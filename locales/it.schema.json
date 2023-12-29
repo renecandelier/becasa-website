@@ -547,7 +547,7 @@
           "label": "Intestazione"
         },
         "invert_badge": {
-          "label": "Inverti il badge della data"
+          "label": "Invertire i colori del badge della data"
         },
         "link": {
           "label": "Link"
@@ -755,11 +755,11 @@
         },
         "image_caption_style": {
           "label": "Stile della didascalia dell'immagine",
-          "option_beneath": "sotto",
-          "option_overlay": "sovrapposizione"
+          "option_beneath": "Sotto",
+          "option_overlay": "Sovrapposizione"
         },
         "loop_carousel": {
-          "label": "Carosello di loop"
+          "label": "Eseguire il loop dopo l'ultima immagine"
         },
         "mobile_columns": {
           "label": "Numero di colonne su mobile",
@@ -778,7 +778,7 @@
           "label": "Testo in sovrimpressione"
         },
         "subheading": {
-          "label": "SOTTOVOCE"
+          "label": "Sottotitolo"
         },
         "title": {
           "label": "Titolo"
@@ -933,94 +933,94 @@
     "image_compare": {
       "blocks": {
         "image": {
-          "name": "",
+          "name": "Immagine",
           "settings": {
             "filter_amount": {
-              "label": ""
+              "label": "Quantità del filtro"
             },
             "filter_effect": {
-              "label": "",
-              "option_blur": "",
-              "option_brightness": "",
-              "option_contrast": "",
-              "option_grayscale": "",
-              "option_invert": "",
-              "option_none": "",
-              "option_saturate": "",
-              "option_sepia": ""
+              "label": "Effetto del filtro",
+              "option_blur": "Sfocatura",
+              "option_brightness": "Luminosità",
+              "option_contrast": "Contrasto",
+              "option_grayscale": "Scala di grigi",
+              "option_invert": "Invertire",
+              "option_none": "Nessuno",
+              "option_saturate": "Saturazione",
+              "option_sepia": "Seppia"
             },
             "graphics__header": {
-              "content": ""
+              "content": "Effetti grafici"
             },
             "image": {
-              "label": ""
+              "label": "Immagine"
             },
             "show_label": {
-              "label": ""
+              "label": "Mostra Etichetta"
             },
             "text": {
-              "label": ""
+              "label": "Etichetta"
             },
             "text__header": {
-              "content": ""
+              "content": "Etichetta"
             },
             "text_color": {
-              "label": ""
+              "label": "Testo dell'etichetta"
             },
             "text_container_color": {
-              "label": ""
+              "label": "Sfondo dell'etichetta"
             },
             "text_position": {
-              "label": ""
+              "label": "Posizione dell'etichetta"
             }
           }
         }
       },
-      "name": "",
+      "name": "Confronta immagine",
       "presets": {
-        "name": ""
+        "name": "Confronta immagine"
       },
       "settings": {
         "cta_header": {
-          "content": ""
+          "content": "Pulsante"
         },
         "heading": {
-          "label": ""
+          "label": "Titolo"
         },
         "image_max_width": {
-          "label": ""
+          "label": "Larghezza massima dell'immagine"
         },
         "image_position": {
-          "label": "",
-          "option_below": "",
-          "option_left": "",
-          "option_right": ""
+          "label": "Posizione dell'immagine",
+          "option_below": "Sotto",
+          "option_left": "A sinistra",
+          "option_right": "A destra"
         },
         "link": {
-          "label": ""
+          "label": "Pulsante di collegamento"
         },
         "link_text": {
-          "label": ""
+          "label": "Etichetta pulsante"
         },
         "reveal_direction": {
-          "label": "",
-          "option_horizontal": "",
-          "option_vertical": ""
+          "label": "Direzione di rivelazione dell'immagine",
+          "option_horizontal": "Orizzontale",
+          "option_vertical": "Verticale"
         },
         "slider_arrows_color": {
-          "label": ""
+          "label": "Frecce del cursore di rivelazione dell'immagine"
         },
         "slider_color": {
-          "label": ""
+          "label": "Cursore di rivelazione dell'immagine"
         },
         "subheading": {
-          "label": ""
+          "label": "sottotitolo"
         },
         "text__header": {
-          "content": ""
+          "content": "Testo"
         },
         "text_alignment": {
-          "label": ""
+          "label": "Allineamento del testo"
         }
       }
     },
@@ -1450,8 +1450,16 @@
     "main_cart": {
       "name": "Carrello pagina",
       "settings": {
+        "cross_sells_position": {
+          "label": "Posizione",
+          "option_1": "Sotto il totale parziale",
+          "option_2": "Voci sottostanti"
+        },
         "header__product": {
           "content": "Articoli del prodotto"
+        },
+        "paragraph__cross_sells": {
+          "content": "La configurazione delle vendite incrociate si trova nell'area \"Carrello\" delle impostazioni del tema."
         },
         "show_product_currency": {
           "label": "Includi simbolo di valuta nel prezzo"
@@ -1720,7 +1728,7 @@
           "name": "Descrizione"
         },
         "featured_products": {
-          "name": "Prodotti in evidenza",
+          "name": "Prodotti complementari",
           "settings": {
             "enable_swiper_mobile": {
               "label": "Abilita lo swipe su mobile"
@@ -1729,14 +1737,23 @@
               "content": "Layout"
             },
             "header__products": {
-              "content": "prodotti"
+              "content": "Prodotti"
             },
             "heading": {
-              "info": "L'intestazione apparirà solo quando i prodotti sono visibili.",
+              "info": "L'intestazione appare solo quando compaiono i prodotti.",
               "label": "Titolo"
             },
+            "max_products": {
+              "label": "Massimo prodotti da mostrare"
+            },
+            "product_source": {
+              "info": "Per selezionare prodotti complementari, aggiungi l'app Ricerca e scoperta. [Ulteriori informazioni](https://help.shopify.com/en/manual/online-store/search-and-discovery/product-recommendations)",
+              "label": "Prodotti da mostrare",
+              "option_app_recommendations": "Consigli per le app di ricerca e scoperta",
+              "option_custom_product_list": "Elenco prodotti personalizzato"
+            },
             "products_list": {
-              "info": "Aggiungere un meta-campo [riferimento prodotto](/admin/metafields/product/create) (elenco di prodotti) per impostare voci diverse per ogni prodotto",
+              "info": "Creare un metacampo [riferimento prodotto](/admin/metafields/product/create) (un elenco di prodotti) per mostrare elementi diversi per ogni prodotto.",
               "label": "prodotti"
             }
           }
@@ -2549,6 +2566,9 @@
         "custom_content": {
           "name": "Contenuti personalizzati"
         },
+        "one_column": {
+          "name": ""
+        },
         "product_description": {
           "name": "Descrizione del prodotto"
         },
@@ -2649,16 +2669,16 @@
           "label": "Testo grande"
         },
         "giant_heading_font_size": {
-          "label": "Dimensione del font"
+          "label": "Dimensione del testo"
         },
         "giant_heading_font_size_mobile": {
-          "label": "Dimensione carattere mobile"
+          "label": "Dimensione dei caratteri per cellulari"
         },
         "heading__left_column": {
           "content": "Colonna sinistra"
         },
         "heading__right_column": {
-          "content": "Colonna di destra"
+          "content": "Colonna destra"
         },
         "left_column_width": {
           "label": "Larghezza della colonna"
@@ -3165,6 +3185,80 @@
         }
       }
     },
+    "video": {
+      "blocks": {
+        "play_button": {
+          "name": "Pulsante di riproduzione",
+          "settings": {
+            "button_layout": {
+              "label": "Layout dei pulsanti",
+              "option_full": "Completo",
+              "option_minimal": "minimo"
+            }
+          }
+        },
+        "subheading": {
+          "name": "SOTTOVOCE",
+          "settings": {
+            "text": {
+              "label": "SOTTOVOCE"
+            }
+          }
+        },
+        "text": {
+          "name": "Testo",
+          "settings": {
+            "text": {
+              "label": "Testo"
+            }
+          }
+        },
+        "title": {
+          "name": "Titolo",
+          "settings": {
+            "title": {
+              "label": "Titolo"
+            }
+          }
+        }
+      },
+      "name": "video",
+      "presets": {
+        "name": "video"
+      },
+      "settings": {
+        "aspect_ratio": {
+          "label": "Rapporto d'aspetto dei media"
+        },
+        "focal_point": {
+          "label": "Punto focale dei media"
+        },
+        "image": {
+          "info": "Consigliato quando si utilizza YouTube o Vimeo.",
+          "label": "Immagine di copertina"
+        },
+        "loop": {
+          "label": "Video in loop"
+        },
+        "text_position": {
+          "label": "Allineamento del testo"
+        },
+        "text_position_mobile": {
+          "label": "Allineamento del testo mobile"
+        },
+        "video": {
+          "label": "Video di Shopify"
+        },
+        "video_source": {
+          "label": "Fonte video",
+          "option_1": "Shopify",
+          "option_2": "Youtube o Vimeo"
+        },
+        "video_url": {
+          "label": "URL di Youtube o Vimeo"
+        }
+      }
+    },
     "video_hero": {
       "blocks": {
         "accent": {
@@ -3302,23 +3396,59 @@
           "info": "Si applica a tutte le immagini degli articoli del carrello nel modello del carrello, nel carrello rapido e nel popup di conferma dell'acquisto.",
           "label": "Rapporto d'aspetto dell'immagine del carrello"
         },
+        "cross_sells_heading": {
+          "label": "Intestazione"
+        },
+        "cross_sells_max_products": {
+          "label": "Numero massimo di prodotti da mostrare"
+        },
+        "cross_sells_recommendations_type": {
+          "label": "Raccomandazioni da mostrare",
+          "option_collection": "Dalla collezione",
+          "option_product_list": "Dalla lista dei prodotti"
+        },
+        "cross_sells_show_thumbnails": {
+          "label": "Mostra le miniature dei prodotti"
+        },
         "enable_confirmation_popup": {
           "info": "Una volta aggiunto un prodotto al carrello, apparirà un popup di conferma.",
           "label": "Abilita il popup di conferma dell'acquisto"
+        },
+        "enable_cross_sells": {
+          "info": "I suggerimenti verranno visualizzati nel carrello rapido e nel modello di carrello.",
+          "label": "Abilita le vendite incrociate"
         },
         "enable_free_shipping_bar": {
           "info": "La barra della spedizione gratuita viene visualizzata nel carrello rapido, nella conferma dell'acquisto e nel modello del carrello.",
           "label": "Abilita la barra di spedizione gratuita"
         },
+        "enable_low_inventory_warning": {
+          "label": "Abilitare"
+        },
         "free_shipping_threshold": {
           "info": "Inserire il valore senza simbolo di valuta e utilizzare un decimale per separare i dollari dai centesimi. Esempio: \"100,00\".",
           "label": "Importo minimo di spedizione gratuita"
         },
+        "header__cross_sells": {
+          "content": "Vende incrociate"
+        },
         "header__free_shipping_bar": {
           "content": "Barra della spedizione gratuita"
         },
+        "header__low_inventory_warning": {
+          "content": "Avviso di scorte insufficienti"
+        },
+        "low_inventory_warning_threshold": {
+          "label": "Soglia di inventario bassa"
+        },
+        "paragraph__cross_sells": {
+          "content": "Usa le vendite incrociate per consigliare prodotti aggiuntivi da una collezione o da un elenco di prodotti."
+        },
         "paragraph__free_shipping_bar": {
           "content": "La barra della spedizione gratuita è configurata separatamente dalle tariffe di spedizione effettive, che devono essere [configurate separatamente] (https://help.shopify.com/en/manual/shipping/setting-up-and-managing-your-shipping/free-shipping-rates#free-shipping-over-a-certain-value)."
+        },
+        "paragraph__low_inventory_warning": {
+          "content": "Gli articoli nel carrello visualizzeranno un avviso se la quantità rimanente corrente è inferiore alla soglia di inventario basso"
         },
         "show_order_notes": {
           "label": "Mostra le note dell'ordine"
@@ -3781,6 +3911,7 @@
         "label": "Proporzioni delle immagini",
         "option_landscape": "Orizzontale (3:2)",
         "option_landscape_alt": "Orizzontale (3:2)",
+        "option_landscape_ultrawide_alt": "Paesaggio ultrawide (21:9)",
         "option_landscape_wide_alt": "Larghezza paesaggio (16:9)",
         "option_natural": "Originale",
         "option_portrait": "Ritratto (2:3)",
@@ -3807,7 +3938,7 @@
       },
       "banners": {
         "background_color": {
-          "info": "Utilizzato quando non è selezionata alcuna immagine di sfondo.",
+          "info": "Colore utilizzato quando non c'è un'immagine di sfondo.",
           "label": "Colore di sfondo"
         },
         "header_background_image": {
@@ -3823,7 +3954,7 @@
           "label": "Immagine"
         },
         "min_height": {
-          "label": "altezza"
+          "label": "Altezza"
         },
         "min_height_mobile": {
           "label": "Altezza mobile"
@@ -3901,6 +4032,9 @@
       "color_overlay_gradient": {
         "label": "Sfumatura in sovrimpressione"
       },
+      "color_overlay_text": {
+        "label": "Testo in sovrimpressione"
+      },
       "countdown": {
         "background_color": {
           "info": "Utilizzato quando non è selezionata alcuna immagine di sfondo.",
@@ -3953,7 +4087,7 @@
           "label": "Titolo"
         },
         "hide_timer_on_complete": {
-          "label": "Nascondi il timer al completamento"
+          "label": "Nascondere il timer al termine"
         },
         "hour": {
           "label": "Ora",
@@ -4081,8 +4215,14 @@
         "text": {
           "label": "Testo"
         },
+        "time_zone_selection": {
+          "info": "Selezionare il fuso orario per il conto alla rovescia",
+          "label": "Fuso orario",
+          "option__shop": "Fuso orario del negozio",
+          "option__user": "Fuso orario del cliente"
+        },
         "timer_complete_message": {
-          "label": "Messaggio di completamento del timer"
+          "label": "Messaggio \"Timer terminato\""
         },
         "year": {
           "label": "Anno"

@@ -46,6 +46,7 @@
   },
   "cart": {
     "general": {
+      "add": "Add",
       "cart": "Your cart",
       "checkout": "Checkout",
       "confirmation_popup_heading": "Added to cart",
@@ -57,6 +58,7 @@
       "free_shipping": "Your order qualifies for free shipping!",
       "free_shipping_remaining_html": "Only {{ remaining_amount }} away from free shipping!",
       "go_to_cart": "Go to cart",
+      "inventory_warning": "Only {{ amount }} left!",
       "items_with_count": {
         "one": "{{ count }} item",
         "other": "{{ count }} items"

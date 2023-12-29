@@ -46,6 +46,7 @@
   },
   "cart": {
     "general": {
+      "add": "añade",
       "cart": "Su cesta",
       "checkout": "Mira",
       "confirmation_popup_heading": "Artículo agregado a tu carrito",
@@ -57,6 +58,7 @@
       "free_shipping": "Su pedido tiene derecho a un envío gratuito.",
       "free_shipping_remaining_html": "¡Sólo a {{ remaining_amount }} del envío gratuito!",
       "go_to_cart": "Ir a la cesta",
+      "inventory_warning": "¡Solo quedan {{ amount }} !",
       "items_with_count": {
         "one": "{{ count }} Posten",
         "other": "{{ count }} artículos"

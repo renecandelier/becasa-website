@@ -547,7 +547,7 @@
           "label": "Überschrift"
         },
         "invert_badge": {
-          "label": "Datumsabzeichen umkehren"
+          "label": "Invertieren Sie die Farben des Datumsabzeichens"
         },
         "link": {
           "label": "Link"
@@ -724,7 +724,7 @@
           "name": "Bild",
           "settings": {
             "text": {
-              "label": "Beschriftung"
+              "label": "Bildunterschrift"
             },
             "title": {
               "label": "Titel"
@@ -754,12 +754,12 @@
           "label": "Größe der Bildunterschrift"
         },
         "image_caption_style": {
-          "label": "Bildunterschrift Stil",
+          "label": "Stil der Bildunterschrift",
           "option_beneath": "Unter",
-          "option_overlay": "Overlay"
+          "option_overlay": "Überlagern"
         },
         "loop_carousel": {
-          "label": "Schleifen-Karussell"
+          "label": "Schleife nach dem letzten Bild"
         },
         "mobile_columns": {
           "label": "Anzahl der Spalten auf dem Handy",
@@ -933,94 +933,94 @@
     "image_compare": {
       "blocks": {
         "image": {
-          "name": "",
+          "name": "Bild",
           "settings": {
             "filter_amount": {
-              "label": ""
+              "label": "Filtermenge"
             },
             "filter_effect": {
-              "label": "",
-              "option_blur": "",
-              "option_brightness": "",
-              "option_contrast": "",
-              "option_grayscale": "",
-              "option_invert": "",
-              "option_none": "",
-              "option_saturate": "",
-              "option_sepia": ""
+              "label": "Filter-Effekt",
+              "option_blur": "Unschärfe",
+              "option_brightness": "Helligkeit",
+              "option_contrast": "Kontrast",
+              "option_grayscale": "Graustufen",
+              "option_invert": "Invertieren",
+              "option_none": "Keine",
+              "option_saturate": "Sättigen",
+              "option_sepia": "Sepia"
             },
             "graphics__header": {
-              "content": ""
+              "content": "Grafische Effekte"
             },
             "image": {
-              "label": ""
+              "label": "Bild"
             },
             "show_label": {
-              "label": ""
+              "label": "Etikett anzeigen"
             },
             "text": {
-              "label": ""
+              "label": "Anzeigen"
             },
             "text__header": {
-              "content": ""
+              "content": "Anzeigen"
             },
             "text_color": {
-              "label": ""
+              "label": "Text beschriften"
             },
             "text_container_color": {
-              "label": ""
+              "label": "Hintergrund beschriften"
             },
             "text_position": {
-              "label": ""
+              "label": "Position der Beschriftung"
             }
           }
         }
       },
-      "name": "",
+      "name": "Bildvergleich",
       "presets": {
-        "name": ""
+        "name": "Bildvergleich"
       },
       "settings": {
         "cta_header": {
-          "content": ""
+          "content": "Taste"
         },
         "heading": {
-          "label": ""
+          "label": "Überschrift"
         },
         "image_max_width": {
-          "label": ""
+          "label": "Maximale Bildbreite"
         },
         "image_position": {
-          "label": "",
-          "option_below": "",
-          "option_left": "",
-          "option_right": ""
+          "label": "Bildposition",
+          "option_below": "Unterhalb",
+          "option_left": "Links",
+          "option_right": "Recht"
         },
         "link": {
-          "label": ""
+          "label": "Schaltflächenlink"
         },
         "link_text": {
-          "label": ""
+          "label": "Beschriftung der Schaltfläche"
         },
         "reveal_direction": {
-          "label": "",
-          "option_horizontal": "",
-          "option_vertical": ""
+          "label": "Richtung der Bildeinblendung",
+          "option_horizontal": "Horizontal",
+          "option_vertical": "Vertikale"
         },
         "slider_arrows_color": {
-          "label": ""
+          "label": "Pfeile des Schiebereglers für die Bildanzeige"
         },
         "slider_color": {
-          "label": ""
+          "label": "Schieberegler für die Bildanzeige"
         },
         "subheading": {
-          "label": ""
+          "label": "Unterrubrik"
         },
         "text__header": {
-          "content": ""
+          "content": "Text"
         },
         "text_alignment": {
-          "label": ""
+          "label": "Textausrichtung"
         }
       }
     },
@@ -1450,8 +1450,16 @@
     "main_cart": {
       "name": "Warenkorb Seite",
       "settings": {
+        "cross_sells_position": {
+          "label": "Position",
+          "option_1": "Unterhalb der Zwischensumme",
+          "option_2": "Nachstehende Einzelposten"
+        },
         "header__product": {
           "content": "Produktartikel"
+        },
+        "paragraph__cross_sells": {
+          "content": "Die Konfiguration von Cross-Sells finden Sie im Bereich \"Warenkorb\" in den Theme-Einstellungen."
         },
         "show_product_currency": {
           "label": "Währungssymbol in den Preis einbeziehen"
@@ -1720,7 +1728,7 @@
           "name": "Beschreibung"
         },
         "featured_products": {
-          "name": "Ausgewählte Produkte",
+          "name": "Ergänzende Produkte",
           "settings": {
             "enable_swiper_mobile": {
               "label": "Wischen auf dem Handy aktivieren"
@@ -1732,11 +1740,20 @@
               "content": "Produkte"
             },
             "heading": {
-              "info": "Die Überschrift wird nur angezeigt, wenn Produkte angezeigt werden.",
+              "info": "Die Überschrift erscheint nur, wenn Produkte erscheinen.",
               "label": "Überschrift"
             },
+            "max_products": {
+              "label": "Maximal anzuzeigende Produkte"
+            },
+            "product_source": {
+              "info": "Um ergänzende Produkte auszuwählen, fügen Sie die Search & Discovery-App hinzu. [Weitere Informationen](https://help.shopify.com/en/manual/online-store/search-and-discovery/product-recommendations)",
+              "label": "Produkte zu zeigen",
+              "option_app_recommendations": "Empfehlungen für Such- und Entdeckungs-Apps",
+              "option_custom_product_list": "Benutzerdefinierte Produktliste"
+            },
             "products_list": {
-              "info": "Fügen Sie ein [Produktreferenz](/admin/metafields/product/create) (Liste der Produkte) Metafeld hinzu, um verschiedene Elemente für jedes Produkt festzulegen",
+              "info": "Erstellen Sie ein [Produktreferenz-Metafeld](/admin/metafields/product/create) (eine Liste von Produkten), um verschiedene Artikel für jedes Produkt anzuzeigen.",
               "label": "Produkte"
             }
           }
@@ -2549,6 +2566,9 @@
         "custom_content": {
           "name": "Benutzerdefinierte Inhalte"
         },
+        "one_column": {
+          "name": ""
+        },
         "product_description": {
           "name": "Produktbeschreibung"
         },
@@ -2649,7 +2669,7 @@
           "label": "Großer Text"
         },
         "giant_heading_font_size": {
-          "label": "Schriftgröße"
+          "label": "Textgröße"
         },
         "giant_heading_font_size_mobile": {
           "label": "Schriftgröße für Mobilgeräte"
@@ -3165,6 +3185,80 @@
         }
       }
     },
+    "video": {
+      "blocks": {
+        "play_button": {
+          "name": "Play-Taste",
+          "settings": {
+            "button_layout": {
+              "label": "Layout der Schaltflächen",
+              "option_full": "vollständig",
+              "option_minimal": "Minimal"
+            }
+          }
+        },
+        "subheading": {
+          "name": "Unterrubrik",
+          "settings": {
+            "text": {
+              "label": "Unterrubrik"
+            }
+          }
+        },
+        "text": {
+          "name": "Text",
+          "settings": {
+            "text": {
+              "label": "Text"
+            }
+          }
+        },
+        "title": {
+          "name": "Überschrift",
+          "settings": {
+            "title": {
+              "label": "Überschrift"
+            }
+          }
+        }
+      },
+      "name": "Video",
+      "presets": {
+        "name": "Video"
+      },
+      "settings": {
+        "aspect_ratio": {
+          "label": "Seitenverhältnis der Medien"
+        },
+        "focal_point": {
+          "label": "Medienschwerpunkt"
+        },
+        "image": {
+          "info": "Empfohlen bei Verwendung von YouTube oder Vimeo.",
+          "label": "Titelbild"
+        },
+        "loop": {
+          "label": "Loop-Video"
+        },
+        "text_position": {
+          "label": "Textausrichtung"
+        },
+        "text_position_mobile": {
+          "label": "Mobile Textausrichtung"
+        },
+        "video": {
+          "label": "Shopify-Video"
+        },
+        "video_source": {
+          "label": "Video Quelle",
+          "option_1": "Shopify",
+          "option_2": "Youtube oder Vimeo"
+        },
+        "video_url": {
+          "label": "Youtube oder Vimeo URL"
+        }
+      }
+    },
     "video_hero": {
       "blocks": {
         "accent": {
@@ -3302,23 +3396,59 @@
           "info": "Gilt für alle Artikelbilder in der Warenkorbvorlage, im Schnellwarenkorb und im Popup zur Kaufbestätigung.",
           "label": "Bildseitenverhältnis des Artikels im Warenkorb"
         },
+        "cross_sells_heading": {
+          "label": "Überschrift"
+        },
+        "cross_sells_max_products": {
+          "label": "Maximale Anzahl der anzuzeigenden Produkte"
+        },
+        "cross_sells_recommendations_type": {
+          "label": "Empfehlungen zum Anzeigen",
+          "option_collection": "Aus Sammlung",
+          "option_product_list": "Aus der Produktliste"
+        },
+        "cross_sells_show_thumbnails": {
+          "label": "Produkt-Thumbnails anzeigen"
+        },
         "enable_confirmation_popup": {
           "info": "Ein Bestätigungs-Popup erscheint, sobald ein Produkt in den Warenkorb gelegt wurde.",
           "label": "Popup zur Kaufbestätigung aktivieren"
+        },
+        "enable_cross_sells": {
+          "info": "Empfehlungen werden im Schnellwarenkorb und in der Warenkorbvorlage angezeigt.",
+          "label": "Ermöglichen Sie Cross-Sells"
         },
         "enable_free_shipping_bar": {
           "info": "Die Leiste für den kostenlosen Versand wird im schnellen Warenkorb, in der Kaufbestätigung und in der Warenkorbvorlage angezeigt.",
           "label": "Leiste für kostenlosen Versand aktivieren"
         },
+        "enable_low_inventory_warning": {
+          "label": "Aktivieren"
+        },
         "free_shipping_threshold": {
           "info": "Gib den Wert ohne Währungssymbol ein und trenne Euro und Cent durch eine Dezimalstelle. Beispiel: '100.00'",
           "label": "Mindestbetrag für den kostenlosen Versand"
         },
+        "header__cross_sells": {
+          "content": "Cross-Sells"
+        },
         "header__free_shipping_bar": {
           "content": "Leiste für den kostenlosen Versand"
         },
+        "header__low_inventory_warning": {
+          "content": "Warnung bei niedrigem Lagerbestand"
+        },
+        "low_inventory_warning_threshold": {
+          "label": "Niedrige Bestandsschwelle"
+        },
+        "paragraph__cross_sells": {
+          "content": "Verwenden Sie Cross-Sells, um zusätzliche Produkte aus einer Kollektion oder Produktliste zu empfehlen."
+        },
         "paragraph__free_shipping_bar": {
           "content": "Die Leiste für den kostenlosen Versand wird getrennt von deinen eigentlichen Versandtarifen konfiguriert, die [separat konfiguriert] werden müssen (https://help.shopify.com/en/manual/shipping/setting-up-and-managing-your-shipping/free-shipping-rates#free-shipping-over-a-certain-value)."
+        },
+        "paragraph__low_inventory_warning": {
+          "content": "Artikel im Einkaufswagen zeigen eine Warnung an, wenn die aktuelle verbleibende Menge unter der Schwelle für niedrigen Lagerbestand liegt"
         },
         "show_order_notes": {
           "label": "Bestellnotizen anzeigen"
@@ -3781,6 +3911,7 @@
         "label": "Bildseitenverhältnis",
         "option_landscape": "Querformat (3:2)",
         "option_landscape_alt": "Querformat (3:2)",
+        "option_landscape_ultrawide_alt": "Querformat ultraweit (21:9)",
         "option_landscape_wide_alt": "Querformat breit (16:9)",
         "option_natural": "Original",
         "option_portrait": "Porträt (2:3)",
@@ -3807,7 +3938,7 @@
       },
       "banners": {
         "background_color": {
-          "info": "Wird verwendet, wenn kein Hintergrundbild ausgewählt ist.",
+          "info": "Farbe, die verwendet wird, wenn kein Hintergrundbild vorhanden ist.",
           "label": "Hintergrundfarbe"
         },
         "header_background_image": {
@@ -3835,7 +3966,7 @@
           "label": "Mobiles Bild"
         },
         "show_frame": {
-          "label": "Rahmen anzeigen"
+          "label": "Den Bannerrahmen anzeigen"
         },
         "text": {
           "label": "Text"
@@ -3901,6 +4032,9 @@
       "color_overlay_gradient": {
         "label": "Overlay Farbverlauf"
       },
+      "color_overlay_text": {
+        "label": "Text überlagern"
+      },
       "countdown": {
         "background_color": {
           "info": "Wird verwendet, wenn kein Hintergrundbild ausgewählt ist.",
@@ -3953,7 +4087,7 @@
           "label": "Überschrift"
         },
         "hide_timer_on_complete": {
-          "label": "Timer nach Fertigstellung ausblenden"
+          "label": "Timer nach Beendigung ausblenden"
         },
         "hour": {
           "label": "Stunde",
@@ -4081,8 +4215,14 @@
         "text": {
           "label": "Text"
         },
+        "time_zone_selection": {
+          "info": "Wählen Sie die Zeitzone für den Countdown",
+          "label": "Zeitzone",
+          "option__shop": "Zeitzone Ihres Ladens",
+          "option__user": "Zeitzone des Kunden"
+        },
         "timer_complete_message": {
-          "label": "Meldung über das Ende des Timers"
+          "label": "Meldung \"Timer beendet\""
         },
         "year": {
           "label": "Jahr"

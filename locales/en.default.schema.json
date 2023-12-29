@@ -1450,8 +1450,16 @@
     "main_cart": {
       "name": "Cart page",
       "settings": {
+        "cross_sells_position": {
+          "label": "Position",
+          "option_1": "Below subtotal",
+          "option_2": "Below line items"
+        },
         "header__product": {
           "content": "Product items"
+        },
+        "paragraph__cross_sells": {
+          "content": "The configuration of cross sells can be found in the \"Cart\" area of the theme settings."
         },
         "show_product_currency": {
           "label": "Include currency symbol in price"
@@ -1720,7 +1728,7 @@
           "name": "Description"
         },
         "featured_products": {
-          "name": "Featured products",
+          "name": "Complementary products",
           "settings": {
             "enable_swiper_mobile": {
               "label": "Enable swipe on mobile"
@@ -1735,9 +1743,18 @@
               "info": "The heading will only appear when products are showing.",
               "label": "Heading"
             },
+            "max_products": {
+              "label": "Maximum products to show"
+            },
+            "product_source": {
+              "info": "To select complementary products, add the Search & Discovery app. [Learn more](https://help.shopify.com/en/manual/online-store/search-and-discovery/product-recommendations)",
+              "label": "Products to show",
+              "option_app_recommendations": "Search & Discovery app recommendations",
+              "option_custom_product_list": "Custom product list"
+            },
             "products_list": {
               "info": "Add a [product reference](/admin/metafields/product/create) (list of products) metafield to set different items for each product",
-              "label": "Products"
+              "label": "Custom product list"
             }
           }
         },
@@ -2293,10 +2310,10 @@
           "name": "Flyout"
         },
         "flyout_countdown_sign_up": {
-          "name": "Countdown sign up flyout"
+          "name": "Countdown signup flyout"
         },
         "flyout_sign_up": {
-          "name": "Sign up flyout"
+          "name": "Signup flyout"
         },
         "heading": {
           "name": "",
@@ -2546,6 +2563,9 @@
     },
     "product_tabs": {
       "blocks": {
+        "custom_content": {
+          "name": ""
+        },
         "one_column": {
           "name": "One column tab"
         },
@@ -3165,6 +3185,80 @@
         }
       }
     },
+    "video": {
+      "blocks": {
+        "play_button": {
+          "name": "Play button",
+          "settings": {
+            "button_layout": {
+              "label": "Button layout",
+              "option_full": "Full",
+              "option_minimal": "Minimal"
+            }
+          }
+        },
+        "subheading": {
+          "name": "Subheading",
+          "settings": {
+            "text": {
+              "label": "Subheading"
+            }
+          }
+        },
+        "text": {
+          "name": "Text",
+          "settings": {
+            "text": {
+              "label": "Text"
+            }
+          }
+        },
+        "title": {
+          "name": "Heading",
+          "settings": {
+            "title": {
+              "label": "Heading"
+            }
+          }
+        }
+      },
+      "name": "Video",
+      "presets": {
+        "name": "Video"
+      },
+      "settings": {
+        "aspect_ratio": {
+          "label": "Media aspect ratio"
+        },
+        "focal_point": {
+          "label": "Media focal point"
+        },
+        "image": {
+          "info": "Recommended when using YouTube or Vimeo.",
+          "label": "Cover image"
+        },
+        "loop": {
+          "label": "Loop video"
+        },
+        "text_position": {
+          "label": "Text alignment"
+        },
+        "text_position_mobile": {
+          "label": "Mobile text alignment"
+        },
+        "video": {
+          "label": "Shopify video"
+        },
+        "video_source": {
+          "label": "Video source",
+          "option_1": "Shopify",
+          "option_2": "Youtube or Vimeo"
+        },
+        "video_url": {
+          "label": "Youtube or Vimeo URL"
+        }
+      }
+    },
     "video_hero": {
       "blocks": {
         "accent": {
@@ -3302,23 +3396,59 @@
           "info": "Applies to all cart item images within the cart template, quick cart, and purchase confirmation popup.",
           "label": "Cart item image aspect ratio"
         },
+        "cross_sells_heading": {
+          "label": "Heading"
+        },
+        "cross_sells_max_products": {
+          "label": "Max number of products to show"
+        },
+        "cross_sells_recommendations_type": {
+          "label": "Recommendations to show",
+          "option_collection": "From collection",
+          "option_product_list": "From product list"
+        },
+        "cross_sells_show_thumbnails": {
+          "label": "Show product thumbnails"
+        },
         "enable_confirmation_popup": {
           "info": "Confirmation popup will appear once a product has been added to the cart.",
           "label": "Enable purchase confirmation popup"
+        },
+        "enable_cross_sells": {
+          "info": "Recommendations will show in the quick cart and cart template.",
+          "label": "Enable cross sells"
         },
         "enable_free_shipping_bar": {
           "info": "The free shipping bar will show within the quick cart, purchase confirmation, and cart template.",
           "label": "Enable free shipping bar"
         },
+        "enable_low_inventory_warning": {
+          "label": "Enable"
+        },
         "free_shipping_threshold": {
           "info": "Enter the value without a currency symbol and use a decimal to separate dollars and cents. Example: '100.00'",
           "label": "Free shipping minimum amount"
         },
+        "header__cross_sells": {
+          "content": "Cross sells"
+        },
         "header__free_shipping_bar": {
           "content": "Free shipping bar"
         },
+        "header__low_inventory_warning": {
+          "content": "Low inventory warning"
+        },
+        "low_inventory_warning_threshold": {
+          "label": "Low inventory threshold"
+        },
+        "paragraph__cross_sells": {
+          "content": "Use cross sells to recommend additional products from a collection or product list."
+        },
         "paragraph__free_shipping_bar": {
           "content": "The free shipping bar is configured separately from your actual shipping rates, which need to be [configured separately](https://help.shopify.com/en/manual/shipping/setting-up-and-managing-your-shipping/free-shipping-rates#free-shipping-over-a-certain-value)."
+        },
+        "paragraph__low_inventory_warning": {
+          "content": "Items in the cart will display a warning if the current quantity remaining is below the low inventory threshold"
         },
         "show_order_notes": {
           "label": "Show order notes"
@@ -3781,6 +3911,7 @@
         "label": "Image aspect ratio",
         "option_landscape": "Landscape (3:2)",
         "option_landscape_alt": "Landscape (5:4)",
+        "option_landscape_ultrawide_alt": "Landscape ultrawide (21:9)",
         "option_landscape_wide_alt": "Landscape wide (16:9)",
         "option_natural": "Natural",
         "option_portrait": "Portrait (2:3)",
@@ -3841,8 +3972,11 @@
           "label": "Text"
         }
       },
-      "button_background_color": {
+      "buttons_background_color": {
         "label": "Buttons"
+      },
+      "button_background_color": {
+        "label": "Button"
       },
       "button_link": {
         "label": "Button link"
@@ -3900,6 +4034,9 @@
       },
       "color_overlay_gradient": {
         "label": "Overlay gradient"
+      },
+      "color_overlay_text": {
+        "label": "Overlay text"
       },
       "countdown": {
         "background_color": {
@@ -4080,6 +4217,12 @@
         },
         "text": {
           "label": "Text"
+        },
+        "time_zone_selection": {
+          "info": "Select the time zone you want the countdown to be displayed in",
+          "label": "Time zone",
+          "option__shop": "Shop time zone",
+          "option__user": "Users local time zone"
         },
         "timer_complete_message": {
           "label": "Timer complete message"
