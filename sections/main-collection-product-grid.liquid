@@ -93,6 +93,7 @@
                         collection__products--no-products
                       {% endif %}
                     ">
+        	{% comment %} ***&&&***
                     {% for product in collection.products %}
                       {%
                         render 'product-item' with
@@ -108,6 +109,75 @@
                         </button>
                       </div>
                     {% endfor %}
+        	{% endcomment %}
+
+        {%- assign isCollectionSplit = true -%}
+{%- if collection.description == "non-split" -%}		
+<script>console.log({{ collection | json }});</script>
+                   {%- assign isCollectionSplit = false -%}		
+  {%- endif -%}
+         {%- for product in collection.products -%}		
+             		
+             {%- assign isSplit = false -%}		
+             {%- for tag in product.tags -%}		
+               {%- if tag == "split" and isCollectionSplit == true -%}		
+                 {%- assign isSplit = true -%}		
+                 {%- endif -%}		
+               {%- endfor -%}		
+             		
+             {%- if isSplit == true -%}		
+               {%- assign currentVariantColor = "" -%}
+
+               {%- for variant in product.variants -%}	
+                 	
+                 {%- assign variantColor = variant.title | split: " " | first | downcase -%}		
+                 {%- if variantColor != currentVariantColor -%}		
+                   {%- assign currentVariantColor = variantColor -%}		
+                   {%- assign foundFirstImage = false -%}		
+                   {% for media in product.media %}		
+                     {% assign altName = media.alt | split: " " | first | downcase %}		
+                     {% if variantColor == altName and foundFirstImage == false and media.media_type == "image" %}		
+                       {%- assign foundFirstImage = true -%}		
+                       {% assign altIndex = media.position %}		
+                       {% assign altIndex = altIndex | minus: 1 %}		
+                       {% endif %}		
+                     {% endfor %}
+{%- if collection.description == "sale" -%}
+                    {%- if variant.compare_at_price > 0 -%}
+                   <script>console.log({{ variant.compare_at_price | json }});</script>
+                    {%		
+                        render 'product-item' with		
+                        prod: product,		
+                        aspect_ratio: settings.product_listing_aspect_ratio,		
+                        has_grid_reveal: true,		
+                        indexForVariant: altIndex,		
+                        selectedVariant: variant		
+                      %}
+                           {% endif %}
+                                              {% else %}
+
+                   {%		
+                        render 'product-item' with		
+                        prod: product,		
+                        aspect_ratio: settings.product_listing_aspect_ratio,		
+                        has_grid_reveal: true,		
+                        indexForVariant: altIndex,		
+                        selectedVariant: variant		
+                      %}		
+                     {% endif %}
+
+                   {%- endif -%}		
+                 {%- endfor -%}		
+               {% else %}		
+               {%		
+                        render 'product-item' with		
+                        prod: product,		
+                        aspect_ratio: settings.product_listing_aspect_ratio,		
+                        has_grid_reveal: true,		
+                      %}		
+               {%- endif -%}		
+             {%- endfor -%}
+        
                   </div>
 
                   {% unless paginated %}

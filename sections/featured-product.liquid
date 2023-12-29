@@ -447,6 +447,98 @@
       ]
     },
     {
+      "type": "featured_products",
+      "name": "t:sections.main_product_overview.blocks.featured_products.name",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "text",
+          "id": "heading",
+          "label": "t:sections.main_product_overview.blocks.featured_products.settings.heading.label",
+          "default": "Pairs well with",
+          "info": "t:sections.main_product_overview.blocks.featured_products.settings.heading.info"
+        },
+        {
+          "type": "select",
+          "id": "column_placement",
+          "label": "t:sections.main_product_details.blocks.shared.settings.column_placement.label",
+          "default": "right",
+          "options": [
+            {
+              "value": "left",
+              "label": "t:sections.main_product_details.blocks.shared.settings.column_placement.option_left"
+            },
+            {
+              "value": "right",
+              "label": "t:sections.main_product_details.blocks.shared.settings.column_placement.option_right"
+            }
+          ]
+        },
+        {
+          "type": "header",
+          "content": "t:sections.main_product_overview.blocks.featured_products.settings.header__products.content"
+        },
+        {
+          "type": "range",
+          "id": "max_products",
+          "min": 1,
+          "max": 10,
+          "step": 1,
+          "label": "t:sections.main_product_overview.blocks.featured_products.settings.max_products.label",
+          "default": 3
+        },
+        {
+          "type": "radio",
+          "id": "product_source",
+          "label": "t:sections.main_product_overview.blocks.featured_products.settings.product_source.label",
+          "options": [
+            {
+              "value": "custom-product-list",
+              "label": "t:sections.main_product_overview.blocks.featured_products.settings.product_source.option_custom_product_list"
+            },
+            {
+            "value": "app-recommendations",
+            "label": "t:sections.main_product_overview.blocks.featured_products.settings.product_source.option_app_recommendations"
+            }
+          ],
+          "default": "custom-product-list",
+          "info": "t:sections.main_product_overview.blocks.featured_products.settings.product_source.info"
+        },
+        {
+          "id": "product_list",
+          "type": "product_list",
+          "label": "t:sections.main_product_overview.blocks.featured_products.settings.products_list.label",
+          "info": "t:sections.main_product_overview.blocks.featured_products.settings.products_list.info"
+        },
+        {
+          "type": "header",
+          "content": "t:sections.main_product_overview.blocks.featured_products.settings.header__layout.content"
+        },
+        {
+          "type": "checkbox",
+          "id": "enable_swiper_mobile",
+          "label": "t:sections.main_product_overview.blocks.featured_products.settings.enable_swiper_mobile.label",
+          "default": true
+        },
+        {
+          "type": "header",
+          "content": "t:sections.main_product_overview.blocks.shared_settings.header__display_as_row"
+        },
+        {
+          "id": "display_as_collapsible_row",
+          "type": "checkbox",
+          "label": "t:sections.main_product_overview.blocks.shared_settings.display_as_collapsible_row.label",
+          "default": false
+        },
+        {
+          "id": "expand_by_default",
+          "type": "checkbox",
+          "label": "t:sections.main_product_overview.blocks.shared_settings.expand_by_default.label",
+          "default": true
+        }
+      ]
+    },
+    {
       "type": "custom_liquid",
       "name": "t:sections.main_product_overview.blocks.custom_liquid.name",
       "limit": 1,
@@ -630,72 +722,6 @@
           "type": "text",
           "label": "t:sections.main_product_overview.blocks.shared_settings.collapsible_row_title.label",
           "default": "Description"
-        }
-      ]
-    },
-    {
-      "type": "featured_products",
-      "name": "t:sections.main_product_overview.blocks.featured_products.name",
-      "limit": 1,
-      "settings": [
-        {
-          "type": "text",
-          "id": "heading",
-          "label": "t:sections.main_product_overview.blocks.featured_products.settings.heading.label",
-          "default": "Related products",
-          "info": "t:sections.main_product_overview.blocks.featured_products.settings.heading.info"
-        },
-        {
-          "type": "select",
-          "id": "column_placement",
-          "label": "t:sections.main_product_details.blocks.shared.settings.column_placement.label",
-          "default": "right",
-          "options": [
-            {
-              "value": "left",
-              "label": "t:sections.main_product_details.blocks.shared.settings.column_placement.option_left"
-            },
-            {
-              "value": "right",
-              "label": "t:sections.main_product_details.blocks.shared.settings.column_placement.option_right"
-            }
-          ]
-        },
-        {
-          "type": "header",
-          "content": "t:sections.main_product_overview.blocks.featured_products.settings.header__products.content"
-        },
-        {
-          "id": "product_list",
-          "type": "product_list",
-          "label": "t:sections.main_product_overview.blocks.featured_products.settings.products_list.label",
-          "info": "t:sections.main_product_overview.blocks.featured_products.settings.products_list.info"
-        },
-        {
-          "type": "header",
-          "content": "t:sections.main_product_overview.blocks.featured_products.settings.header__layout.content"
-        },
-        {
-          "type": "checkbox",
-          "id": "enable_swiper_mobile",
-          "label": "t:sections.main_product_overview.blocks.featured_products.settings.enable_swiper_mobile.label",
-          "default": true
-        },
-        {
-          "type": "header",
-          "content": "t:sections.main_product_overview.blocks.shared_settings.header__display_as_row"
-        },
-        {
-          "id": "display_as_collapsible_row",
-          "type": "checkbox",
-          "label": "t:sections.main_product_overview.blocks.shared_settings.display_as_collapsible_row.label",
-          "default": false
-        },
-        {
-          "id": "expand_by_default",
-          "type": "checkbox",
-          "label": "t:sections.main_product_overview.blocks.shared_settings.expand_by_default.label",
-          "default": true
         }
       ]
     },
