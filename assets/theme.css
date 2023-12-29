@@ -22045,3 +22045,39 @@ html:not(.no-js):not(.prefers-reduced-motion)
     var(--delay-amount) * var(--delay-offset-multiplier, 0)
   );
   }
+
+/* comment ****&&&*** */
+
+.product-thumbnails__item.hide__img {
+    display: none;
+}
+
+.product-thumbnails__item.visible__img {
+    display: block !important;
+}
+
+.product__media-item.hide__img {
+    display: none;
+}
+
+
+@media(max-width: 960px){
+  .product__media-item.visible__img {
+    display: flex !important;
+}
+  .product__media-container .product__media {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: scroll;
+    gap: 10px;
+}
+
+.product__media-container.below-mobile .product__media-item, .product__media-container.below-mobile .product__media-item .media {
+    width: 100%;
+    width: 350px;
+    overflow: unset !important;
+}
+  .product__media::-webkit-scrollbar {
+    display: none;
+}
+}

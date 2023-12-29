@@ -7,6 +7,7 @@ function _classCallCheck$1(instance, Constructor) { if (!(instance instanceof Co
  * (http://www.w3.org/Consortium/Legal/2015/copyright-software-and-document).
  */
 
+
 (function () {
   // Return early if we're not running inside of the browser.
   if (typeof window === 'undefined') {
@@ -6100,19 +6101,77 @@ function OptionButtons(els) {
   };
 }
 
+// ***&&&*** variant project 
+
 function createOptionGroup(el) {
   var select = n$2("select", el);
   var buttons = t$2("[data-button]", el);
   var buttonClick = e$2(buttons, "click", function (e) {
     e.preventDefault();
+    
     var buttonEl = e.currentTarget;
     var optionHandle = buttonEl.dataset.optionHandle;
+    var optionHandleValue = buttonEl.dataset.optionValue;
+    var colorOptionHandle = buttonEl.dataset.optionOrigin;
+   
+    const optionHandleValueLower = optionHandleValue.toLowerCase();
+     
+    const productThumb = document.querySelectorAll(".product-thumbnails__items img");
+    const mainProductThumb = document.querySelectorAll(".product__media-container img");
+    const carouselWrapper = document.querySelector(".product__media.carousel__wrapper.swiper-wrapper")
+    
+    if(colorOptionHandle ==="Color" || colorOptionHandle ==="color"){
+       productThumb.forEach(thumb => {
+      const thumbParent = thumb.parentElement.parentElement.parentElement.parentElement
+      
+      if(optionHandleValueLower !== thumb.alt.toLowerCase()){
+        //console.log("optionHandleValueLower",optionHandleValueLower, thumb.alt.toLowerCase())
+        thumbParent.classList.add("hide__img");
+        thumbParent.classList.remove("visible__img");    
+      }else {
+        console.log("optionHandleValueLower",optionHandleValueLower, thumb.alt.toLowerCase())
+        thumbParent.classList.add("visible__img");
+        thumbParent.classList.remove("hide__img");
+      }
+    })
+    }
+
+    if(colorOptionHandle ==="Color" || colorOptionHandle ==="color"){
+       mainProductThumb.forEach(thumb => {
+      const thumbParent = thumb.parentElement.parentElement.parentElement.parentElement.parentElement;
+      const lightThumbParent = thumb.parentElement.parentElement.parentElement;
+     
+      if(optionHandleValueLower !== thumb.alt.toLowerCase()){
+        thumbParent.classList.add("hide__img");
+        thumbParent.classList.remove("visible__img");
+
+        lightThumbParent.classList.add("lighthouse__hide_img");
+        lightThumbParent.classList.remove("lighthouse__visible_img");
+      
+      }else {
+        thumbParent.classList.add("visible__img");
+        thumbParent.classList.remove("hide__img");
+        
+        lightThumbParent.classList.remove("lighthouse__hide_img");
+        lightThumbParent.classList.add("lighthouse__visible_img");
+      }
+    })
+    }
+
+    
+    
+   
+    //console.log("product-thumbnails__items",productThumb)
     buttons.forEach(function (btn) {
       l(btn, "selected", btn.dataset.optionHandle === optionHandle);
     });
     var opt = n$2("[data-value-handle=\"".concat(optionHandle, "\"]"), select);
+    console.log("OPT", opt, colorOptionHandle)
     opt.selected = true;
-    select.dispatchEvent(new Event("change"));
+    if(colorOptionHandle ==="Color" || colorOptionHandle ==="color"){
+      select.dispatchEvent(new Event("change"));
+    }
+    
   });
   return function () {
     return buttonClick();
@@ -6580,6 +6639,7 @@ var selectors$G = {
     return "".concat(selectors$G.buttonWrap, "[data-option-value=\"").concat(value, "\"]");
   }
 };
+
 /**
  *  VariantAvailability
     - Cross out sold out or unavailable variants
@@ -7399,7 +7459,9 @@ var quickViewModal = function quickViewModal(node) {
 
 var icons$1 = window.theme.icons;
 function productLightbox() {
-  var lightboxImages = t$2(".lightbox-image", document);
+  // ***&&&*** variant Project 7463 & 7472
+  var lightboxImages = t$2(".lightbox-image.lighthouse__visible_img", document);
+  console.log("lightboxImages", lightboxImages)
   if (!lightboxImages.length) return;
   var productLightbox;
   import(flu.chunks.photoswipe).then(function (_ref) {
@@ -7407,7 +7469,7 @@ function productLightbox() {
         PhotoSwipe = _ref.PhotoSwipe;
     productLightbox = new PhotoSwipeLightbox({
       gallery: ".lightbox-media-container",
-      children: ".lightbox-image",
+      children: ".lightbox-image.lighthouse__visible_img",
       pswpModule: PhotoSwipe,
       mainClass: "pswp--product-lightbox",
       bgOpacity: 1,
@@ -7417,15 +7479,18 @@ function productLightbox() {
       zoomSVG: icons$1.zoom
     });
     productLightbox.init(); // Hide nav ui elements if single image
+    console.log("pswp")
 
     productLightbox.on("firstUpdate", function () {
+      console.log("pswp")
       var _productLightbox = productLightbox,
           pswp = _productLightbox.pswp,
           options = _productLightbox.options;
       var productImageCount = options.dataSource.items.length;
-
+console.log("pswp", options, productImageCount, pswp)
       if (productImageCount === 1) {
         u$1(pswp.element, "pswp--is-single-image");
+        console.log("pswp", pswp.element);
       }
     });
   });
