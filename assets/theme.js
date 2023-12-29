@@ -2896,12 +2896,12 @@ function wrapTables () {
   });
 }
 
-var classes$E = {
+var classes$F = {
   visible: "is-visible",
   active: "active",
   fixed: "is-fixed"
 };
-var selectors$1B = {
+var selectors$1E = {
   closeBtn: "[data-modal-close]",
   wash: ".modal__wash",
   modalContent: ".modal__content"
@@ -2911,12 +2911,12 @@ var modal = function modal(node) {
   var focusTrap = createFocusTrap(node, {
     allowOutsideClick: true
   });
-  var modalContent = n$2(selectors$1B.modalContent, node);
+  var modalContent = n$2(selectors$1E.modalContent, node);
   var delegate = new Delegate(document);
-  delegate.on("click", selectors$1B.wash, function () {
+  delegate.on("click", selectors$1E.wash, function () {
     return _close();
   });
-  var events = [e$2(n$2(selectors$1B.closeBtn, node), "click", function (e) {
+  var events = [e$2(n$2(selectors$1E.closeBtn, node), "click", function (e) {
     e.preventDefault();
 
     _close();
@@ -2945,7 +2945,7 @@ var modal = function modal(node) {
   var _open = function _open() {
     // Due to this component being shared between templates we have to
     // animate around it being fixed to the window
-    u$1(node, classes$E.active);
+    u$1(node, classes$F.active);
     focusTrap.activate();
     disableBodyScroll(node, {
       allowTouchMove: function allowTouchMove(el) {
@@ -2963,7 +2963,7 @@ var modal = function modal(node) {
 
   var _close = function _close() {
     focusTrap.deactivate();
-    i$1(node, classes$E.active);
+    i$1(node, classes$F.active);
     enableBodyScroll(node);
     setTimeout(function () {
       modalContent.innerHTML = "";
@@ -3187,7 +3187,7 @@ var shouldAnimate = (function (node) {
   return a$1(node, "animation") && !a$1(document.documentElement, "prefers-reduced-motion");
 });
 
-var selectors$1A = {
+var selectors$1D = {
   sectionBlockItems: ".section-blocks > *",
   image: ".image-with-text__image .image__img",
   imageSmall: ".image-with-text__small-image .image__img",
@@ -3195,8 +3195,8 @@ var selectors$1A = {
 };
 var animateImageWithText = (function (node) {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1A.image, selectors$1A.imageSmall, selectors$1A.imageCaption]);
-  delayOffset(node, [selectors$1A.sectionBlockItems], 6);
+  delayOffset(node, [selectors$1D.image, selectors$1D.imageSmall, selectors$1D.imageCaption]);
+  delayOffset(node, [selectors$1D.sectionBlockItems], 6);
   var observer = intersectionWatcher(node);
   return {
     destroy: function destroy() {
@@ -3205,14 +3205,67 @@ var animateImageWithText = (function (node) {
   };
 });
 
-var selectors$1z = {
+var selectors$1C = {
   sectionBlockItems: ".section-blocks > *",
   image: ".image-with-text-split__image .image__img"
 };
 var animateImageWithTextSplit = (function (node) {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1z.image]);
-  delayOffset(node, [selectors$1z.sectionBlockItems], 6);
+  delayOffset(node, [selectors$1C.image]);
+  delayOffset(node, [selectors$1C.sectionBlockItems], 6);
+  var observer = intersectionWatcher(node);
+  return {
+    destroy: function destroy() {
+      observer === null || observer === void 0 ? void 0 : observer.destroy();
+    }
+  };
+});
+
+var selectors$1B = {
+  content: ".testimonials__item-content > *",
+  image: ".testimonials__item-product-image",
+  imageCaption: ".testimonials__item-product-title",
+  item: ".animation--item"
+};
+var classes$E = {
+  imageRight: "testimonials__item--image-placement-right"
+};
+var animateTestimonials = (function (node) {
+  var delayItems = []; // Create an array of selectors for the animation elements
+  // in the order they should animate in
+
+  if (a$1(node, classes$E.imageRight)) {
+    delayItems.push(selectors$1B.content);
+    delayItems.push(selectors$1B.image);
+    delayItems.push(selectors$1B.imageCaption);
+  } else {
+    delayItems.push(selectors$1B.image);
+    delayItems.push(selectors$1B.imageCaption);
+    delayItems.push(selectors$1B.content);
+  } // Add the animation delay offset variables
+
+
+  delayOffset(node, delayItems, 2);
+  delayOffset(node, [selectors$1B.item]);
+});
+
+var selectors$1A = {
+  content: ".quote__item-inner > *"
+};
+var animateQuotes = (function (node) {
+  // Add the animation delay offset variables
+  delayOffset(node, [selectors$1A.content]);
+});
+
+var selectors$1z = {
+  sectionBlockItems: ".animation--section-introduction > *",
+  controls: ".animation--controls",
+  items: ".animation--item"
+};
+var animateListSlider = (function (node) {
+  var delayItems = [selectors$1z.sectionBlockItems, selectors$1z.controls, selectors$1z.items]; // Add the animation delay offset variables
+
+  delayOffset(node, delayItems);
   var observer = intersectionWatcher(node);
   return {
     destroy: function destroy() {
@@ -3222,80 +3275,27 @@ var animateImageWithTextSplit = (function (node) {
 });
 
 var selectors$1y = {
-  content: ".testimonials__item-content > *",
-  image: ".testimonials__item-product-image",
-  imageCaption: ".testimonials__item-product-title",
-  item: ".animation--item"
-};
-var classes$D = {
-  imageRight: "testimonials__item--image-placement-right"
-};
-var animateTestimonials = (function (node) {
-  var delayItems = []; // Create an array of selectors for the animation elements
-  // in the order they should animate in
-
-  if (a$1(node, classes$D.imageRight)) {
-    delayItems.push(selectors$1y.content);
-    delayItems.push(selectors$1y.image);
-    delayItems.push(selectors$1y.imageCaption);
-  } else {
-    delayItems.push(selectors$1y.image);
-    delayItems.push(selectors$1y.imageCaption);
-    delayItems.push(selectors$1y.content);
-  } // Add the animation delay offset variables
-
-
-  delayOffset(node, delayItems, 2);
-  delayOffset(node, [selectors$1y.item]);
-});
-
-var selectors$1x = {
-  content: ".quote__item-inner > *"
-};
-var animateQuotes = (function (node) {
-  // Add the animation delay offset variables
-  delayOffset(node, [selectors$1x.content]);
-});
-
-var selectors$1w = {
-  sectionBlockItems: ".animation--section-introduction > *",
-  controls: ".animation--controls",
-  items: ".animation--item"
-};
-var animateListSlider = (function (node) {
-  var delayItems = [selectors$1w.sectionBlockItems, selectors$1w.controls, selectors$1w.items]; // Add the animation delay offset variables
-
-  delayOffset(node, delayItems);
-  var observer = intersectionWatcher(node);
-  return {
-    destroy: function destroy() {
-      observer === null || observer === void 0 ? void 0 : observer.destroy();
-    }
-  };
-});
-
-var selectors$1v = {
   introductionItems: ".section-introduction > *",
   image: ".complete-the-look__image-wrapper .image__img",
   product: ".complete-the-look__product",
   products: ".complete-the-look__products"
 };
-var classes$C = {
+var classes$D = {
   imageLeft: "complete-the-look--image-left"
 };
 var animateCompleteTheLook = (function (node) {
   var delayItems = [];
-  delayItems.push(selectors$1v.introductionItems); // Create an array of selectors for the animation elements
+  delayItems.push(selectors$1y.introductionItems); // Create an array of selectors for the animation elements
   // in the order they should animate in
 
-  if (a$1(node, classes$C.imageLeft) || window.matchMedia(getMediaQuery("below-720")).matches) {
-    delayItems.push(selectors$1v.image);
-    delayItems.push(selectors$1v.products);
-    delayItems.push(selectors$1v.product);
+  if (a$1(node, classes$D.imageLeft) || window.matchMedia(getMediaQuery("below-720")).matches) {
+    delayItems.push(selectors$1y.image);
+    delayItems.push(selectors$1y.products);
+    delayItems.push(selectors$1y.product);
   } else {
-    delayItems.push(selectors$1v.products);
-    delayItems.push(selectors$1v.product);
-    delayItems.push(selectors$1v.image);
+    delayItems.push(selectors$1y.products);
+    delayItems.push(selectors$1y.product);
+    delayItems.push(selectors$1y.image);
   } // Add the animation delay offset variables
 
 
@@ -3308,14 +3308,14 @@ var animateCompleteTheLook = (function (node) {
   };
 });
 
-var selectors$1u = {
+var selectors$1x = {
   introductionItems: ".section-introduction > *",
   image: ".shoppable-image__image-wrapper .image__img",
   hotspots: ".shoppable-item__hotspot-wrapper"
 };
 var animateShoppableImage = (function (node) {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1u.introductionItems, selectors$1u.image, selectors$1u.hotspots]);
+  delayOffset(node, [selectors$1x.introductionItems, selectors$1x.image, selectors$1x.hotspots]);
   var observer = intersectionWatcher(node);
   return {
     destroy: function destroy() {
@@ -3324,7 +3324,7 @@ var animateShoppableImage = (function (node) {
   };
 });
 
-var selectors$1t = {
+var selectors$1w = {
   introductionItems: ".section-introduction > *",
   carousel: ".shoppable-feature__secondary-content .shoppable-feature__carousel-outer",
   hotspots: ".shoppable-item__hotspot-wrapper",
@@ -3332,10 +3332,10 @@ var selectors$1t = {
 };
 var animateShoppableFeature = (function (node) {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1t.introductionItems, selectors$1t.carousel], 1);
-  delayOffset(node, [selectors$1t.hotspots], 1); // Add separate delay offsets for mobile drawer
+  delayOffset(node, [selectors$1w.introductionItems, selectors$1w.carousel], 1);
+  delayOffset(node, [selectors$1w.hotspots], 1); // Add separate delay offsets for mobile drawer
 
-  delayOffset(node, [selectors$1t.mobileDrawerItems], 1);
+  delayOffset(node, [selectors$1w.mobileDrawerItems], 1);
   var observer = intersectionWatcher(node);
   return {
     destroy: function destroy() {
@@ -3344,20 +3344,20 @@ var animateShoppableFeature = (function (node) {
   };
 });
 
-var selectors$1s = {
+var selectors$1v = {
   textContent: ".image-hero-split-item__text-container-inner > *"
 };
 var animateImageHeroSplit = (function (node) {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1s.textContent], 1);
+  delayOffset(node, [selectors$1v.textContent], 1);
 });
 
-var selectors$1r = {
+var selectors$1u = {
   textContent: ".image-hero__text-container-inner > *"
 };
 var animateImageHero = (function (node) {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1r.textContent], 3);
+  delayOffset(node, [selectors$1u.textContent], 3);
   var observer = intersectionWatcher(node);
   return {
     destroy: function destroy() {
@@ -3366,10 +3366,10 @@ var animateImageHero = (function (node) {
   };
 });
 
-var classes$B = {
+var classes$C = {
   animation: "animation--image-compare"
 };
-var selectors$1q = {
+var selectors$1t = {
   introductionItems: ".animation--section-introduction > *",
   image: ".image_compare__image-wrapper .image__img",
   labels: ".image-compare__label-container",
@@ -3377,7 +3377,7 @@ var selectors$1q = {
   sliderButton: ".image-compare__slider-button"
 };
 var animateImageCompare = (function (node) {
-  delayOffset(node, [selectors$1q.introductionItems, selectors$1q.image, selectors$1q.labels, selectors$1q.sliderLine, selectors$1q.sliderButton]);
+  delayOffset(node, [selectors$1t.introductionItems, selectors$1t.image, selectors$1t.labels, selectors$1t.sliderLine, selectors$1t.sliderButton]);
   var margin = window.matchMedia(getMediaQuery("above-720")).matches ? 200 : 100;
   var threshold = Math.min(margin / node.offsetHeight, 0.5);
   var observer = new IntersectionObserver(function (_ref) {
@@ -3388,7 +3388,7 @@ var animateImageCompare = (function (node) {
       u$1(node, "is-visible"); // Enable slider controls by removing animation class after animation duration
 
       setTimeout(function () {
-        i$1(node, classes$B.animation);
+        i$1(node, classes$C.animation);
       }, 1200);
       observer.disconnect();
     }
@@ -3403,12 +3403,12 @@ var animateImageCompare = (function (node) {
   };
 });
 
-var selectors$1p = {
-  textContent: ".video-hero__text-container > *"
+var selectors$1s = {
+  textContent: ".video__text-container > *"
 };
-var animateVideoHero = (function (node) {
+var animateVideo = (function (node) {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1p.textContent], 3);
+  delayOffset(node, [selectors$1s.textContent], 3);
   var observer = intersectionWatcher(node);
   return {
     destroy: function destroy() {
@@ -3417,15 +3417,29 @@ var animateVideoHero = (function (node) {
   };
 });
 
-var selectors$1o = {
+var selectors$1r = {
+  textContent: ".video-hero__text-container > *"
+};
+var animateVideoHero = (function (node) {
+  // Add the animation delay offset variables
+  delayOffset(node, [selectors$1r.textContent], 3);
+  var observer = intersectionWatcher(node);
+  return {
+    destroy: function destroy() {
+      observer === null || observer === void 0 ? void 0 : observer.destroy();
+    }
+  };
+});
+
+var selectors$1q = {
   articleHeading: "\n    .article__image-container,\n    .article__header-inner > *\n  ",
   articleContent: ".article__content"
 };
 var animateArticle = (function (node) {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1o.articleHeading, selectors$1o.articleContent]);
-  var articleHeading = t$2(selectors$1o.articleHeading, node);
-  var articleContent = n$2(selectors$1o.articleContent, node);
+  delayOffset(node, [selectors$1q.articleHeading, selectors$1q.articleContent]);
+  var articleHeading = t$2(selectors$1q.articleHeading, node);
+  var articleContent = n$2(selectors$1q.articleContent, node);
   var observers = articleHeading.map(function (item) {
     return intersectionWatcher(item);
   });
@@ -3439,13 +3453,13 @@ var animateArticle = (function (node) {
   };
 });
 
-var selectors$1n = {
+var selectors$1p = {
   image: ".collection-banner__image-container",
   content: ".collection-banner__text-container-inner > *"
 };
 var animateCollectionBanner = (function (node) {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1n.image, selectors$1n.content]);
+  delayOffset(node, [selectors$1p.image, selectors$1p.content]);
   var observer = intersectionWatcher(node);
   return {
     destroy: function destroy() {
@@ -3454,20 +3468,20 @@ var animateCollectionBanner = (function (node) {
   };
 });
 
-var selectors$1m = {
+var selectors$1o = {
   partial: "[data-partial]",
   filterBar: "[data-filter-bar]",
   mobileFilterBar: "[data-mobile-filters]",
   productItems: ".animation--item:not(.animation--item-revealed)"
 };
-var classes$A = {
+var classes$B = {
   hideProducts: "animation--collection-products-hide",
   itemRevealed: "animation--item-revealed"
 };
 var animateCollection = (function (node) {
-  var partial = n$2(selectors$1m.partial, node);
-  var filterbarEl = n$2(selectors$1m.filterBar, node);
-  var mobileFilterBarEl = n$2(selectors$1m.mobileFilterBar, node);
+  var partial = n$2(selectors$1o.partial, node);
+  var filterbarEl = n$2(selectors$1o.filterBar, node);
+  var mobileFilterBarEl = n$2(selectors$1o.mobileFilterBar, node);
   var filterbarObserver = null;
 
   if (filterbarEl) {
@@ -3483,10 +3497,10 @@ var animateCollection = (function (node) {
   setupProductItem();
 
   function setupProductItem() {
-    var productItems = t$2(selectors$1m.productItems, node);
-    delayOffset(node, [selectors$1m.productItems]);
+    var productItems = t$2(selectors$1o.productItems, node);
+    delayOffset(node, [selectors$1o.productItems]);
     setTimeout(function () {
-      u$1(productItems, classes$A.itemRevealed);
+      u$1(productItems, classes$B.itemRevealed);
     }, 0);
   } // Scroll to top of collection grid after applying filters
   // to show the newly filtered list of products
@@ -3503,7 +3517,7 @@ var animateCollection = (function (node) {
   function updateContents() {
     setupProductItem(); // Remove the fade out class
 
-    i$1(partial, classes$A.hideProducts);
+    i$1(partial, classes$B.hideProducts);
 
     _scrollIntoView();
   }
@@ -3524,14 +3538,14 @@ var animateCollection = (function (node) {
   };
 });
 
-var selectors$1l = {
+var selectors$1n = {
   saleAmount: ".animation--sale-amount",
   sectionBlockItems: ".animation--section-blocks > *",
   saleItems: ".sale-promotion .sale-promotion__type,\n  .sale-promotion .sale-promotion__unit-currency,\n  .sale-promotion .sale-promotion__unit-percent,\n  .sale-promotion .sale-promotion__unit-off,\n  .sale-promotion .sale-promotion__amount,\n  .sale-promotion .sale-promotion__per-month,\n  .sale-promotion .sale-promotion__per-year,\n  .sale-promotion .sale-promotion__terms,\n  .sale-promotion .sales-banner__button"
 };
 var animateSalesBanner = (function (node) {
-  var leftColumnDelayItems = [selectors$1l.saleAmount, selectors$1l.saleItems];
-  var rightColumnDelayItems = [selectors$1l.sectionBlockItems]; // Add the animation delay offset variables
+  var leftColumnDelayItems = [selectors$1n.saleAmount, selectors$1n.saleItems];
+  var rightColumnDelayItems = [selectors$1n.sectionBlockItems]; // Add the animation delay offset variables
 
   delayOffset(node, leftColumnDelayItems);
   delayOffset(node, rightColumnDelayItems, 1);
@@ -3543,12 +3557,12 @@ var animateSalesBanner = (function (node) {
   };
 });
 
-var selectors$1k = {
+var selectors$1m = {
   sectionBlockItems: ".section-blocks > *"
 };
 var animateCountdownBanner = (function (node) {
   var observer = intersectionWatcher(node);
-  delayOffset(node, [selectors$1k.sectionBlockItems]);
+  delayOffset(node, [selectors$1m.sectionBlockItems]);
   return {
     destroy: function destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
@@ -3556,12 +3570,12 @@ var animateCountdownBanner = (function (node) {
   };
 });
 
-var selectors$1j = {
+var selectors$1l = {
   items: "\n  .sales-banner__bar-item--heading,\n  .sales-banner__bar-text,\n  .sales-banner__button,\n  .countdown-banner__bar-item--heading,\n  .countdown-banner__bar-item--timer,\n  .countdown-banner__bar-text,\n  .countdown-banner__button"
 };
 var animateCountdownBar = (function (node) {
   var observer = intersectionWatcher(node);
-  delayOffset(node, [selectors$1j.items]);
+  delayOffset(node, [selectors$1l.items]);
   return {
     destroy: function destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
@@ -3578,13 +3592,13 @@ var animatePromotionBar = (function (node) {
   };
 });
 
-var selectors$1i = {
+var selectors$1k = {
   headerItems: ".animation--blog-header > *",
   articleItem: ".article-item",
   pagination: ".blog__pagination"
 };
 var animateBlog = (function (node) {
-  delayOffset(node, [selectors$1i.headerItems, selectors$1i.articleItem, selectors$1i.pagination]);
+  delayOffset(node, [selectors$1k.headerItems, selectors$1k.articleItem, selectors$1k.pagination]);
   var observer = intersectionWatcher(node, true);
   return {
     destroy: function destroy() {
@@ -3593,30 +3607,30 @@ var animateBlog = (function (node) {
   };
 });
 
-var selectors$1h = {
+var selectors$1j = {
   flyouts: "[data-filter-modal]",
   animationFilterDrawerItem: ".animation--filter-drawer-item"
 };
-var classes$z = {
+var classes$A = {
   animationRevealed: "animation--filter-bar-revealed",
   animationFilterDrawerItem: "animation--filter-drawer-item"
 };
 var animateFilterDrawer = (function (node) {
-  var flyouts = t$2(selectors$1h.flyouts, node);
+  var flyouts = t$2(selectors$1j.flyouts, node);
   flyouts.forEach(_setupItemOffsets); // Set the position offset on each time to be animated
 
   function _setupItemOffsets(flyout) {
-    delayOffset(flyout, [selectors$1h.animationFilterDrawerItem]);
+    delayOffset(flyout, [selectors$1j.animationFilterDrawerItem]);
   } // Trigger the reveal animation when the drawer is opened
 
 
   function open(flyout) {
-    u$1(flyout, classes$z.animationRevealed);
+    u$1(flyout, classes$A.animationRevealed);
   } // Reset the reveal animation when the drawer is closed
 
 
   function close(flyouts) {
-    i$1(flyouts, classes$z.animationRevealed);
+    i$1(flyouts, classes$A.animationRevealed);
   }
 
   return {
@@ -3625,25 +3639,25 @@ var animateFilterDrawer = (function (node) {
   };
 });
 
-var selectors$1g = {
+var selectors$1i = {
   animationItem: ".animation--drawer-menu-item"
 };
-var classes$y = {
+var classes$z = {
   animationRevealed: "animation--drawer-menu-revealed"
 };
 var animateDrawerMenu = (function (node) {
-  delayOffset(node, [selectors$1g.animationItem]); // Trigger the reveal animation when the drawer is opened
+  delayOffset(node, [selectors$1i.animationItem]); // Trigger the reveal animation when the drawer is opened
 
   function open() {
     if (shouldAnimate(node)) {
-      u$1(node, classes$y.animationRevealed);
+      u$1(node, classes$z.animationRevealed);
     }
   } // Trigger the reveal animation when the drawer is opened
 
 
   function close() {
     if (shouldAnimate(node)) {
-      i$1(node, classes$y.animationRevealed);
+      i$1(node, classes$z.animationRevealed);
     }
   }
 
@@ -3653,27 +3667,27 @@ var animateDrawerMenu = (function (node) {
   };
 });
 
-var selectors$1f = {
+var selectors$1h = {
   animationItem: ".animation--quick-cart-items > *, .animation--quick-cart-footer"
 };
-var classes$x = {
+var classes$y = {
   animationRevealed: "animation--quick-cart-revealed"
 };
 var animateQuickCart = (function (node) {
   setup(); // Trigger the reveal animation when the drawer is opened
 
   function open() {
-    u$1(node, classes$x.animationRevealed);
+    u$1(node, classes$y.animationRevealed);
   } // Reset the reveal animation when the drawer is closed
 
 
   function close() {
-    i$1(node, classes$x.animationRevealed);
+    i$1(node, classes$y.animationRevealed);
   } // Setup delay offsets
 
 
   function setup() {
-    delayOffset(node, [selectors$1f.animationItem]);
+    delayOffset(node, [selectors$1h.animationItem]);
   }
 
   return {
@@ -3683,26 +3697,26 @@ var animateQuickCart = (function (node) {
   };
 });
 
-var selectors$1e = {
+var selectors$1g = {
   animationItems: ".animation--quick-view-items > *"
 };
-var classes$w = {
+var classes$x = {
   animationRevealed: "animation--quick-view-revealed"
 };
 var animateQuickView = (function (node) {
   function animate() {
     // Add the animation delay offset variables
-    delayOffset(node, [selectors$1e.animationItems]); // Trigger the reveal animation when the quick view is opened.
+    delayOffset(node, [selectors$1g.animationItems]); // Trigger the reveal animation when the quick view is opened.
     // We can't use the `.is-visible` class added in `quick-view-modal.js`
     // because it can be added before the content is fetched.
 
     setTimeout(function () {
-      u$1(node, classes$w.animationRevealed);
+      u$1(node, classes$x.animationRevealed);
     }, 0);
   }
 
   function reset() {
-    i$1(node, classes$w.animationRevealed);
+    i$1(node, classes$x.animationRevealed);
   }
 
   return {
@@ -3711,7 +3725,7 @@ var animateQuickView = (function (node) {
   };
 });
 
-var selectors$1d = {
+var selectors$1f = {
   columns: ".meganav__list-parent > li",
   image: ".meganav__promo-image .image__img",
   overlay: ".meganav__secondary-promo-overlay",
@@ -3721,12 +3735,12 @@ var selectors$1d = {
 };
 var animateMeganav = (function (node) {
   var delayItems = [];
-  var columnItems = t$2(selectors$1d.columns, node);
+  var columnItems = t$2(selectors$1f.columns, node);
 
-  if (a$1(node, selectors$1d.hasPromo)) {
-    delayOffset(node, [selectors$1d.image, selectors$1d.overlay, selectors$1d.promoItems]);
+  if (a$1(node, selectors$1f.hasPromo)) {
+    delayOffset(node, [selectors$1f.image, selectors$1f.overlay, selectors$1f.promoItems]);
 
-    if (a$1(node, selectors$1d.promoLeft)) {
+    if (a$1(node, selectors$1f.promoLeft)) {
       // Set columnItem initial delay to i + 1 of previously delayed
       assignColumnDelays(columnItems, 4);
     } else {
@@ -3756,12 +3770,12 @@ var animateMeganav = (function (node) {
   }
 });
 
-var selectors$1c = {
+var selectors$1e = {
   heading: ".list-collections__heading",
   productItems: ".animation--item"
 };
 var animateListCollections = (function (node) {
-  delayOffset(node, [selectors$1c.heading, selectors$1c.productItems]);
+  delayOffset(node, [selectors$1e.heading, selectors$1e.productItems]);
   var observer = intersectionWatcher(node, true);
   return {
     destroy: function destroy() {
@@ -3770,11 +3784,11 @@ var animateListCollections = (function (node) {
   };
 });
 
-var selectors$1b = {
+var selectors$1d = {
   gridItems: ".grid-item"
 };
 var animateGrid = (function (node) {
-  delayOffset(node, [selectors$1b.gridItems]);
+  delayOffset(node, [selectors$1d.gridItems]);
   var observer = intersectionWatcher(node);
   return {
     destroy: function destroy() {
@@ -3783,18 +3797,134 @@ var animateGrid = (function (node) {
   };
 });
 
-var selectors$1a = {
+var selectors$1c = {
   animationItems: ".animation--purchase-confirmation-item",
   animationFooterItems: ".animation--purchase-confirmation-footer-item"
 };
-var classes$v = {
+var classes$w = {
   animationRevealed: "animation--purchase-confirmation-revealed"
 };
 var animatePurchaseConfirmation = (function (node) {
   function animate() {
     // Add the animation delay offset variables
-    delayOffset(node, [selectors$1a.animationItems]);
-    delayOffset(node, [selectors$1a.animationFooterItems]); // Trigger the reveal animation when the quick view is opened.
+    delayOffset(node, [selectors$1c.animationItems]);
+    delayOffset(node, [selectors$1c.animationFooterItems]); // Trigger the reveal animation when the quick view is opened.
+
+    setTimeout(function () {
+      u$1(node, classes$w.animationRevealed);
+    }, 0);
+  }
+
+  function reset() {
+    i$1(node, classes$w.animationRevealed);
+  }
+
+  return {
+    animate: animate,
+    reset: reset
+  };
+});
+
+var selectors$1b = {
+  pageItems: ".page-section__inner > *"
+};
+var animatePage = (function (node) {
+  // Add the animation delay offset variables
+  delayOffset(node, [selectors$1b.pageItems]);
+  var observer = intersectionWatcher(node, true);
+  return {
+    destroy: function destroy() {
+      observer.forEach(function (observer) {
+        return observer.destroy();
+      });
+    }
+  };
+});
+
+var selectors$1a = {
+  items: ".collapsible-row-list__inner > *"
+};
+var animateCollapsibleRowList = (function (node) {
+  // Add the animation delay offset variables
+  delayOffset(node, [selectors$1a.items]);
+  var observer = intersectionWatcher(node);
+  return {
+    destroy: function destroy() {
+      observer === null || observer === void 0 ? void 0 : observer.destroy();
+    }
+  };
+});
+
+var selectors$19 = {
+  items: ".animation--section-blocks > *"
+};
+var animateRichText = (function (node) {
+  delayOffset(node, [selectors$19.items]);
+  var observer = intersectionWatcher(node, true);
+  return {
+    destroy: function destroy() {
+      observer === null || observer === void 0 ? void 0 : observer.destroy();
+    }
+  };
+});
+
+var selectors$18 = {
+  headerItems: ".animation--section-introduction > *",
+  articleItem: ".article-item"
+};
+var animateBlogPosts = (function (node) {
+  delayOffset(node, [selectors$18.headerItems, selectors$18.articleItem]);
+  var observer = intersectionWatcher(node, true);
+  return {
+    destroy: function destroy() {
+      observer === null || observer === void 0 ? void 0 : observer.destroy();
+    }
+  };
+});
+
+var selectors$17 = {
+  intro: ".animation--section-introduction > *",
+  items: ".animation--item"
+};
+var animateFeaturedCollectionGrid = (function (node) {
+  delayOffset(node, [selectors$17.intro, selectors$17.items]);
+  var observer = intersectionWatcher(node);
+  return {
+    destroy: function destroy() {
+      observer === null || observer === void 0 ? void 0 : observer.destroy();
+    }
+  };
+});
+
+var selectors$16 = {
+  productItems: ".animation--item",
+  introductionItems: ".animation--section-introduction > *"
+};
+var animateCollectionListGrid = (function (node) {
+  delayOffset(node, [selectors$16.introductionItems, selectors$16.productItems]);
+  var observer = intersectionWatcher(node);
+  return {
+    destroy: function destroy() {
+      observer === null || observer === void 0 ? void 0 : observer.destroy();
+    }
+  };
+});
+
+var selectors$15 = {
+  animationItems: ".animation--store-availability-drawer-items > *"
+};
+var classes$v = {
+  animationRevealed: "animation--store-availability-drawer-revealed"
+};
+var animateStoreAvailabilityDrawer = (function (node) {
+  function animate() {
+    // Set the position offset on each time to be animated
+    var items = t$2(selectors$15.animationItems, node);
+    items.forEach(function (item, i) {
+      item.style.setProperty("--position-offset-multiplier", i);
+    }); // Trigger the reveal animation when the quick view is opened.
+    // We can't use the `.is-visible` class added in `quick-view-modal.js`
+    // because it can be added before the content is fetched.
 
     setTimeout(function () {
       u$1(node, classes$v.animationRevealed);
@@ -3811,84 +3941,13 @@ var animatePurchaseConfirmation = (function (node) {
   };
 });
 
-var selectors$19 = {
-  pageItems: ".page-section__inner > *"
-};
-var animatePage = (function (node) {
-  // Add the animation delay offset variables
-  delayOffset(node, [selectors$19.pageItems]);
-  var observer = intersectionWatcher(node, true);
-  return {
-    destroy: function destroy() {
-      observer.forEach(function (observer) {
-        return observer.destroy();
-      });
-    }
-  };
-});
-
-var selectors$18 = {
-  items: ".collapsible-row-list__inner > *"
-};
-var animateCollapsibleRowList = (function (node) {
-  // Add the animation delay offset variables
-  delayOffset(node, [selectors$18.items]);
-  var observer = intersectionWatcher(node);
-  return {
-    destroy: function destroy() {
-      observer === null || observer === void 0 ? void 0 : observer.destroy();
-    }
-  };
-});
-
-var selectors$17 = {
-  items: ".animation--section-blocks > *"
-};
-var animateRichText = (function (node) {
-  delayOffset(node, [selectors$17.items]);
-  var observer = intersectionWatcher(node, true);
-  return {
-    destroy: function destroy() {
-      observer === null || observer === void 0 ? void 0 : observer.destroy();
-    }
-  };
-});
-
-var selectors$16 = {
-  headerItems: ".animation--section-introduction > *",
-  articleItem: ".article-item"
-};
-var animateBlogPosts = (function (node) {
-  delayOffset(node, [selectors$16.headerItems, selectors$16.articleItem]);
-  var observer = intersectionWatcher(node, true);
-  return {
-    destroy: function destroy() {
-      observer === null || observer === void 0 ? void 0 : observer.destroy();
-    }
-  };
-});
-
-var selectors$15 = {
-  intro: ".animation--section-introduction > *",
-  items: ".animation--item"
-};
-var animateFeaturedCollectionGrid = (function (node) {
-  delayOffset(node, [selectors$15.intro, selectors$15.items]);
-  var observer = intersectionWatcher(node);
-  return {
-    destroy: function destroy() {
-      observer === null || observer === void 0 ? void 0 : observer.destroy();
-    }
-  };
-});
-
 var selectors$14 = {
-  productItems: ".animation--item",
-  introductionItems: ".animation--section-introduction > *"
+  media: ".animation--product-media"
 };
-var animateCollectionListGrid = (function (node) {
-  delayOffset(node, [selectors$14.introductionItems, selectors$14.productItems]);
-  var observer = intersectionWatcher(node);
+var animateProduct = (function (node) {
+  // Add the animation delay offset variables
+  delayOffset(node, [selectors$14.media]);
+  var observer = intersectionWatcher(node, true);
   return {
     destroy: function destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
@@ -3897,56 +3956,11 @@ var animateCollectionListGrid = (function (node) {
 });
 
 var selectors$13 = {
-  animationItems: ".animation--store-availability-drawer-items > *"
-};
-var classes$u = {
-  animationRevealed: "animation--store-availability-drawer-revealed"
-};
-var animateStoreAvailabilityDrawer = (function (node) {
-  function animate() {
-    // Set the position offset on each time to be animated
-    var items = t$2(selectors$13.animationItems, node);
-    items.forEach(function (item, i) {
-      item.style.setProperty("--position-offset-multiplier", i);
-    }); // Trigger the reveal animation when the quick view is opened.
-    // We can't use the `.is-visible` class added in `quick-view-modal.js`
-    // because it can be added before the content is fetched.
-
-    setTimeout(function () {
-      u$1(node, classes$u.animationRevealed);
-    }, 0);
-  }
-
-  function reset() {
-    i$1(node, classes$u.animationRevealed);
-  }
-
-  return {
-    animate: animate,
-    reset: reset
-  };
-});
-
-var selectors$12 = {
-  media: ".animation--product-media"
-};
-var animateProduct = (function (node) {
-  // Add the animation delay offset variables
-  delayOffset(node, [selectors$12.media]);
-  var observer = intersectionWatcher(node, true);
-  return {
-    destroy: function destroy() {
-      observer === null || observer === void 0 ? void 0 : observer.destroy();
-    }
-  };
-});
-
-var selectors$11 = {
   headerItems: ".animation--section-introduction > *",
   animationItem: ".animation--item"
 };
 var animateContactForm = (function (node) {
-  delayOffset(node, [selectors$11.headerItems, selectors$11.animationItem]);
+  delayOffset(node, [selectors$13.headerItems, selectors$13.animationItem]);
   var observer = intersectionWatcher(node, true);
   return {
     destroy: function destroy() {
@@ -3955,20 +3969,20 @@ var animateContactForm = (function (node) {
   };
 });
 
-var selectors$10 = {
+var selectors$12 = {
   partial: "[data-partial]",
   filterBar: "[data-filter-bar]",
   mobileFilterBar: "[data-mobile-filters]",
   productItems: ".animation--item:not(.animation--item-revealed)"
 };
-var classes$t = {
+var classes$u = {
   hideProducts: "animation--search-products-hide",
   itemRevealed: "animation--item-revealed"
 };
 var animateSearch = (function (node) {
-  var partial = n$2(selectors$10.partial, node);
-  var filterbarEl = n$2(selectors$10.filterBar, node);
-  var mobileFilterBarEl = n$2(selectors$10.mobileFilterBar, node);
+  var partial = n$2(selectors$12.partial, node);
+  var filterbarEl = n$2(selectors$12.filterBar, node);
+  var mobileFilterBarEl = n$2(selectors$12.mobileFilterBar, node);
   var filterbarObserver = null;
 
   if (filterbarEl) {
@@ -3984,10 +3998,10 @@ var animateSearch = (function (node) {
   _setupProductItem();
 
   function _setupProductItem() {
-    var productItems = t$2(selectors$10.productItems, node);
-    delayOffset(node, [selectors$10.productItems]);
+    var productItems = t$2(selectors$12.productItems, node);
+    delayOffset(node, [selectors$12.productItems]);
     setTimeout(function () {
-      u$1(productItems, classes$t.itemRevealed);
+      u$1(productItems, classes$u.itemRevealed);
     }, 0);
   } // Scroll to top of search grid after applying filters
   // to show the newly filtered list of products
@@ -4005,7 +4019,7 @@ var animateSearch = (function (node) {
     _setupProductItem(); // Remove the fade out class
 
 
-    i$1(partial, classes$t.hideProducts);
+    i$1(partial, classes$u.hideProducts);
 
     _scrollIntoView();
   }
@@ -4026,12 +4040,40 @@ var animateSearch = (function (node) {
   };
 });
 
-var selectors$$ = {
+var selectors$11 = {
   content: ".animation--section-blocks > *"
 };
 var animateSearchBanner = (function (node) {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$$.content]);
+  delayOffset(node, [selectors$11.content]);
+  var observer = intersectionWatcher(node);
+  return {
+    destroy: function destroy() {
+      observer === null || observer === void 0 ? void 0 : observer.destroy();
+    }
+  };
+});
+
+var selectors$10 = {
+  headerItems: ".animation--section-introduction > *",
+  columnItems: ".multi-column__grid-item"
+};
+var animateMultiColumn = (function (node) {
+  delayOffset(node, [selectors$10.headerItems, selectors$10.columnItems]);
+  var observer = intersectionWatcher(node);
+  return {
+    destroy: function destroy() {
+      observer.destroy();
+    }
+  };
+});
+
+var selectors$$ = {
+  textContent: ".password__text-container-inner > *"
+};
+var animatePassword = (function (node) {
+  // Add the animation delay offset variables
+  delayOffset(node, [selectors$$.textContent], 3);
   var observer = intersectionWatcher(node);
   return {
     destroy: function destroy() {
@@ -4041,52 +4083,24 @@ var animateSearchBanner = (function (node) {
 });
 
 var selectors$_ = {
-  headerItems: ".animation--section-introduction > *",
-  columnItems: ".multi-column__grid-item"
-};
-var animateMultiColumn = (function (node) {
-  delayOffset(node, [selectors$_.headerItems, selectors$_.columnItems]);
-  var observer = intersectionWatcher(node);
-  return {
-    destroy: function destroy() {
-      observer.destroy();
-    }
-  };
-});
-
-var selectors$Z = {
-  textContent: ".password__text-container-inner > *"
-};
-var animatePassword = (function (node) {
-  // Add the animation delay offset variables
-  delayOffset(node, [selectors$Z.textContent], 3);
-  var observer = intersectionWatcher(node);
-  return {
-    destroy: function destroy() {
-      observer === null || observer === void 0 ? void 0 : observer.destroy();
-    }
-  };
-});
-
-var selectors$Y = {
   animationItem: ".animation--popup-item"
 };
-var classes$s = {
+var classes$t = {
   animationRevealed: "animation--popup-revealed"
 };
 var animatePopup = (function (node) {
-  delayOffset(node, [selectors$Y.animationItem]); // Trigger the reveal animation when the drawer is opened
+  delayOffset(node, [selectors$_.animationItem]); // Trigger the reveal animation when the drawer is opened
 
   function open() {
     if (shouldAnimate(node)) {
-      u$1(node, classes$s.animationRevealed);
+      u$1(node, classes$t.animationRevealed);
     }
   } // Trigger the reveal animation when the drawer is opened
 
 
   function close() {
     if (shouldAnimate(node)) {
-      i$1(node, classes$s.animationRevealed);
+      i$1(node, classes$t.animationRevealed);
     }
   }
 
@@ -4096,11 +4110,11 @@ var animatePopup = (function (node) {
   };
 });
 
-var selectors$X = {
+var selectors$Z = {
   items: ".animation--section-blocks > *"
 };
 var animateNewsletter = (function (node) {
-  delayOffset(node, [selectors$X.items]);
+  delayOffset(node, [selectors$Z.items]);
   var observer = intersectionWatcher(node, true);
   return {
     destroy: function destroy() {
@@ -4109,11 +4123,11 @@ var animateNewsletter = (function (node) {
   };
 });
 
-var selectors$W = {
+var selectors$Y = {
   items: ".animation--section-blocks > *"
 };
 var animateNewsletterCompact = (function (node) {
-  delayOffset(node, [selectors$W.items]);
+  delayOffset(node, [selectors$Y.items]);
   var observer = intersectionWatcher(node, true);
   return {
     destroy: function destroy() {
@@ -4122,16 +4136,16 @@ var animateNewsletterCompact = (function (node) {
   };
 });
 
-var selectors$V = {
+var selectors$X = {
   headerItems: ".animation--section-introduction > *",
   eventItems: ".event-item"
 };
 var animateEvents = (function (node) {
-  delayOffset(node, [selectors$V.headerItems]);
+  delayOffset(node, [selectors$X.headerItems]);
   var observer = intersectionWatcher(node, true);
 
   function animateEventItems() {
-    delayOffset(node, [selectors$V.eventItems]);
+    delayOffset(node, [selectors$X.eventItems]);
     setTimeout(function () {
       u$1(node, "animate-event-items");
     }, 50);
@@ -4145,13 +4159,13 @@ var animateEvents = (function (node) {
   };
 });
 
-var selectors$U = {
+var selectors$W = {
   giantHeading: ".animation--giant-heading",
   sectionBlockItems: ".animation--section-blocks > *"
 };
 var animatePromoBanner = (function (node) {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$U.giantHeading, selectors$U.sectionBlockItems]);
+  delayOffset(node, [selectors$W.giantHeading, selectors$W.sectionBlockItems]);
   var observer = intersectionWatcher(node);
   return {
     destroy: function destroy() {
@@ -4160,15 +4174,15 @@ var animatePromoBanner = (function (node) {
   };
 });
 
-var selectors$T = {
+var selectors$V = {
   controls: ".product-tabs__tab-buttons",
   items: ".product-tabs__tab-list-wrapper",
   accordionItems: ".accordion"
 };
 var animateProductTabs = (function (node) {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$T.controls, selectors$T.items]);
-  delayOffset(node, [selectors$T.accordionItems]);
+  delayOffset(node, [selectors$V.controls, selectors$V.items]);
+  delayOffset(node, [selectors$V.accordionItems]);
   var observer = intersectionWatcher(node);
   return {
     destroy: function destroy() {
@@ -4198,10 +4212,10 @@ function makeRequest(method, url) {
   });
 }
 
-var classes$r = {
+var classes$s = {
   active: "active"
 };
-var selectors$S = {
+var selectors$U = {
   drawerTrigger: "[data-store-availability-drawer-trigger]",
   closeBtn: "[data-store-availability-close]",
   productTitle: "[data-store-availability-product-title]",
@@ -4216,17 +4230,17 @@ var storeAvailabilityDrawer = function storeAvailabilityDrawer(node) {
   var focusTrap = createFocusTrap(node, {
     allowOutsideClick: true
   });
-  var wash = n$2(selectors$S.wash, node.parentNode);
-  var productTitleContainer = n$2(selectors$S.productTitle);
-  var variantTitleContainer = n$2(selectors$S.variantTitle);
-  var storeListContainer = n$2(selectors$S.storeListContainer, node);
+  var wash = n$2(selectors$U.wash, node.parentNode);
+  var productTitleContainer = n$2(selectors$U.productTitle);
+  var variantTitleContainer = n$2(selectors$U.variantTitle);
+  var storeListContainer = n$2(selectors$U.storeListContainer, node);
   var storeAvailabilityDrawerAnimate = null;
 
   if (shouldAnimate(node)) {
     storeAvailabilityDrawerAnimate = animateStoreAvailabilityDrawer(node);
   }
 
-  var events = [e$2([n$2(selectors$S.closeBtn, node), wash], "click", function (e) {
+  var events = [e$2([n$2(selectors$U.closeBtn, node), wash], "click", function (e) {
     e.preventDefault();
 
     _close();
@@ -4236,7 +4250,7 @@ var storeAvailabilityDrawer = function storeAvailabilityDrawer(node) {
   })];
 
   var _handleClick = function _handleClick(target) {
-    var parentContainer = target.closest(selectors$S.parentWrapper);
+    var parentContainer = target.closest(selectors$U.parentWrapper);
     var _parentContainer$data = parentContainer.dataset,
         baseUrl = _parentContainer$data.baseUrl,
         variantId = _parentContainer$data.variantId,
@@ -4249,14 +4263,14 @@ var storeAvailabilityDrawer = function storeAvailabilityDrawer(node) {
       productTitleContainer.innerText = productTitle; // Shopify returns string null on variant titles for products without varians
 
       variantTitleContainer.innerText = variantTitle === "null" ? "" : variantTitle;
-      var storeList = n$2(selectors$S.storeListContent, container);
+      var storeList = n$2(selectors$U.storeListContent, container);
       storeListContainer.innerHTML = "";
       storeListContainer.appendChild(storeList);
     }).then(_open);
   };
 
   var _open = function _open() {
-    u$1(node, classes$r.active);
+    u$1(node, classes$s.active);
 
     if (shouldAnimate(node)) {
       storeAvailabilityDrawerAnimate.animate();
@@ -4280,7 +4294,7 @@ var storeAvailabilityDrawer = function storeAvailabilityDrawer(node) {
 
   var _close = function _close() {
     focusTrap.deactivate();
-    i$1(node, classes$r.active);
+    i$1(node, classes$s.active);
     node.setAttribute("aria-hidden", "true");
     setTimeout(function () {
       if (shouldAnimate(node)) {
@@ -4292,7 +4306,7 @@ var storeAvailabilityDrawer = function storeAvailabilityDrawer(node) {
   };
 
   var delegate = new Delegate(document.body);
-  delegate.on("click", selectors$S.drawerTrigger, function (_, target) {
+  delegate.on("click", selectors$U.drawerTrigger, function (_, target) {
     return _handleClick(target);
   });
 
@@ -4307,7 +4321,7 @@ var storeAvailabilityDrawer = function storeAvailabilityDrawer(node) {
   };
 };
 
-var strings$6 = window.theme.strings.accessibility;
+var strings$7 = window.theme.strings.accessibility;
 
 var handleTab = function handleTab() {
   var tabHandler = null;
@@ -4349,12 +4363,12 @@ function backgroundVideoHandler(container) {
 
   var pauseVideo = function pauseVideo() {
     video.pause();
-    pause.innerText = strings$6.play_video;
+    pause.innerText = strings$7.play_video;
   };
 
   var playVideo = function playVideo() {
     video.play();
-    pause.innerText = strings$6.pause_video;
+    pause.innerText = strings$7.pause_video;
   };
 
   if (prefersReducedMotion()) {
@@ -4375,7 +4389,7 @@ function backgroundVideoHandler(container) {
   };
 }
 
-var classes$q = {
+var classes$r = {
   hidden: "hidden"
 };
 var sectionClasses = (function () {
@@ -4384,8 +4398,8 @@ var sectionClasses = (function () {
     sections.forEach(function (section) {
       var child = section.firstElementChild; // Specific to recommended hidden products
 
-      if (child && child.classList.contains(classes$q.hidden)) {
-        u$1(section, classes$q.hidden);
+      if (child && child.classList.contains(classes$r.hidden)) {
+        u$1(section, classes$r.hidden);
       }
     });
   }
@@ -4560,19 +4574,19 @@ function getUrlWithVariant(url, id) {
   return url.concat('?variant=').concat(id);
 }
 
-var selectors$R = {
+var selectors$T = {
   sentinal: ".scroll-sentinal",
   scrollButtons: ".scroll-button",
   scrollViewport: "[data-scroll-container-viewport]"
 };
 
 var scrollContainer = function scrollContainer(node) {
-  var sentinals = t$2(selectors$R.sentinal, node);
-  var buttons = t$2(selectors$R.scrollButtons, node);
+  var sentinals = t$2(selectors$T.sentinal, node);
+  var buttons = t$2(selectors$T.scrollButtons, node);
   var _node$dataset = node.dataset,
       axis = _node$dataset.axis,
       startAtEnd = _node$dataset.startAtEnd;
-  var scrollerViewport = n$2(selectors$R.scrollViewport, node);
+  var scrollerViewport = n$2(selectors$T.scrollViewport, node);
   window.addEventListener("load", function () {
     u$1(node, "scroll-container-initialized");
 
@@ -4668,7 +4682,7 @@ var sel$3 = {
   copyURLButton: ".social-share__copy-url",
   successMessage: ".social-share__success-message"
 };
-var classes$p = {
+var classes$q = {
   hidden: "hidden",
   linkCopied: "social-sharing__popup--success"
 };
@@ -4681,7 +4695,7 @@ var SocialShare = (function (node) {
   var clickListener = e$2(window, "click", handleClick); // Hide copy button on old browsers
 
   if (!navigator.clipboard || !navigator.clipboard.writeText) {
-    u$1(copyURLButton, classes$p.hidden);
+    u$1(copyURLButton, classes$q.hidden);
   }
 
   function handleClick(evt) {
@@ -4726,11 +4740,11 @@ var SocialShare = (function (node) {
 
   function showMessage(message) {
     successMessage.innerHTML = message;
-    i$1(successMessage, classes$p.hidden);
-    u$1(popup, classes$p.linkCopied);
+    i$1(successMessage, classes$q.hidden);
+    u$1(popup, classes$q.linkCopied);
     setTimeout(function () {
-      u$1(successMessage, classes$p.hidden);
-      i$1(popup, classes$p.linkCopied);
+      u$1(successMessage, classes$q.hidden);
+      i$1(popup, classes$q.linkCopied);
     }, 2000);
   }
 
@@ -4793,8 +4807,10 @@ var paths = {
   base: "".concat(routes.base || "/cart", ".js"),
   add: "".concat(routes.add || "/cart/add", ".js"),
   change: "".concat(routes.change || "/cart/change", ".js"),
-  clear: "".concat(routes.clear || "/cart/clear", ".js")
-}; // Add a `sorted` key that orders line items
+  clear: "".concat(routes.clear || "/cart/clear", ".js"),
+  update: "".concat(routes.update || "/cart/update", ".js")
+};
+var strings$6 = window.theme.strings.cart; // Add a `sorted` key that orders line items
 // in the order the customer added them if possible
 
 function sortCart(cart) {
@@ -4811,38 +4827,19 @@ function sortCart(cart) {
   return cart;
 }
 
-function addVariant(variant, quantity) {
-  var numAvailable = variant.inventory_policy === "deny" && variant.inventory_management === "shopify" ? variant.inventory_quantity : null; // null means they can add as many as they want
-
+function updateItem(key, quantity) {
   return get().then(function (_ref) {
     var items = _ref.items;
-    var existing = items.filter(function (item) {
-      return item.id === variant.id;
-    })[0] || {};
-    var numRequested = (existing.quantity || 0) + quantity;
-
-    if (numAvailable !== null && numRequested > numAvailable) {
-      var err = "There are only ".concat(numAvailable, " of that product available, requested ").concat(numRequested, ".");
-      throw new Error(err);
-    } else {
-      return addItemById(variant.id, quantity);
-    }
-  });
-}
-
-function updateItem(id, quantity) {
-  return get().then(function (_ref2) {
-    var items = _ref2.items;
 
     for (var i = 0; i < items.length; i++) {
-      if (items[i].variant_id === parseInt(id)) {
-        return changeItem(i + 1, quantity); // shopify cart is a 1-based index
+      if (items[i].key === key) {
+        return changeItem(i + 1, key, quantity); // shopify cart is a 1-based index
       }
     }
   });
 }
 
-function changeItem(line, quantity) {
+function changeItem(line, itemKey, quantity) {
   return fetch(paths.change, {
     method: "POST",
     credentials: "include",
@@ -4856,6 +4853,34 @@ function changeItem(line, quantity) {
   }).then(function (res) {
     return res.json();
   }).then(function (cart) {
+    var item = cart.items.find(function (_ref2) {
+      var key = _ref2.key;
+      return key === itemKey;
+    }); // Throw error only if the quantity returned is less by one
+    // then the quantity change request. This is triggered when a
+    // increase quantity button is pressed when insufficient quantity
+    // exists.
+    // item will not exist if it has been removed from the cart.
+
+    if (item && item.quantity === quantity - 1) {
+      var errorMessage = {
+        code: 422,
+        message: strings$6.quantityError
+      };
+      dispatchCustomEvent("cart:error", {
+        errorMessage: strings$6.quantityError
+      });
+      r$1("quick-cart:error", null, {
+        key: itemKey,
+        errorMessage: strings$6.quantityError
+      });
+      r$1("cart:error", null, {
+        key: itemKey,
+        errorMessage: strings$6.quantityError
+      });
+      throw errorMessage;
+    }
+
     r$1("cart:updated", {
       cart: cart
     });
@@ -5002,10 +5027,9 @@ function serialize(form) {
 
 var cart = {
   addItem: addItem,
-  addItemById: addItemById,
-  addVariant: addVariant,
   get: get,
-  updateItem: updateItem
+  updateItem: updateItem,
+  addItemById: addItemById
 };
 
 /**
@@ -5611,7 +5635,7 @@ function Media(node) {
   };
 }
 
-var selectors$Q = {
+var selectors$S = {
   idInput: '[name="id"]',
   optionInput: '[name^="options"]',
   quantityInput: "[data-quantity-input]",
@@ -5669,7 +5693,7 @@ function ProductForm(container, form, prod) {
   };
 
   var setIdInputValue = function setIdInputValue(value) {
-    var idInputElement = form.querySelector(selectors$Q.idInput);
+    var idInputElement = form.querySelector(selectors$S.idInput);
 
     if (!idInputElement) {
       idInputElement = document.createElement("input");
@@ -5700,9 +5724,9 @@ function ProductForm(container, form, prod) {
   };
 
   listeners.push(e$2(form, "submit", onSubmit));
-  var optionInputs = initInputs(selectors$Q.optionInput, config.onOptionChange);
-  var formQuantityInput = initInputs(selectors$Q.quantityInput, config.onQuantityChange);
-  var propertyInputs = initInputs(selectors$Q.propertyInput, config.onPropertyChange);
+  var optionInputs = initInputs(selectors$S.optionInput, config.onOptionChange);
+  var formQuantityInput = initInputs(selectors$S.quantityInput, config.onQuantityChange);
+  var propertyInputs = initInputs(selectors$S.propertyInput, config.onPropertyChange);
 
   var destroy = function destroy() {
     listeners.forEach(function (unsubscribe) {
@@ -5762,20 +5786,20 @@ var preventDefault = (function (fn) {
   };
 });
 
-var selectors$P = {
+var selectors$R = {
   imageById: function imageById(id) {
     return "[data-media-item-id='".concat(id, "']");
   },
   imageWrapper: "[data-product-media-wrapper]",
   inYourSpace: "[data-in-your-space]"
 };
-var classes$o = {
+var classes$p = {
   hidden: "hidden"
 };
 function switchImage (container, imageId, inYourSpaceButton) {
-  var newImage = n$2(selectors$P.imageWrapper + selectors$P.imageById(imageId), container);
-  var otherImages = t$2("".concat(selectors$P.imageWrapper, ":not(").concat(selectors$P.imageById(imageId), ")"), container);
-  i$1(newImage, classes$o.hidden); // Update view in space button
+  var newImage = n$2(selectors$R.imageWrapper + selectors$R.imageById(imageId), container);
+  var otherImages = t$2("".concat(selectors$R.imageWrapper, ":not(").concat(selectors$R.imageById(imageId), ")"), container);
+  i$1(newImage, classes$p.hidden); // Update view in space button
 
   if (inYourSpaceButton) {
     if (newImage.dataset.mediaType === "model") {
@@ -5784,7 +5808,7 @@ function switchImage (container, imageId, inYourSpaceButton) {
   }
 
   otherImages.forEach(function (image) {
-    return u$1(image, classes$o.hidden);
+    return u$1(image, classes$p.hidden);
   });
 }
 
@@ -5823,13 +5847,13 @@ function quantityInput (container) {
   };
 }
 
-var selectors$O = {
+var selectors$Q = {
   popupTrigger: "[data-popup-trigger]"
 };
 
 var informationPopup = function informationPopup(node) {
   var events = [];
-  var popupTriggers = t$2(selectors$O.popupTrigger, node);
+  var popupTriggers = t$2(selectors$Q.popupTrigger, node);
 
   if (!popupTriggers.length) {
     return;
@@ -5857,7 +5881,7 @@ var informationPopup = function informationPopup(node) {
   };
 };
 
-var selectors$N = {
+var selectors$P = {
   moreButton: "[data-more-media]",
   moreBar: "[data-more-media-bar]",
   productMedia: "[data-product-media]"
@@ -5870,14 +5894,14 @@ var states = {
 };
 
 var moreMedia = function moreMedia(node) {
-  var moreButton = n$2(selectors$N.moreButton, node);
+  var moreButton = n$2(selectors$P.moreButton, node);
 
   if (!moreButton) {
     return;
   }
 
-  var moreBar = n$2(selectors$N.moreBar, node);
-  var productMedia = n$2(selectors$N.productMedia, node);
+  var moreBar = n$2(selectors$P.moreBar, node);
+  var productMedia = n$2(selectors$P.productMedia, node);
   var initialAR = parseFloat(window.getComputedStyle(productMedia).aspectRatio);
   var isOpen = false;
 
@@ -5968,13 +5992,13 @@ var moreMedia = function moreMedia(node) {
 };
 
 var strings$5 = window.theme.strings.products;
-var selectors$M = {
+var selectors$O = {
   price: "[data-price]",
   comparePrice: "[data-compare-price]"
 };
 function updatePrices (container, variant) {
-  var price = t$2(selectors$M.price, container);
-  var comparePrice = t$2(selectors$M.comparePrice, container);
+  var price = t$2(selectors$O.price, container);
+  var comparePrice = t$2(selectors$O.comparePrice, container);
   var unavailableString = strings$5.product.unavailable;
 
   if (!variant) {
@@ -5995,14 +6019,14 @@ function updatePrices (container, variant) {
   });
 }
 
-var selectors$L = {
+var selectors$N = {
   productSku: "[data-product-sku]",
   productSkuContainer: ".product__vendor_and_sku"
 };
 var strings$4 = window.theme.strings.products;
 function updateSku (container, variant) {
-  var skuElement = n$2(selectors$L.productSku, container);
-  var skuContainer = n$2(selectors$L.productSkuContainer, container);
+  var skuElement = n$2(selectors$N.productSku, container);
+  var skuContainer = n$2(selectors$N.productSkuContainer, container);
   if (!skuElement) return;
   var sku = strings$4.product.sku;
 
@@ -6039,26 +6063,26 @@ function updateBuyButton (btn, variant) {
   }
 }
 
-var selectors$K = {
+var selectors$M = {
   accordionShell: ".accordion.product-reviews",
   accordionContent: ".accordion__content"
 };
-var classes$n = {
+var classes$o = {
   hidden: "hidden",
   accordion: "accordion"
 };
 function reviewsHandler (node, container) {
   if (!node) return;
   var parentAppBlockContainer = node.parentNode;
-  var accordion = n$2(selectors$K.accordionShell, container);
-  var accordionContent = n$2(selectors$K.accordionContent, accordion); // Move the contents of the reviews app into the accordion shell
+  var accordion = n$2(selectors$M.accordionShell, container);
+  var accordionContent = n$2(selectors$M.accordionContent, accordion); // Move the contents of the reviews app into the accordion shell
   // Then move the contents with the accrdion back into the original
   // location.
 
   accordionContent.appendChild(node);
   parentAppBlockContainer.appendChild(accordion);
-  u$1(parentAppBlockContainer, classes$n.accordion);
-  i$1(accordion, classes$n.hidden);
+  u$1(parentAppBlockContainer, classes$o.accordion);
+  i$1(accordion, classes$o.hidden);
 }
 
 function OptionButtons(els) {
@@ -6095,13 +6119,13 @@ function createOptionGroup(el) {
   };
 }
 
-var selectors$J = {
+var selectors$L = {
   counterContainer: "[data-inventory-counter]",
   inventoryMessage: ".inventory-counter__message",
   countdownBar: ".inventory-counter__bar",
   progressBar: ".inventory-counter__bar-progress"
 };
-var classes$m = {
+var classes$n = {
   hidden: "hidden",
   inventoryLow: "inventory--low",
   inventoryEmpty: "inventory--empty",
@@ -6110,9 +6134,9 @@ var classes$m = {
 
 var inventoryCounter = function inventoryCounter(container, config) {
   var variantsInventories = config.variantsInventories;
-  var counterContainer = n$2(selectors$J.counterContainer, container);
-  var inventoryMessageElement = n$2(selectors$J.inventoryMessage, container);
-  var progressBar = n$2(selectors$J.progressBar, container);
+  var counterContainer = n$2(selectors$L.counterContainer, container);
+  var inventoryMessageElement = n$2(selectors$L.inventoryMessage, container);
+  var progressBar = n$2(selectors$L.progressBar, container);
   var _counterContainer$dat = counterContainer.dataset,
       lowInventoryThreshold = _counterContainer$dat.lowInventoryThreshold,
       stockCountdownMax = _counterContainer$dat.stockCountdownMax,
@@ -6124,7 +6148,7 @@ var inventoryCounter = function inventoryCounter(container, config) {
 
   var threshold = parseInt(lowInventoryThreshold, 10);
   var countDownMax = parseInt(stockCountdownMax, 10);
-  l(counterContainer, classes$m.hidden, !productIventoryValid(variantsInventories[config.id]));
+  l(counterContainer, classes$n.hidden, !productIventoryValid(variantsInventories[config.id]));
   checkThreshold(variantsInventories[config.id]);
   setProgressBar(variantsInventories[config.id].inventory_quantity);
   setInventoryMessage(variantsInventories[config.id].inventory_message);
@@ -6133,11 +6157,11 @@ var inventoryCounter = function inventoryCounter(container, config) {
     var inventory_policy = _ref.inventory_policy,
         inventory_quantity = _ref.inventory_quantity,
         inventory_management = _ref.inventory_management;
-    i$1(counterContainer, classes$m.inventoryLow);
+    i$1(counterContainer, classes$n.inventoryLow);
 
     if (inventory_management !== null && inventory_policy === "deny") {
       if (inventory_quantity <= 0) {
-        u$1(counterContainer, classes$m.inventoryEmpty);
+        u$1(counterContainer, classes$n.inventoryEmpty);
         counterContainer.setAttribute("data-stock-category", "empty");
       } else if (inventory_quantity <= threshold) {
         counterContainer.setAttribute("data-stock-category", "low");
@@ -6171,15 +6195,15 @@ var inventoryCounter = function inventoryCounter(container, config) {
       return;
     }
 
-    l(counterContainer, classes$m.hidden, !productIventoryValid(variantsInventories[variant.id]));
+    l(counterContainer, classes$n.hidden, !productIventoryValid(variantsInventories[variant.id]));
     checkThreshold(variantsInventories[variant.id]);
     setProgressBar(variantsInventories[variant.id].inventory_quantity);
     setInventoryMessage(variantsInventories[variant.id].inventory_message);
   };
 
   function setUnavailable() {
-    i$1(counterContainer, classes$m.hidden);
-    u$1(counterContainer, classes$m.inventoryUnavailable);
+    i$1(counterContainer, classes$n.hidden);
+    u$1(counterContainer, classes$n.inventoryUnavailable);
     counterContainer.setAttribute("data-stock-category", "unavailable");
     setProgressBar(0);
     setInventoryMessage(unavailableText);
@@ -6200,14 +6224,14 @@ var lerp = function lerp(start, end, amt) {
   return (1 - amt) * start + amt * end;
 };
 
-var selectors$I = {
+var selectors$K = {
   productMeta: ".product__meta"
 };
-var classes$l = {
+var classes$m = {
   hasSticky: "product--has-sticky-scroll"
 };
 function stickyScroll (node) {
-  var productMeta = n$2(selectors$I.productMeta, node);
+  var productMeta = n$2(selectors$K.productMeta, node);
   node.style.setProperty("--product-meta-top", 0); // Init position vars
   // The previous scroll position of the page
 
@@ -6256,11 +6280,11 @@ function stickyScroll (node) {
     // so it won't have room to scroll.
 
     if (metaHeightWithHeader > window.innerHeight && node.offsetHeight > metaHeightWithHeader) {
-      u$1(node, classes$l.hasSticky);
+      u$1(node, classes$m.hasSticky);
 
       _scrollHandler(window.scrollY);
     } else {
-      i$1(node, classes$l.hasSticky);
+      i$1(node, classes$m.hasSticky);
     }
   }
 
@@ -6304,20 +6328,20 @@ function stickyScroll (node) {
   };
 }
 
-var selectors$H = {
+var selectors$J = {
   item: ".product-item",
   itemInner: ".product-item__inner",
   quickViewButton: ".show-product-quickview"
 };
 function ProductItem(container) {
-  var items = t$2(selectors$H.item, container);
+  var items = t$2(selectors$J.item, container);
   if (!items.length) return; // Add z-index for quick-buy overlap
 
   items.forEach(function (item, i) {
     return item.style.setProperty("--z-index-item", items.length - i);
   });
   var productItemAnimations = AnimateProductItem(items);
-  var quickViewButtons = t$2(selectors$H.quickViewButton, container);
+  var quickViewButtons = t$2(selectors$J.quickViewButton, container);
   var events = [e$2(quickViewButtons, "click", function (e) {
     e.preventDefault();
     e.stopPropagation();
@@ -6340,18 +6364,18 @@ function ProductItem(container) {
   };
 }
 
-var selectors$G = {
+var selectors$I = {
   sliderContainer: ".swiper",
   visibleSlides: ".swiper-slide-visible"
 };
-var classes$k = {
+var classes$l = {
   overflow: "has-overflow",
   carousel: "carousel"
 };
 var Carousel = (function (node) {
   var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
   // Pass the swiper container or the contain section
-  var swiperContainer = a$1(node, classes$k.carousel) ? node : n$2(selectors$G.sliderContainer, node);
+  var swiperContainer = a$1(node, classes$l.carousel) ? node : n$2(selectors$I.sliderContainer, node);
   if (!swiperContainer) return;
   var carousel;
   var events = [];
@@ -6375,13 +6399,13 @@ var Carousel = (function (node) {
   var handleOverflow = function handleOverflow(slides) {
     // Allow breakpoints config settings to apply
     setTimeout(function () {
-      var hasOverflow = a$1(swiperContainer, classes$k.overflow);
-      var needsOverflow = t$2(selectors$G.visibleSlides, swiperContainer).length !== slides.length;
+      var hasOverflow = a$1(swiperContainer, classes$l.overflow);
+      var needsOverflow = t$2(selectors$I.visibleSlides, swiperContainer).length !== slides.length;
 
       if (!hasOverflow && needsOverflow) {
-        u$1(swiperContainer, classes$k.overflow);
+        u$1(swiperContainer, classes$l.overflow);
       } else if (hasOverflow && !needsOverflow) {
-        i$1(swiperContainer, classes$k.overflow);
+        i$1(swiperContainer, classes$l.overflow);
       }
     }, 0);
   };
@@ -6439,27 +6463,70 @@ var Carousel = (function (node) {
   };
 });
 
-var selectors$F = {
+var selectors$H = {
+  wrappingContainer: ".product__block-featured-products",
   featuredProducts: "[data-featured-products]",
+  featuredProductsContent: "[data-featured-products-content]",
   leftSideMobileFeaturedProducts: ".left-side-blocks.for-mobile [data-featured-products]"
 };
 
 var featuredProducts = function featuredProducts(node) {
-  var featuredProducts = t$2(selectors$F.featuredProducts, node);
+  var featuredProducts = t$2(selectors$H.featuredProducts, node);
   if (!featuredProducts.length) return;
-  var productItems = featuredProducts.forEach(function (productContainer) {
-    return ProductItem(productContainer);
-  });
-  var enableMobileSwiper = featuredProducts[0].dataset.enableMobileSwiper === "true";
+  var productItems;
   var mobileSwiper;
   var mobileFeaturedProducts;
+  var _featuredProducts$0$d = featuredProducts[0].dataset,
+      recommendationsType = _featuredProducts$0$d.recommendationsType,
+      id = _featuredProducts$0$d.productId,
+      sectionId = _featuredProducts$0$d.sectionId,
+      enableMobileSwiper = _featuredProducts$0$d.enableMobileSwiper,
+      maxRecommendations = _featuredProducts$0$d.maxRecommendations;
 
-  if (enableMobileSwiper) {
-    // Left column blocks are rendered twice to keep correct
+  if (recommendationsType === "app-recommendations") {
+    handleRecommendedProducts();
+  } else {
+    // Merchant is using custom product list
+    productItems = featuredProducts.forEach(function (productContainer) {
+      return ProductItem(productContainer);
+    });
+    handleMobileSwiper();
+  }
+
+  function handleRecommendedProducts() {
+    var requestUrl = "".concat(window.theme.routes.productRecommendations, "?section_id=").concat(sectionId, "&limit=").concat(maxRecommendations, "&product_id=").concat(id, "&intent=complementary");
+    fetch(requestUrl).then(function (response) {
+      return response.text();
+    }).then(function (text) {
+      var html = document.createElement("div");
+      html.innerHTML = text;
+      var recommendations = n$2(selectors$H.featuredProductsContent, html);
+
+      if (recommendations && recommendations.innerHTML.trim().length) {
+        featuredProducts.forEach(function (block) {
+          return block.innerHTML = recommendations.innerHTML;
+        });
+        productItems = featuredProducts.map(function (productContainer) {
+          return ProductItem(productContainer);
+        }); // Remove hidden flag as content has been fetched
+
+        featuredProducts.forEach(function (block) {
+          i$1(block.closest(selectors$H.wrappingContainer), "hidden");
+        });
+        handleMobileSwiper();
+      }
+    }).catch(function (error) {
+      throw error;
+    });
+  }
+
+  function handleMobileSwiper() {
+    if (enableMobileSwiper !== "true") return; // Left column blocks are rendered twice to keep correct
     // ordering with right column blocks on mobile. Here we
     // target the mobile left version if it exists as it requires
     // the potential mobile swiper only.
-    mobileFeaturedProducts = n$2(selectors$F.leftSideMobileFeaturedProducts, node) || n$2(selectors$F.featuredProducts, node);
+
+    mobileFeaturedProducts = n$2(selectors$H.leftSideMobileFeaturedProducts, node) || n$2(selectors$H.featuredProducts, node);
 
     if (window.matchMedia(getMediaQuery("below-720")).matches) {
       _initMobileSwiper();
@@ -6497,20 +6564,20 @@ var featuredProducts = function featuredProducts(node) {
   };
 };
 
-var classes$j = {
+var classes$k = {
   disabled: "disabled"
 };
-var selectors$E = {
+var selectors$G = {
   variantsWrapper: ".product__variants-wrapper",
   variantsJson: "[data-variant-json]",
   input: ".dynamic-variant-input",
   inputWrap: ".dynamic-variant-input-wrap",
   inputWrapWithValue: function inputWrapWithValue(option) {
-    return "".concat(selectors$E.inputWrap, "[data-index=\"").concat(option, "\"]");
+    return "".concat(selectors$G.inputWrap, "[data-index=\"").concat(option, "\"]");
   },
   buttonWrap: ".dynamic-variant-button",
   buttonWrapWithValue: function buttonWrapWithValue(value) {
-    return "".concat(selectors$E.buttonWrap, "[data-option-value=\"").concat(value, "\"]");
+    return "".concat(selectors$G.buttonWrap, "[data-option-value=\"").concat(value, "\"]");
   }
 };
 /**
@@ -6526,17 +6593,17 @@ var selectors$E = {
  */
 
 function variantAvailability (container) {
-  var variantsWrapper = n$2(selectors$E.variantsWrapper, container); // Variant options block do not exist
+  var variantsWrapper = n$2(selectors$G.variantsWrapper, container); // Variant options block do not exist
 
   if (!variantsWrapper) return;
   var _variantsWrapper$data = variantsWrapper.dataset,
       enableDynamicProductOptions = _variantsWrapper$data.enableDynamicProductOptions,
       currentVariantId = _variantsWrapper$data.currentVariantId;
   if (enableDynamicProductOptions === "false") return;
-  var productVariants = JSON.parse(n$2(selectors$E.variantsJson, container).innerText); // Using associated selects as buy buttons may be disabled.
+  var productVariants = JSON.parse(n$2(selectors$G.variantsJson, container).innerText); // Using associated selects as buy buttons may be disabled.
 
-  var variantSelectors = t$2(selectors$E.input, container);
-  var variantSelectorWrappers = t$2(selectors$E.inputWrap, container);
+  var variantSelectors = t$2(selectors$G.input, container);
+  var variantSelectorWrappers = t$2(selectors$G.inputWrap, container);
   var events = [];
   init();
 
@@ -6658,7 +6725,7 @@ function variantAvailability (container) {
   }
 
   function manageOptionState(option, values) {
-    var group = n$2(selectors$E.inputWrapWithValue(option), container); // Loop through each option value
+    var group = n$2(selectors$G.inputWrapWithValue(option), container); // Loop through each option value
 
     values.forEach(function (obj) {
       toggleVariantOption(group, obj);
@@ -6670,19 +6737,19 @@ function variantAvailability (container) {
     var value = escapeQuotes(obj.value); // Do nothing if the option is a select dropdown
 
     if (a$1(group, "select-wrapper")) return;
-    var button = n$2(selectors$E.buttonWrapWithValue(value), group); // Variant exists - enable & show variant
+    var button = n$2(selectors$G.buttonWrapWithValue(value), group); // Variant exists - enable & show variant
 
-    i$1(button, classes$j.disabled); // Variant sold out - cross out option (remains selectable)
+    i$1(button, classes$k.disabled); // Variant sold out - cross out option (remains selectable)
 
     if (obj.soldOut) {
-      u$1(button, classes$j.disabled);
+      u$1(button, classes$k.disabled);
     }
   }
 
   function disableVariantGroup(group) {
     if (a$1(group, "select-wrapper")) return;
-    t$2(selectors$E.buttonWrap, group).forEach(function (button) {
-      return u$1(button, classes$j.disabled);
+    t$2(selectors$G.buttonWrap, group).forEach(function (button) {
+      return u$1(button, classes$k.disabled);
     });
   }
 
@@ -6708,21 +6775,21 @@ function variantAvailability (container) {
 }
 
 window.theme.strings.products;
-var selectors$D = {
+var selectors$F = {
   unitPriceContainer: "[data-unit-price-container]",
   unitPrice: "[data-unit-price]",
   unitPriceBase: "[data-unit-base]"
 };
-var classes$i = {
+var classes$j = {
   available: "unit-price--available"
 };
 
 var updateUnitPrices = function updateUnitPrices(container, variant) {
-  var unitPriceContainers = t$2(selectors$D.unitPriceContainer, container);
-  var unitPrices = t$2(selectors$D.unitPrice, container);
-  var unitPriceBases = t$2(selectors$D.unitPriceBase, container);
+  var unitPriceContainers = t$2(selectors$F.unitPriceContainer, container);
+  var unitPrices = t$2(selectors$F.unitPrice, container);
+  var unitPriceBases = t$2(selectors$F.unitPriceBase, container);
   var showUnitPricing = !variant || !variant.unit_price;
-  l(unitPriceContainers, classes$i.available, !showUnitPricing);
+  l(unitPriceContainers, classes$j.available, !showUnitPricing);
   if (!variant || !variant.unit_price) return;
 
   _replaceText(unitPrices, formatMoney(variant.unit_price));
@@ -6769,7 +6836,7 @@ var storeAvailability = function storeAvailability(container, product, variant) 
   };
 };
 
-var selectors$C = {
+var selectors$E = {
   form: "[data-product-form]",
   addToCart: "[data-add-to-cart]",
   variantSelect: "[data-variant-select]",
@@ -6815,12 +6882,12 @@ var Product = /*#__PURE__*/function () {
     this.isQuickView = isQuickView;
     this.isFullProduct = isFullProduct;
     this.isFeaturedProduct = isFeaturedProduct;
-    this.formElement = n$2(selectors$C.form, this.container);
-    this.quantityError = n$2(selectors$C.quantityError, this.container);
-    this.displayedDiscount = n$2(selectors$C.displayedDiscount, this.container);
+    this.formElement = n$2(selectors$E.form, this.container);
+    this.quantityError = n$2(selectors$E.quantityError, this.container);
+    this.displayedDiscount = n$2(selectors$E.displayedDiscount, this.container);
     this.viewInYourSpace = n$2("[data-in-your-space]", this.container);
     this.viewInYourSpace && l(this.viewInYourSpace, "visible", isMobile$1());
-    this.photosDesktop = n$2(selectors$C.photosDesktop, this.container);
+    this.photosDesktop = n$2(selectors$E.photosDesktop, this.container);
     this.breakPointHandler = atBreakpointChange(960, function () {
       if (window.matchMedia(getMediaQuery("below-960")).matches) {
         _this._initPhotoCarousel();
@@ -6835,8 +6902,8 @@ var Product = /*#__PURE__*/function () {
       this._initPhotoCarousel();
     }
 
-    this.productThumbnails = n$2(selectors$C.thumbs, this.container);
-    this.productThumbnailItems = t$2(selectors$C.thumb, this.container);
+    this.productThumbnails = n$2(selectors$E.thumbs, this.container);
+    this.productThumbnailItems = t$2(selectors$E.thumb, this.container);
 
     if (this.productThumbnails) {
       this.productThumbnailsScroller = scrollContainer(this.productThumbnails);
@@ -6844,14 +6911,14 @@ var Product = /*#__PURE__*/function () {
 
     this.moreMedia = moreMedia(this.container); // Handle Surface pickup
 
-    this.storeAvailabilityContainer = n$2(selectors$C.storeAvailability, this.container);
+    this.storeAvailabilityContainer = n$2(selectors$E.storeAvailability, this.container);
     this.availability = null; // Handle Shopify Product Reviews if they exist as a product block
 
-    this.reviewsHandler = reviewsHandler(n$2(selectors$C.productReviews, this.container), this.container); // // non-SPR rating display
+    this.reviewsHandler = reviewsHandler(n$2(selectors$E.productReviews, this.container), this.container); // // non-SPR rating display
 
-    var nonSprRatingCount = n$2(selectors$C.nonSprRatingCountLink, this.container);
+    var nonSprRatingCount = n$2(selectors$E.nonSprRatingCountLink, this.container);
 
-    if (nonSprRatingCount && !n$2(selectors$C.productReviews, document)) {
+    if (nonSprRatingCount && !n$2(selectors$E.productReviews, document)) {
       // The rating count links to "#shopify-product-reviews" but
       // if that block doesn't exist we should remove the link
       nonSprRatingCount.removeAttribute("href");
@@ -6898,7 +6965,7 @@ var Product = /*#__PURE__*/function () {
     }
 
     this.quantityInput = quantityInput(this.container);
-    this.customOptionInputs = t$2(selectors$C.customOptionInputs, this.container);
+    this.customOptionInputs = t$2(selectors$E.customOptionInputs, this.container);
     this.socialButtons = t$2("[data-social-share]", this.container);
     this.featuredProducts = featuredProducts(this.container);
 
@@ -6963,7 +7030,7 @@ var Product = /*#__PURE__*/function () {
       if (this.customOptionInputs) {
         this.customOptionInputs.forEach(function (input) {
           var id = input.dataset.customOptionInput;
-          var target = n$2(selectors$C.customOptionInputTargetsById(id), _this2.container);
+          var target = n$2(selectors$E.customOptionInputTargetsById(id), _this2.container);
 
           _this2.events.push(e$2(input, "change", function (e) {
             // Update the hidden input within the form, per type
@@ -6981,7 +7048,7 @@ var Product = /*#__PURE__*/function () {
     value: function _initPhotoCarousel() {
       var _this3 = this;
 
-      var swiperWrapper = n$2(selectors$C.photosMobile, this.container);
+      var swiperWrapper = n$2(selectors$E.photosMobile, this.container);
       import(flu.chunks.swiper).then(function (_ref) {
         var Swiper = _ref.Swiper,
             Pagination = _ref.Pagination;
@@ -6993,9 +7060,12 @@ var Product = /*#__PURE__*/function () {
           pagination: {
             el: ".swiper-pagination",
             type: "bullets",
+            dynamicBullets: true,
+            dynamicMainBullets: 7,
             clickable: true
           },
-          watchSlidesProgress: true
+          watchSlidesProgress: true,
+          autoHeight: true
         });
 
         _this3.mobileSwiper.on("slideChange", function (evt) {
@@ -7018,15 +7088,15 @@ var Product = /*#__PURE__*/function () {
       var variant = _ref2.dataset.variant,
           srcElement = _ref2.srcElement;
       // Update option label
-      var optionParentWrapper = srcElement.closest(selectors$C.productOption);
-      var optionLabel = n$2(selectors$C.optionLabelValue, optionParentWrapper);
+      var optionParentWrapper = srcElement.closest(selectors$E.productOption);
+      var optionLabel = n$2(selectors$E.optionLabelValue, optionParentWrapper);
 
       if (optionLabel) {
         optionLabel.textContent = srcElement.value;
       }
 
-      var buyButton = n$2(selectors$C.addToCart, this.container);
-      var priceWrapper = n$2(selectors$C.priceWrapper, this.container);
+      var buyButton = n$2(selectors$E.addToCart, this.container);
+      var priceWrapper = n$2(selectors$E.priceWrapper, this.container);
       priceWrapper && l(priceWrapper, "hide", !variant); // Update prices to reflect selected variant
 
       updatePrices(this.container, variant); // Update buy button
@@ -7040,7 +7110,7 @@ var Product = /*#__PURE__*/function () {
       this.availability && this.availability.update(variant); // Update displayed discount
 
       if (this.displayedDiscount) {
-        var newDiscountEl = variant && n$2(selectors$C.displayedDiscountByVariantId(variant.id), this.container);
+        var newDiscountEl = variant && n$2(selectors$E.displayedDiscountByVariantId(variant.id), this.container);
 
         if (variant && newDiscountEl) {
           this.displayedDiscount.textContent = newDiscountEl.textContent;
@@ -7066,7 +7136,7 @@ var Product = /*#__PURE__*/function () {
         path: url
       }, "", url); // We need to set the id input manually so the Dynamic Checkout Button works
 
-      var selectedVariantOpt = n$2("".concat(selectors$C.variantSelect, " ").concat(selectors$C.optionById(variant.id)), this.container);
+      var selectedVariantOpt = n$2("".concat(selectors$E.variantSelect, " ").concat(selectors$E.optionById(variant.id)), this.container);
       selectedVariantOpt.selected = true; // We need to dispatch an event so Shopify pay knows the form has changed
 
       this.formElement.dispatchEvent(new Event("change")); // Update selected variant image and thumb
@@ -7144,14 +7214,14 @@ var Product = /*#__PURE__*/function () {
     value: function onFormSubmit(e) {
       var _this4 = this;
 
-      var purchaseConfirmation = n$2(selectors$C.purchaseConfirmation, document);
-      var quickCart = n$2(selectors$C.quickCart, document);
+      var purchaseConfirmation = n$2(selectors$E.purchaseConfirmation, document);
+      var quickCart = n$2(selectors$E.quickCart, document);
       var isQuickViewForm = Boolean(e.target.closest(".quick-product")); // if quick cart and confirmation popup are enable submit form
 
       if (!purchaseConfirmation && !quickCart && !isQuickViewForm) return;
       e.preventDefault();
       u$1(this.quantityError, "hidden");
-      var button = n$2(selectors$C.addToCart, this.container);
+      var button = n$2(selectors$E.addToCart, this.container);
       u$1(button, "loading");
       cart.addItem(this.formElement).then(function (_ref4) {
         var item = _ref4.item;
@@ -7178,7 +7248,7 @@ var Product = /*#__PURE__*/function () {
         }
 
         i$1(_this4.quantityError, "hidden");
-        var button = n$2(selectors$C.addToCart, _this4.container);
+        var button = n$2(selectors$E.addToCart, _this4.container);
         i$1(button, "loading");
       });
     }
@@ -7207,12 +7277,12 @@ var Product = /*#__PURE__*/function () {
   return Product;
 }();
 
-var classes$h = {
+var classes$i = {
   visible: "is-visible",
   active: "active",
   fixed: "is-fixed"
 };
-var selectors$B = {
+var selectors$D = {
   closeBtn: "[data-modal-close]",
   wash: ".modal__wash",
   modalContent: ".quick-view-modal__content",
@@ -7223,10 +7293,10 @@ var quickViewModal = function quickViewModal(node) {
   var focusTrap = createFocusTrap(node, {
     allowOutsideClick: true
   });
-  var wash = n$2(selectors$B.wash, node);
-  var closeButton = n$2(selectors$B.closeBtn, node);
-  var modalContent = n$2(selectors$B.modalContent, node);
-  var loadingMessage = n$2(selectors$B.loadingMessage, node);
+  var wash = n$2(selectors$D.wash, node);
+  var closeButton = n$2(selectors$D.closeBtn, node);
+  var modalContent = n$2(selectors$D.modalContent, node);
+  var loadingMessage = n$2(selectors$D.loadingMessage, node);
   var quickViewAnimation = null;
 
   if (shouldAnimate(node)) {
@@ -7272,11 +7342,11 @@ var quickViewModal = function quickViewModal(node) {
   };
 
   var _open = function _open() {
-    u$1(node, classes$h.fixed);
+    u$1(node, classes$i.fixed);
     setTimeout(function () {
-      u$1(node, classes$h.active);
+      u$1(node, classes$i.active);
       setTimeout(function () {
-        u$1(node, classes$h.visible);
+        u$1(node, classes$i.visible);
         focusTrap.activate();
       }, 50);
     }, 50);
@@ -7296,11 +7366,14 @@ var quickViewModal = function quickViewModal(node) {
 
   var _close = function _close() {
     focusTrap.deactivate();
-    i$1(node, classes$h.visible);
-    i$1(node, classes$h.active);
+    i$1(node, classes$i.visible);
+    i$1(node, classes$i.active);
     enableBodyScroll(node);
+    r$1("quick-cart:scrollup");
     setTimeout(function () {
-      i$1(node, classes$h.fixed);
+      var _product;
+
+      i$1(node, classes$i.fixed);
 
       if (shouldAnimate(node)) {
         quickViewAnimation.reset();
@@ -7309,7 +7382,7 @@ var quickViewModal = function quickViewModal(node) {
       modalContent.innerHTML = "";
       modalContent.appendChild(loadingMessage);
       u$1(modalContent, "empty");
-      product.unload();
+      (_product = product) === null || _product === void 0 ? void 0 : _product.unload();
     }, 500);
   };
 
@@ -7358,7 +7431,7 @@ function productLightbox() {
   });
 }
 
-var classes$g = {
+var classes$h = {
   visible: "is-visible"
 };
 
@@ -7383,19 +7456,19 @@ var flashAlertModal = function flashAlertModal(node) {
     if (!alertMessage) return;
     var messageContainer = n$2(".flash-alert__container", node);
     messageContainer.innerText = alertMessage;
-    u$1(node, classes$g.visible);
+    u$1(node, classes$h.visible);
     messageContainer.addEventListener("animationend", function () {
-      i$1(node, classes$g.visible);
+      i$1(node, classes$h.visible);
     }, {
       once: true
     });
   };
 };
 
-var selectors$A = {
+var selectors$C = {
   innerOverlay: ".header-overlay__inner"
 };
-var classes$f = {
+var classes$g = {
   isVisible: "is-visible",
   isActive: "is-active"
 };
@@ -7408,7 +7481,7 @@ var events = {
 var headerOverlay = function headerOverlay(node) {
   if (!node) return;
   var overlay = node;
-  var overlayInner = node.querySelector(selectors$A.innerOverlay);
+  var overlayInner = node.querySelector(selectors$C.innerOverlay);
   var overlayShowListener = c(events.show, function () {
     return _showOverlay();
   });
@@ -7420,9 +7493,9 @@ var headerOverlay = function headerOverlay(node) {
     o$1({
       headerOverlayOpen: true
     });
-    overlay.classList.add(classes$f.isActive);
+    overlay.classList.add(classes$g.isActive);
     setTimeout(function () {
-      overlayInner.classList.add(classes$f.isVisible);
+      overlayInner.classList.add(classes$g.isVisible);
     }, 0);
   };
 
@@ -7431,9 +7504,9 @@ var headerOverlay = function headerOverlay(node) {
       headerOverlayOpen: false
     });
     r$1(events.hiding);
-    overlayInner.classList.remove(classes$f.isVisible);
+    overlayInner.classList.remove(classes$g.isVisible);
     setTimeout(function () {
-      overlay.classList.remove(classes$f.isActive);
+      overlay.classList.remove(classes$g.isActive);
     }, 0);
   };
 
@@ -8487,7 +8560,7 @@ function PredictiveSearch(resultsContainer) {
   };
 }
 
-var classes$e = {
+var classes$f = {
   active: "active",
   visible: "quick-search--visible"
 };
@@ -8505,7 +8578,7 @@ function QuickSearch (node, header) {
     var keyCode = _ref.keyCode;
     if (keyCode === 27) close();
   }), c("drawer-menu:open", function () {
-    if (a$1(node, classes$e.active)) close();
+    if (a$1(node, classes$f.active)) close();
   })];
   var trap = createFocusTrap(node, {
     allowOutsideClick: true
@@ -8513,9 +8586,9 @@ function QuickSearch (node, header) {
 
   function handleInput(e) {
     if (e.target.value === "") reset();
-    l(clear, classes$e.visible, e.target.value !== "");
-    l(input.parentNode, classes$e.active, e.target.value !== "");
-    l(form, classes$e.active, e.target.value !== "");
+    l(clear, classes$f.visible, e.target.value !== "");
+    l(input.parentNode, classes$f.active, e.target.value !== "");
+    l(form, classes$f.active, e.target.value !== "");
     predictiveSearch.getSearchResults(e.target.value);
   } // Clear contents of the search input and hide results container
 
@@ -8523,9 +8596,9 @@ function QuickSearch (node, header) {
   function reset(e) {
     e && e.preventDefault();
     input.value = "";
-    i$1(clear, classes$e.visible);
-    i$1(input.parentNode, classes$e.active);
-    i$1(form, classes$e.active);
+    i$1(clear, classes$f.visible);
+    i$1(input.parentNode, classes$f.active);
+    i$1(form, classes$f.active);
     resultsContainer.innerHTML = "";
     input.focus();
   }
@@ -8546,7 +8619,7 @@ function QuickSearch (node, header) {
     searchToggles.forEach(function (searchToggle) {
       searchToggle.setAttribute("aria-expanded", true);
     });
-    u$1(node, classes$e.active);
+    u$1(node, classes$f.active);
     node.setAttribute("aria-hidden", false);
     document.body.setAttribute("quick-search-open", "true");
     trap.activate();
@@ -8569,7 +8642,7 @@ function QuickSearch (node, header) {
       scrollPosition = window.pageYOffset;
       document.body.style.top = "-".concat(scrollPosition, "px");
       document.body.classList.add("scroll-lock");
-      u$1(node, classes$e.visible);
+      u$1(node, classes$f.visible);
     }, 50);
   }
 
@@ -8577,11 +8650,11 @@ function QuickSearch (node, header) {
     searchToggles.forEach(function (searchToggle) {
       searchToggle.setAttribute("aria-expanded", false);
     });
-    i$1(node, classes$e.visible);
+    i$1(node, classes$f.visible);
     document.body.setAttribute("quick-search-open", "false");
     trap.deactivate();
     setTimeout(function () {
-      i$1(node, classes$e.active);
+      i$1(node, classes$f.active);
       node.setAttribute("aria-hidden", true);
       enableBodyScroll(node);
       document.body.classList.remove("scroll-lock");
@@ -8876,7 +8949,7 @@ var sel$2 = {
   localeInput: "[data-locale-input]",
   currencyInput: "[data-currency-input]"
 };
-var classes$d = {
+var classes$e = {
   active: "active",
   visible: "visible",
   countrySelector: "drawer-menu__list--country-selector"
@@ -8914,7 +8987,7 @@ var menu = function menu(node) {
   var currencyInput = node.querySelector(sel$2.currencyInput); // quick-search listener
 
   var quickSearchListener = c("search:open", function () {
-    if (a$1(node, classes$d.active)) close();
+    if (a$1(node, classes$e.active)) close();
   }); // Every individual menu item
 
   var items = node.querySelectorAll(sel$2.item);
@@ -8974,13 +9047,13 @@ var menu = function menu(node) {
 
   function open() {
     r$1("drawer-menu:open");
-    node.classList.add(classes$d.active);
+    node.classList.add(classes$e.active);
     document.body.setAttribute("mobile-menu-open", "true");
     menuButton.setAttribute("aria-expanded", true);
     menuButton.setAttribute("aria-label", menuButton.getAttribute("data-aria-label-opened"));
     setTimeout(function () {
       focusTrap.activate();
-      node.classList.add(classes$d.visible);
+      node.classList.add(classes$e.visible);
       disableBodyScroll(node, {
         hideBodyOverflow: true,
         allowTouchMove: function allowTouchMove(el) {
@@ -9010,15 +9083,15 @@ var menu = function menu(node) {
     menuButton.setAttribute("aria-label", menuButton.getAttribute("data-aria-label-closed"));
     e && e.preventDefault();
     focusTrap.deactivate();
-    node.classList.remove(classes$d.visible);
+    node.classList.remove(classes$e.visible);
     document.body.setAttribute("mobile-menu-open", "false");
     var childMenus = node.querySelectorAll(sel$2.subMenus);
     childMenus.forEach(function (childMenu) {
-      childMenu.classList.remove(classes$d.visible);
+      childMenu.classList.remove(classes$e.visible);
       childMenu.setAttribute("aria-hidden", true);
     });
     setTimeout(function () {
-      node.classList.remove(classes$d.active);
+      node.classList.remove(classes$e.active);
       enableBodyScroll(node);
       document.body.classList.remove("scroll-lock");
       document.body.style.top = "";
@@ -9033,7 +9106,7 @@ var menu = function menu(node) {
     var parentLink = e.currentTarget;
     parentLink.ariaExpanded = "true";
     var childMenu = parentLink.nextElementSibling;
-    childMenu.classList.add(classes$d.visible);
+    childMenu.classList.add(classes$e.visible);
     childMenu.setAttribute("aria-hidden", false);
     main.style.height = formatHeight(childMenu.offsetHeight);
     menuContents.scrollTo(0, 0);
@@ -9063,7 +9136,7 @@ var menu = function menu(node) {
 
     main.style.height = formatHeight(height);
     var parent = e.currentTarget.closest("ul");
-    parent.classList.remove(classes$d.visible);
+    parent.classList.remove(classes$e.visible);
     var parentLink = parent.previousElementSibling;
     parentLink.ariaExpanded = "false";
     navigate(linksDepth -= 1);
@@ -9073,14 +9146,14 @@ var menu = function menu(node) {
     e.preventDefault();
     navigatePrimary(1);
     var childMenu = e.currentTarget.nextElementSibling;
-    childMenu.classList.add(classes$d.visible);
+    childMenu.classList.add(classes$e.visible);
   }
 
   function handleSecondaryHeading(e) {
     e === null || e === void 0 ? void 0 : e.preventDefault();
     navigatePrimary(0);
     var parent = e.currentTarget.closest("ul");
-    parent.classList.remove(classes$d.visible);
+    parent.classList.remove(classes$e.visible);
   }
 
   function handleCrossBorderChoice(e, input) {
@@ -9091,7 +9164,7 @@ var menu = function menu(node) {
   }
 
   function handleKeyboard(e) {
-    if (!node.classList.contains(classes$d.visible)) return;
+    if (!node.classList.contains(classes$e.visible)) return;
 
     if (e.key == "Escape" || e.keyCode === 27) {
       close();
@@ -9130,11 +9203,11 @@ var menu = function menu(node) {
   };
 };
 
-var selectors$z = {
+var selectors$B = {
   progressBar: ".free-shipping-bar__bar",
   message: ".free-shipping-bar__message"
 };
-var classes$c = {
+var classes$d = {
   loaded: "free-shipping-bar--loaded",
   success: "free-shipping-bar--success"
 };
@@ -9153,13 +9226,13 @@ function freeShippingBar(node) {
 
   _setProgressBar();
 
-  u$1(node, classes$c.loaded);
+  u$1(node, classes$d.loaded);
 
   function _setProgressMessage() {
-    var message = n$2(selectors$z.message, node);
+    var message = n$2(selectors$B.message, node);
 
     if (cartTotal >= thresholdInCents) {
-      u$1(node, classes$c.success);
+      u$1(node, classes$d.success);
       message.innerText = freeShippingSuccessMessage;
     } else {
       var remainder = Math.abs(cartTotal - thresholdInCents);
@@ -9168,27 +9241,27 @@ function freeShippingBar(node) {
   }
 
   function _setProgressBar() {
-    var progressBar = n$2(selectors$z.progressBar, node);
+    var progressBar = n$2(selectors$B.progressBar, node);
     var progress = cartTotal < thresholdInCents ? cartTotal / threshold : 100;
     progressBar.style.setProperty("--progress-width", "".concat(progress, "%"));
   }
 }
 
-var selectors$y = {
+var selectors$A = {
   header: ".header__outer-wrapper",
   containerInner: ".purchase-confirmation-popup__inner",
   freeShippingBar: ".free-shipping-bar",
   viewCartButton: ".purchase-confirmation-popup__view-cart",
   quickCart: ".quick-cart"
 };
-var classes$b = {
+var classes$c = {
   active: "active",
   hidden: "hidden"
 };
 function PurchaseConfirmationPopup(node) {
   if (!node) return;
-  var quickCartEnabled = Boolean(n$2(selectors$y.quickCart, document));
-  var containerInner = n$2(selectors$y.containerInner, node);
+  var quickCartEnabled = Boolean(n$2(selectors$A.quickCart, document));
+  var containerInner = n$2(selectors$A.containerInner, node);
   var purchaseConfirmationAnimation = null;
 
   if (shouldAnimate(node)) {
@@ -9196,7 +9269,7 @@ function PurchaseConfirmationPopup(node) {
   }
 
   var delegate = new Delegate(node);
-  delegate.on("click", selectors$y.viewCartButton, function (event) {
+  delegate.on("click", selectors$A.viewCartButton, function (event) {
     if (!quickCartEnabled) return;
     event.preventDefault();
     r$1("quick-cart:open");
@@ -9214,7 +9287,7 @@ function PurchaseConfirmationPopup(node) {
       container.innerHTML = response;
       containerInner.innerHTML = "";
       containerInner.appendChild(container);
-      var freeShippingBar$1 = n$2(selectors$y.freeShippingBar, containerInner);
+      var freeShippingBar$1 = n$2(selectors$A.freeShippingBar, containerInner);
 
       if (freeShippingBar$1) {
         freeShippingBar(freeShippingBar$1);
@@ -9222,13 +9295,13 @@ function PurchaseConfirmationPopup(node) {
 
 
       var addedProduct = n$2("[data-product-key=\"".concat(product.key, "\"]"), node);
-      i$1(addedProduct, classes$b.hidden);
+      i$1(addedProduct, classes$c.hidden);
       open();
     });
   }
 
   function open() {
-    u$1(node, classes$b.active);
+    u$1(node, classes$c.active);
 
     if (shouldAnimate(node)) {
       purchaseConfirmationAnimation.animate();
@@ -9249,7 +9322,7 @@ function PurchaseConfirmationPopup(node) {
   }
 
   function close() {
-    i$1(node, classes$b.active);
+    i$1(node, classes$c.active);
 
     if (shouldAnimate(node)) {
       setTimeout(function () {
@@ -9259,7 +9332,7 @@ function PurchaseConfirmationPopup(node) {
   }
 }
 
-var selectors$x = {
+var selectors$z = {
   headerInner: ".header__inner",
   form: ".disclosure-form",
   list: "[data-disclosure-list]",
@@ -9267,7 +9340,7 @@ var selectors$x = {
   input: "[data-disclosure-input]",
   option: "[data-disclosure-option]"
 };
-var classes$a = {
+var classes$b = {
   disclosureListRight: "disclosure-list--right",
   disclosureListTop: "disclosure-list--top"
 };
@@ -9279,12 +9352,12 @@ function has(list, selector) {
 }
 
 function Disclosure(node) {
-  var headerInner = n$2(selectors$x.headerInner);
-  var form = node.closest(selectors$x.form);
-  var list = n$2(selectors$x.list, node);
-  var toggle = n$2(selectors$x.toggle, node);
-  var input = n$2(selectors$x.input, node);
-  var options = t$2(selectors$x.option, node);
+  var headerInner = n$2(selectors$z.headerInner);
+  var form = node.closest(selectors$z.form);
+  var list = n$2(selectors$z.list, node);
+  var toggle = n$2(selectors$z.toggle, node);
+  var input = n$2(selectors$z.input, node);
+  var options = t$2(selectors$z.option, node);
   var events = [e$2(toggle, "click", handleToggle), e$2(options, "click", submitForm), e$2(document, "click", handleBodyClick), e$2(toggle, "focusout", handleToggleFocusOut), e$2(list, "focusout", handleListFocusOut), e$2(node, "keyup", handleKeyup)];
 
   function submitForm(evt) {
@@ -9348,21 +9421,21 @@ function Disclosure(node) {
   }
 
   function positionGroup() {
-    i$1(list, classes$a.disclosureListTop);
-    i$1(list, classes$a.disclosureListRight);
+    i$1(list, classes$b.disclosureListTop);
+    i$1(list, classes$b.disclosureListRight);
     var headerInnerBounds = headerInner.getBoundingClientRect();
     var nodeBounds = node.getBoundingClientRect();
     var listBounds = list.getBoundingClientRect(); // check if the drop down list is on the right side of the screen
     // if so position the drop down aligned to the right side of the toggle button
 
     if (nodeBounds.x + listBounds.width >= headerInnerBounds.width) {
-      u$1(list, classes$a.disclosureListRight);
+      u$1(list, classes$b.disclosureListRight);
     } // check if the drop down list is too close to the bottom of the viewport
     // if so position the drop down aligned to the top of the toggle button
 
 
     if (nodeBounds.y >= window.innerHeight / 2) {
-      u$1(list, classes$a.disclosureListTop);
+      u$1(list, classes$b.disclosureListTop);
     }
   }
 
@@ -9389,7 +9462,7 @@ function setHeaderStickyHeaderHeight(value) {
   document.documentElement.style.setProperty("--header-desktop-sticky-height", value + "px");
 }
 
-var selectors$w = {
+var selectors$y = {
   disclosure: "[data-disclosure]"
 };
 register("header", {
@@ -9479,7 +9552,7 @@ register("header", {
     });
     this.ro.observe(this.container); // Wire up Cross Border disclosures
 
-    var cbSelectors = t$2(selectors$w.disclosure, this.container);
+    var cbSelectors = t$2(selectors$y.disclosure, this.container);
 
     if (cbSelectors) {
       cbSelectors.forEach(function (selector) {
@@ -9527,13 +9600,13 @@ register("header", {
   }
 });
 
-var selectors$v = {
+var selectors$x = {
   popupTrigger: "[data-popup-trigger]"
 };
 
 var passwordUnlock = function passwordUnlock(node) {
   var events = [];
-  var popupTriggers = t$2(selectors$v.popupTrigger, node);
+  var popupTriggers = t$2(selectors$x.popupTrigger, node);
 
   if (popupTriggers.length) {
     events.push(e$2(popupTriggers, "click", function (e) {
@@ -9592,7 +9665,7 @@ register("password-header", {
   }
 });
 
-var selectors$u = {
+var selectors$w = {
   disclosure: "[data-disclosure]",
   header: "[data-header]"
 };
@@ -9601,7 +9674,7 @@ register("footer", {
   onLoad: function onLoad() {
     var _this = this;
 
-    var headers = t$2(selectors$u.header, this.container);
+    var headers = t$2(selectors$w.header, this.container);
     this.headerClick = e$2(headers, "click", handleHeaderClick);
 
     function handleHeaderClick(_ref) {
@@ -9618,7 +9691,7 @@ register("footer", {
     } // Wire up Cross Border disclosures
 
 
-    var cbSelectors = t$2(selectors$u.disclosure, this.container);
+    var cbSelectors = t$2(selectors$w.disclosure, this.container);
 
     if (cbSelectors) {
       cbSelectors.forEach(function (selector) {
@@ -9637,7 +9710,7 @@ register("footer", {
   }
 });
 
-var selectors$t = {
+var selectors$v = {
   slider: "[data-slider]",
   slide: "[data-slider] [data-slide]",
   navPrev: ".slider-nav-button-prev",
@@ -9664,8 +9737,8 @@ register("announcement-bar", {
 
     this.disableTabbingToInners = function () {
       // Disable tabbing on items that aren't shown
-      var desktopOnlyInners = t$2(selectors$t.desktopOnlyInner, this.container);
-      var mobileOnlyInners = t$2(selectors$t.mobileOnlyInner, this.container);
+      var desktopOnlyInners = t$2(selectors$v.desktopOnlyInner, this.container);
+      var mobileOnlyInners = t$2(selectors$v.mobileOnlyInner, this.container);
       var desktopIsMobileSize = window.matchMedia(getMediaQuery("below-720")).matches;
       desktopOnlyInners.forEach(function (inner) {
         inner.toggleAttribute("inert", desktopIsMobileSize);
@@ -9675,10 +9748,10 @@ register("announcement-bar", {
       });
     };
 
-    this.sliderContainer = n$2(selectors$t.slider, this.container);
-    this.slides = t$2(selectors$t.slide, this.container);
-    this.navPrev = t$2(selectors$t.navPrev, this.container);
-    this.navNext = t$2(selectors$t.navNext, this.container);
+    this.sliderContainer = n$2(selectors$v.slider, this.container);
+    this.slides = t$2(selectors$v.slide, this.container);
+    this.navPrev = t$2(selectors$v.navPrev, this.container);
+    this.navNext = t$2(selectors$v.navNext, this.container);
     this.disableTabbingToInners();
     this.breakPointHandler = atBreakpointChange(720, function () {
       _this2.disableTabbingToInners();
@@ -9747,8 +9820,9 @@ register("announcement-bar", {
   }
 });
 
-var selectors$s = {
+var selectors$u = {
   item: "[data-input-item]",
+  itemProperties: "[data-item-properties]",
   quantityInput: "[data-quantity-input]",
   quantityAdd: "[data-add-quantity]",
   quantitySubtract: "[data-subtract-quantity]",
@@ -9756,31 +9830,31 @@ var selectors$s = {
 };
 function QuantityButtons(node) {
   var delegate = new Delegate(node);
-  delegate.on("click", selectors$s.quantitySubtract, function (_, target) {
-    var item = target.closest(selectors$s.item);
-    var itemId = item.dataset.id;
-    var qty = n$2(selectors$s.quantityInput, item).value;
+  delegate.on("click", selectors$u.quantitySubtract, function (_, target) {
+    var item = target.closest(selectors$u.item);
+    var key = item.dataset.key;
+    var qty = n$2(selectors$u.quantityInput, item).value;
     r$1("quantity-update:subtract", null, {
-      itemId: itemId
+      key: key
     });
-    cart.updateItem(itemId, parseInt(qty) - 1);
+    cart.updateItem(key, parseInt(qty) - 1);
   });
-  delegate.on("click", selectors$s.quantityAdd, function (_, target) {
-    var item = target.closest(selectors$s.item);
-    var itemId = item.dataset.id;
-    var qty = n$2(selectors$s.quantityInput, item).value;
+  delegate.on("click", selectors$u.quantityAdd, function (_, target) {
+    var item = target.closest(selectors$u.item);
+    var key = item.dataset.key;
+    var qty = n$2(selectors$u.quantityInput, item).value;
     r$1("quantity-update:add", null, {
-      itemId: itemId
+      key: key
     });
-    cart.updateItem(itemId, parseInt(qty) + 1);
+    cart.updateItem(key, parseInt(qty) + 1);
   });
-  delegate.on("click", selectors$s.removeItem, function (_, target) {
-    var item = target.closest(selectors$s.item);
-    var itemId = item.dataset.id;
+  delegate.on("click", selectors$u.removeItem, function (_, target) {
+    var item = target.closest(selectors$u.item);
+    var key = item.dataset.key;
     r$1("quantity-update:remove", null, {
-      itemId: itemId
+      key: key
     });
-    cart.updateItem(itemId, 0);
+    cart.updateItem(key, 0);
   });
 
   var unload = function unload() {
@@ -9793,7 +9867,7 @@ function QuantityButtons(node) {
 }
 
 var strings$3 = window.theme.strings.cart;
-var selectors$r = {
+var selectors$t = {
   cartNoteTrigger: "[data-order-note-trigger]",
   cartNoteTriggerText: "[data-cart-not-trigger-text]",
   cartNoteInputWrapper: "[cart-note-input]",
@@ -9802,16 +9876,16 @@ var selectors$r = {
 };
 function CartNoteToggle(node) {
   var delegate = new Delegate(node);
-  delegate.on("click", selectors$r.cartNoteTrigger, function (_, target) {
+  delegate.on("click", selectors$t.cartNoteTrigger, function (_, target) {
     return handleCartNoteTrigger(target);
   });
 
   function handleCartNoteTrigger(target) {
-    var inputWrapper = n$2(selectors$r.cartNoteInputWrapper, target.parentNode);
+    var inputWrapper = n$2(selectors$t.cartNoteInputWrapper, target.parentNode);
     var textInput = n$2("textarea", inputWrapper); // Handle icon change when open or close
 
-    var plusIcon = n$2(selectors$r.iconPlus, target);
-    var minusIcon = n$2(selectors$r.iconMinus, target);
+    var plusIcon = n$2(selectors$t.iconPlus, target);
+    var minusIcon = n$2(selectors$t.iconMinus, target);
     l([plusIcon, minusIcon], "hidden");
 
     if (isVisible(inputWrapper)) {
@@ -9819,7 +9893,7 @@ function CartNoteToggle(node) {
       slideUp(inputWrapper);
       inputWrapper.setAttribute("aria-expanded", false);
       inputWrapper.setAttribute("aria-hidden", true);
-      var inputTriggertext = n$2(selectors$r.cartNoteTriggerText, node); // Update cart note trigger text
+      var inputTriggertext = n$2(selectors$t.cartNoteTriggerText, node); // Update cart note trigger text
 
       if (textInput.value === "") {
         inputTriggertext.innerText = strings$3.addCartNote;
@@ -9858,7 +9932,48 @@ function updateInnerHTML(selector, doc) {
   }
 }
 
-var selectors$q = {
+var selectors$s = {
+  crossSellsSlider: "[data-cross-sells-slider]",
+  quickViewTrigger: "[data-quick-view-trigger]",
+  addToCartTrigger: "[data-add-item-id]"
+};
+function CrossSells(node) {
+  var crossSellsSlider = n$2(selectors$s.crossSellsSlider, node).dataset.crossSellsSlider;
+  var swiper = crossSellsSlider ? new Carousel(node, {
+    slidesPerView: 1.15,
+    spaceBetween: 8
+  }) : null;
+  var events = [e$2(t$2(selectors$s.quickViewTrigger, node), "click", function (e) {
+    var productUrl = e.target.dataset.productUrl;
+    if (!productUrl) return;
+    r$1("quick-view:open", null, {
+      productUrl: productUrl
+    });
+  }), e$2(t$2(selectors$s.addToCartTrigger, node), "click", function (e) {
+    var addItemId = e.target.dataset.addItemId;
+    if (!addItemId) return;
+    animateButton(e.target);
+    cart.addItemById(addItemId, 1);
+    r$1("quick-cart:scrollup");
+  })];
+
+  function animateButton(button) {
+    u$1(button, "loading");
+  }
+
+  function unload() {
+    events.forEach(function (unsubscribe) {
+      return unsubscribe();
+    });
+    swiper.destroy();
+  }
+
+  return {
+    unload: unload
+  };
+}
+
+var selectors$r = {
   cartWrapper: ".quick-cart__wrapper",
   innerContainer: ".quick-cart__container",
   overlay: ".quick-cart__overlay",
@@ -9872,9 +9987,10 @@ var selectors$q = {
   quantityInput: ".quick-cart .quantity-input__input",
   quantityItem: "[data-input-item]",
   discounts: ".quick-cart__item-discounts",
-  freeShippingBar: "[data-free-shipping-bar]"
+  freeShippingBar: "[data-free-shipping-bar]",
+  crossSells: "[data-cross-sells]"
 };
-var classes$9 = {
+var classes$a = {
   active: "active",
   hidden: "hidden",
   updatingQuantity: "has-quantity-update",
@@ -9884,7 +10000,7 @@ register("quick-cart", {
   onLoad: function onLoad() {
     var _this = this;
 
-    this.cartWrapper = n$2(selectors$q.cartWrapper, this.container);
+    this.cartWrapper = n$2(selectors$r.cartWrapper, this.container);
     this.cartTrap = createFocusTrap(this.container, {
       allowOutsideClick: true
     }); // Events are all on events trigger by other components / functions
@@ -9894,18 +10010,20 @@ register("quick-cart", {
     }), c("quick-cart:updated", function () {
       return _this.refreshQuickCart();
     }), c("quick-cart:error", function (_, _ref) {
-      var id = _ref.id,
+      var key = _ref.key,
           errorMessage = _ref.errorMessage;
 
-      _this.handleErrorMessage(id, errorMessage);
+      _this.handleErrorMessage(key, errorMessage);
+    }), c("quick-cart:scrollup", function () {
+      return _this.scrollUpQuickCart();
     }), c(["quantity-update:subtract", "quantity-update:add"], function (_, _ref2) {
-      var itemId = _ref2.itemId;
+      var key = _ref2.key;
 
-      _this.handleQuantityUpdate(itemId);
+      _this.handleQuantityUpdate(key);
     }), c("quantity-update:remove", function (_, _ref3) {
-      var itemId = _ref3.itemId;
+      var key = _ref3.key;
 
-      _this.handleItemRemoval(itemId);
+      _this.handleItemRemoval(key);
     })];
     this.quantityButtons = QuantityButtons(this.container);
     this.cartNoteToggle = CartNoteToggle(this.container);
@@ -9917,25 +10035,27 @@ register("quick-cart", {
 
 
     this.delegate = new Delegate(this.container);
-    this.delegate.on("click", selectors$q.overlay, function () {
+    this.delegate.on("click", selectors$r.overlay, function () {
       return _this.close();
     });
-    this.delegate.on("click", selectors$q.closeButton, function () {
+    this.delegate.on("click", selectors$r.closeButton, function () {
       return _this.close();
     });
-    this.delegate.on("change", selectors$q.quantityInput, function (e) {
+    this.delegate.on("change", selectors$r.quantityInput, function (e) {
       return _this.handleQuantityInputChange(e);
     });
-    var freeShippingBar$1 = n$2(selectors$q.freeShippingBar, this.container);
+    var freeShippingBar$1 = n$2(selectors$r.freeShippingBar, this.container);
 
     if (freeShippingBar$1) {
       freeShippingBar(freeShippingBar$1);
     }
+
+    this._initCrossSells();
   },
   openQuickCart: function openQuickCart() {
     var _this$animateQuickCar;
 
-    u$1(this.cartWrapper, classes$9.active);
+    u$1(this.cartWrapper, classes$a.active);
     this.cartTrap.activate();
     this.adjustItemPadding();
     (_this$animateQuickCar = this.animateQuickCart) === null || _this$animateQuickCar === void 0 ? void 0 : _this$animateQuickCar.open();
@@ -9957,12 +10077,15 @@ register("quick-cart", {
 
     var url = "".concat(theme.routes.cart.base, "?section_id=quick-cart");
     makeRequest("GET", url).then(function (response) {
+      var _this2$crossSells;
+
       var container = document.createElement("div");
       container.innerHTML = response;
-      var responseInnerContainer = n$2(selectors$q.innerContainer, container);
-      var cartHasItems = Boolean(n$2(selectors$q.items, _this2.container));
-      var responseHasItems = Boolean(n$2(selectors$q.items, container));
-      var freeShippingBar$1 = n$2(selectors$q.freeShippingBar, container);
+      var responseInnerContainer = n$2(selectors$r.innerContainer, container);
+      var cartHasItems = Boolean(n$2(selectors$r.items, _this2.container));
+      var responseHasItems = Boolean(n$2(selectors$r.items, container));
+      var freeShippingBar$1 = n$2(selectors$r.freeShippingBar, container);
+      (_this2$crossSells = _this2.crossSells) === null || _this2$crossSells === void 0 ? void 0 : _this2$crossSells.unload();
 
       if (freeShippingBar$1) {
         freeShippingBar(freeShippingBar$1);
@@ -9973,61 +10096,78 @@ register("quick-cart", {
         var _this2$animateQuickCa;
 
         // Render cart items
-        updateInnerHTML("".concat(selectors$q.cartWrapper, " ").concat(selectors$q.items), container);
+        updateInnerHTML("".concat(selectors$r.cartWrapper, " ").concat(selectors$r.items), container);
 
         _this2.adjustItemPadding(); // Render cart count
 
 
-        updateInnerHTML("".concat(selectors$q.cartWrapper, " ").concat(selectors$q.cartCount), container); // Render subtotal
+        updateInnerHTML("".concat(selectors$r.cartWrapper, " ").concat(selectors$r.cartCount), container); // Render subtotal
 
-        updateInnerHTML("".concat(selectors$q.cartWrapper, " ").concat(selectors$q.subtotal), container); // Render promotions
+        updateInnerHTML("".concat(selectors$r.cartWrapper, " ").concat(selectors$r.subtotal), container); // Render promotions
 
-        updateInnerHTML("".concat(selectors$q.cartWrapper, " ").concat(selectors$q.discounts), container); // Handle form scroll state
+        updateInnerHTML("".concat(selectors$r.cartWrapper, " ").concat(selectors$r.discounts), container); // Handle form scroll state
 
-        var form = n$2(selectors$q.form, _this2.container);
+        var form = n$2(selectors$r.form, _this2.container);
         var previousScrollPosition = form.scrollTop || 0;
         form.scrollTop = previousScrollPosition;
         (_this2$animateQuickCa = _this2.animateQuickCart) === null || _this2$animateQuickCa === void 0 ? void 0 : _this2$animateQuickCa.setup();
       } else {
         // Cart needs to render empty from having items, or needs to render
         // items from empty state
-        var innerContainer = n$2(selectors$q.innerContainer, _this2.container);
+        var innerContainer = n$2(selectors$r.innerContainer, _this2.container);
         innerContainer.innerHTML = responseInnerContainer.innerHTML;
       }
+
+      _this2._initCrossSells();
     });
   },
-  handleErrorMessage: function handleErrorMessage(itemId) {
-    var item = n$2("[data-id=\"".concat(itemId, "\"]"), this.container);
-    i$1(n$2(selectors$q.cartError, item), classes$9.hidden);
-    i$1(item, classes$9.updatingQuantity);
+  handleErrorMessage: function handleErrorMessage(key) {
+    var item = n$2("[data-key=\"".concat(key, "\"]"), this.container);
+    i$1(n$2(selectors$r.cartError, item), classes$a.hidden);
+    i$1(item, classes$a.updatingQuantity);
   },
-  handleQuantityUpdate: function handleQuantityUpdate(itemId) {
-    var item = n$2("[data-id=\"".concat(itemId, "\"]"), this.container);
-    u$1(item, classes$9.updatingQuantity);
+  handleQuantityUpdate: function handleQuantityUpdate(key) {
+    var item = n$2("[data-key=\"".concat(key, "\"]"), this.container);
+    u$1(item, classes$a.updatingQuantity);
   },
-  handleItemRemoval: function handleItemRemoval(itemId) {
-    var item = n$2("[data-id=\"".concat(itemId, "\"]"), this.container);
-    u$1(item, classes$9.removed);
-    u$1(item, classes$9.updatingQuantity);
+  handleItemRemoval: function handleItemRemoval(key) {
+    var item = n$2("[data-key=\"".concat(key, "\"]"), this.container);
+    u$1(item, classes$a.removed);
+    u$1(item, classes$a.updatingQuantity);
   },
   handleQuantityInputChange: function handleQuantityInputChange(_ref4) {
     var target = _ref4.target;
-    var item = target.closest(selectors$q.quantityItem);
-    var itemId = item.dataset.id;
-    cart.updateItem(itemId, target.value);
-    this.handleQuantityUpdate(itemId);
+    var item = target.closest(selectors$r.quantityItem);
+    var key = item.dataset.key;
+    cart.updateItem(key, target.value);
+    this.handleQuantityUpdate(key);
+  },
+  _initCrossSells: function _initCrossSells() {
+    var crossSells = n$2(selectors$r.crossSells, this.container);
+
+    if (crossSells) {
+      this.crossSells = CrossSells(crossSells);
+    }
+  },
+  scrollUpQuickCart: function scrollUpQuickCart() {
+    var form = n$2(selectors$r.form, this.container);
+    var previousScrollPosition = 0; // delay the scroll up to make it seem more 'fluid'
+
+    setTimeout(function () {
+      form.scrollTop = previousScrollPosition;
+    }, 300);
   },
   adjustItemPadding: function adjustItemPadding() {
-    var items = n$2(selectors$q.items, this.container);
+    var items = n$2(selectors$r.items, this.container);
     if (!items) return; // Ensure cart items accounts for the height of cart footer
 
-    var footer = n$2(selectors$q.footer, this.container);
+    var footer = n$2(selectors$r.footer, this.container);
     items.style.paddingBottom = "".concat(footer.clientHeight, "px");
   },
   close: function close() {
     var _this3 = this;
 
-    i$1(this.cartWrapper, classes$9.active);
+    i$1(this.cartWrapper, classes$a.active);
     setTimeout(function () {
       var _this3$animateQuickCa;
 
@@ -10054,6 +10194,83 @@ register("quick-cart", {
   }
 });
 
+var selectors$q = {
+  "settings": "[data-timer-settings]",
+  "days": "[data-days]",
+  "hours": "[data-hours]",
+  "minutes": "[data-minutes]",
+  "seconds": "[data-seconds]"
+};
+var classes$9 = {
+  "active": "active",
+  "hide": "hide",
+  "complete": "complete"
+};
+function CountdownTimer(container) {
+  var settings = n$2(selectors$q.settings, container);
+
+  var _JSON$parse = JSON.parse(settings.innerHTML),
+      year = _JSON$parse.year,
+      month = _JSON$parse.month,
+      day = _JSON$parse.day,
+      hour = _JSON$parse.hour,
+      minute = _JSON$parse.minute,
+      shopTimezone = _JSON$parse.shopTimezone,
+      timeZoneSelection = _JSON$parse.timeZoneSelection,
+      hideTimerOnComplete = _JSON$parse.hideTimerOnComplete;
+
+  var daysEl = n$2(selectors$q.days, container);
+  var hoursEl = n$2(selectors$q.hours, container);
+  var minutesEl = n$2(selectors$q.minutes, container);
+  var secondsEl = n$2(selectors$q.seconds, container);
+  var timezoneString = timeZoneSelection === "shop" ? " GMT".concat(shopTimezone) : "";
+  var countDownDate = new Date(Date.parse("".concat(month, " ").concat(day, ", ").concat(year, " ").concat(hour, ":").concat(minute).concat(timezoneString)));
+  var countDownTime = countDownDate.getTime();
+  var timerInterval = setInterval(timerLoop, 1000);
+  timerLoop();
+  u$1(container, classes$9.active);
+
+  function timerLoop() {
+    window.requestAnimationFrame(function () {
+      // Get today's date and time
+      var now = new Date().getTime(); // Find the distance between now and the count down date
+
+      var distance = countDownTime - now; // Time calculations for days, hours, minutes and seconds
+
+      var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+      var hours = Math.floor(distance % (1000 * 60 * 60 * 24) / (1000 * 60 * 60));
+      var minutes = Math.floor(distance % (1000 * 60 * 60) / (1000 * 60));
+      var seconds = Math.floor(distance % (1000 * 60) / 1000); // If the count down is finished, write some text
+
+      if (distance < 0) {
+        timerInterval && clearInterval(timerInterval);
+        daysEl.innerHTML = 0;
+        hoursEl.innerHTML = 0;
+        minutesEl.innerHTML = 0;
+        secondsEl.innerHTML = 0;
+        u$1(container, classes$9.complete);
+
+        if (hideTimerOnComplete) {
+          u$1(container, classes$9.hide);
+        }
+      } else {
+        daysEl.innerHTML = days;
+        hoursEl.innerHTML = hours;
+        minutesEl.innerHTML = minutes;
+        secondsEl.innerHTML = seconds;
+      }
+    });
+  }
+
+  function destroy() {
+    timerInterval && clearInterval(timerInterval);
+  }
+
+  return {
+    destroy: destroy
+  };
+}
+
 var selectors$p = {
   wash: ".popup__wash",
   dismissButtons: "[data-dismiss-popup]",
@@ -10061,7 +10278,8 @@ var selectors$p = {
   tabButton: ".popup__tab-button",
   tabDismiss: ".popup__tab-dismiss",
   newsletterForm: ".newsletter-form",
-  formSuccessMessage: ".form-status__message--success"
+  formSuccessMessage: ".form-status__message--success",
+  timer: "[data-countdown-timer]"
 };
 var classes$8 = {
   visible: "visible"
@@ -10074,6 +10292,7 @@ function Popup(container) {
   var wash = n$2(selectors$p.wash, container);
   var dismissButtons = t$2(selectors$p.dismissButtons, container);
   var formSuccessMessage = n$2(selectors$p.formSuccessMessage, container);
+  var timer = n$2(selectors$p.timer, container);
   var _container$dataset = container.dataset,
       delayType = _container$dataset.delayType,
       showOnExitIntent = _container$dataset.showOnExitIntent,
@@ -10099,6 +10318,12 @@ function Popup(container) {
   var signupDismissed = Boolean(getStorage(signupDismissedKey));
   var ageVerified = Boolean(getStorage(ageVerifiedKey));
   var canPopUp = true;
+  var countdownTimer = null;
+
+  if (timer) {
+    countdownTimer = CountdownTimer(timer);
+  }
+
   ShouldPopUp();
   var events = [];
 
@@ -10126,7 +10351,7 @@ function Popup(container) {
   if (tab) {
     var tabButton = n$2(selectors$p.tabButton, tab);
     var tabDismiss = n$2(selectors$p.tabDismiss, tab);
-    events.push(e$2(tabButton, "click", showPopup));
+    events.push(e$2(tabButton, "click", handleTabClick));
     events.push(e$2(tabDismiss, "click", hideTab));
   } // Show popup immediately if signup form was submitted
 
@@ -10223,12 +10448,24 @@ function Popup(container) {
 
     var timeStart = new Date(getStorage(storageKey));
     var timeEnd = new Date();
-    var hourDiff = (timeEnd - timeStart) / 1000 / 60 / 60; // Testing code will reset the timer to seconds remove once QA is complete:
-    // const hourDiff = (timeEnd - timeStart) / 1000;
-    // Will not allow popup if the hour frequency is below the previously
+    var hourDiff = (timeEnd - timeStart) / 1000 / 60 / 60; // Will not allow popup if the hour frequency is below the previously
     // set poppedup date.
 
     canPopUp = hourDiff > hourFrequency;
+  }
+
+  function handleTabClick() {
+    showPopup();
+
+    if (popupType === "flyout" && !window.Shopify.designMode) {
+      var focusable = n$2("button, [href], input, select, textarea", container);
+
+      if (focusable) {
+        focusable.focus({
+          preventScroll: true
+        });
+      }
+    }
   }
 
   function showPopup() {
@@ -10236,7 +10473,10 @@ function Popup(container) {
     popupAnimation.open();
 
     if (popupType === "popup" || popupType === "age") {
-      focusTrap.activate();
+      if (!window.Shopify.designMode) {
+        focusTrap.activate();
+      }
+
       disableBodyScroll(container);
     }
 
@@ -10302,6 +10542,8 @@ function Popup(container) {
     if (isAgeVerification) {
       enableBodyScroll(container);
     }
+
+    countdownTimer && countdownTimer.destroy();
   }
 
   return {
@@ -10458,86 +10700,13 @@ register("collection-list-slider", {
 });
 
 var selectors$n = {
-  "settings": "[data-timer-settings]",
-  "days": "[data-days]",
-  "hours": "[data-hours]",
-  "minutes": "[data-minutes]",
-  "seconds": "[data-seconds]"
-};
-var classes$7 = {
-  "active": "active",
-  "hide": "hide",
-  "complete": "complete"
-};
-function CountdownTimer(container) {
-  var settings = n$2(selectors$n.settings, container);
-
-  var _JSON$parse = JSON.parse(settings.innerHTML),
-      year = _JSON$parse.year,
-      month = _JSON$parse.month,
-      day = _JSON$parse.day,
-      hour = _JSON$parse.hour,
-      minute = _JSON$parse.minute,
-      hideTimerOnComplete = _JSON$parse.hideTimerOnComplete;
-
-  var daysEl = n$2(selectors$n.days, container);
-  var hoursEl = n$2(selectors$n.hours, container);
-  var minutesEl = n$2(selectors$n.minutes, container);
-  var secondsEl = n$2(selectors$n.seconds, container);
-  var countDownDate = new Date("".concat(month, " ").concat(day, ", ").concat(year, " ").concat(hour, ":").concat(minute)).getTime();
-  var timerInterval = setInterval(timerLoop, 1000);
-  timerLoop();
-  u$1(container, classes$7.active);
-
-  function timerLoop() {
-    window.requestAnimationFrame(function () {
-      // Get today's date and time
-      var now = new Date().getTime(); // Find the distance between now and the count down date
-
-      var distance = countDownDate - now; // Time calculations for days, hours, minutes and seconds
-
-      var days = Math.floor(distance / (1000 * 60 * 60 * 24));
-      var hours = Math.floor(distance % (1000 * 60 * 60 * 24) / (1000 * 60 * 60));
-      var minutes = Math.floor(distance % (1000 * 60 * 60) / (1000 * 60));
-      var seconds = Math.floor(distance % (1000 * 60) / 1000); // If the count down is finished, write some text
-
-      if (distance < 0) {
-        timerInterval && clearInterval(timerInterval);
-        daysEl.innerHTML = 0;
-        hoursEl.innerHTML = 0;
-        minutesEl.innerHTML = 0;
-        secondsEl.innerHTML = 0;
-        u$1(container, classes$7.complete);
-
-        if (hideTimerOnComplete) {
-          u$1(container, classes$7.hide);
-        }
-      } else {
-        daysEl.innerHTML = days;
-        hoursEl.innerHTML = hours;
-        minutesEl.innerHTML = minutes;
-        secondsEl.innerHTML = seconds;
-      }
-    });
-  }
-
-  function destroy() {
-    timerInterval && clearInterval(timerInterval);
-  }
-
-  return {
-    destroy: destroy
-  };
-}
-
-var selectors$m = {
   "timer": "[data-countdown-timer]"
 };
 register("countdown-banner", {
   onLoad: function onLoad() {
     var _this = this;
 
-    var timers = t$2(selectors$m.timer, this.container);
+    var timers = t$2(selectors$n.timer, this.container);
     this.countdownTimers = [];
     timers.forEach(function (timer) {
       _this.countdownTimers.push(CountdownTimer(timer));
@@ -10557,14 +10726,14 @@ register("countdown-banner", {
   }
 });
 
-var selectors$l = {
+var selectors$m = {
   "timer": "[data-countdown-timer]"
 };
 register("countdown-bar", {
   onLoad: function onLoad() {
     var _this = this;
 
-    var timers = t$2(selectors$l.timer, this.container);
+    var timers = t$2(selectors$m.timer, this.container);
     this.countdownTimers = [];
     timers.forEach(function (timer) {
       _this.countdownTimers.push(CountdownTimer(timer));
@@ -10638,12 +10807,12 @@ register("featured-collection-grid", {
   }
 });
 
-var selectors$k = {
+var selectors$l = {
   navItems: ".featured-collection-slider__navigation-list-item",
   sliderContainer: ".carousel",
   navButtons: ".carousel__navigation-buttons"
 };
-var classes$6 = {
+var classes$7 = {
   selected: "selected",
   visible: "visible",
   fadeout: "fadeout",
@@ -10675,9 +10844,9 @@ register("featured-collection-slider", {
     // spaceBetween?
 
     this.productItem = ProductItem(this.container);
-    this.carouselsElements = t$2(selectors$k.sliderContainer, this.container);
-    this.navItems = t$2(selectors$k.navItems, this.container);
-    this.navigationButtons = t$2(selectors$k.navButtons, this.container);
+    this.carouselsElements = t$2(selectors$l.sliderContainer, this.container);
+    this.navItems = t$2(selectors$l.navItems, this.container);
+    this.navigationButtons = t$2(selectors$l.navButtons, this.container);
     this.navItems.forEach(function (button) {
       return _this.events.push(e$2(button, "click", _this._handleNavButton.bind(_this)));
     });
@@ -10713,7 +10882,7 @@ register("featured-collection-slider", {
     e.preventDefault();
     var navigationItem = e.currentTarget.dataset.navigationItem;
 
-    if (!a$1(e.currentTarget, classes$6.selected)) {
+    if (!a$1(e.currentTarget, classes$7.selected)) {
       this._hideAll();
 
       this._show(parseInt(navigationItem, 10));
@@ -10722,42 +10891,42 @@ register("featured-collection-slider", {
   _hideAll: function _hideAll() {
     var _this2 = this;
 
-    i$1(this.navItems, classes$6.selected);
-    i$1(this.navigationButtons, classes$6.visible);
-    i$1(this.carouselsElements, classes$6.initReveal);
-    i$1(this.carouselsElements, classes$6.reveal);
+    i$1(this.navItems, classes$7.selected);
+    i$1(this.navigationButtons, classes$7.visible);
+    i$1(this.carouselsElements, classes$7.initReveal);
+    i$1(this.carouselsElements, classes$7.reveal);
 
     if (shouldAnimate(this.container)) {
-      u$1(this.carouselsElements, classes$6.fadeout);
+      u$1(this.carouselsElements, classes$7.fadeout);
       setTimeout(function () {
-        i$1(_this2.carouselsElements, classes$6.visible);
+        i$1(_this2.carouselsElements, classes$7.visible);
       }, 300);
     } else {
-      i$1(this.carouselsElements, classes$6.visible);
+      i$1(this.carouselsElements, classes$7.visible);
     }
   },
   _show: function _show(index) {
     var navigationWrapper = n$2("[data-navigation=\"".concat(index, "\"]"), this.container);
-    u$1(navigationWrapper, classes$6.visible);
+    u$1(navigationWrapper, classes$7.visible);
     var collection = n$2("[data-collection=\"".concat(index, "\"]"), this.container);
 
     if (this.navItems.length) {
       var navigationItem = n$2("[data-navigation-item=\"".concat(index, "\"]"), this.container);
-      u$1(navigationItem, classes$6.selected);
+      u$1(navigationItem, classes$7.selected);
     }
 
     if (shouldAnimate(this.container)) {
-      u$1(collection, classes$6.fadeout);
-      u$1(collection, classes$6.initReveal);
+      u$1(collection, classes$7.fadeout);
+      u$1(collection, classes$7.initReveal);
       setTimeout(function () {
-        u$1(collection, classes$6.visible);
-        i$1(collection, classes$6.fadeout);
+        u$1(collection, classes$7.visible);
+        i$1(collection, classes$7.fadeout);
         setTimeout(function () {
-          u$1(collection, classes$6.reveal);
+          u$1(collection, classes$7.reveal);
         }, 50);
       }, 300);
     } else {
-      u$1(collection, classes$6.visible);
+      u$1(collection, classes$7.visible);
     }
   },
   onUnload: function onUnload() {
@@ -10874,7 +11043,7 @@ register("gallery-carousel", {
   }
 });
 
-var selectors$j = {
+var selectors$k = {
   recommendations: "[data-recommendations]",
   carouselSlide: ".carousel__slide"
 };
@@ -10895,7 +11064,7 @@ register("recommended-products", {
     // to something like perViewSmall, perViewMedium, perViewLarge and same with
     // spaceBetween?
 
-    var content = n$2(selectors$j.recommendations, this.container);
+    var content = n$2(selectors$k.recommendations, this.container);
     if (!content) return;
     var requestUrl = "".concat(window.theme.routes.productRecommendations, "?section_id=").concat(sectionId, "&limit=").concat(limit, "&product_id=").concat(id);
     var request = new XMLHttpRequest();
@@ -10905,8 +11074,8 @@ register("recommended-products", {
       if (request.status >= 200 && request.status < 300) {
         var container = document.createElement("div");
         container.innerHTML = request.response;
-        content.innerHTML = n$2(selectors$j.recommendations, container).innerHTML;
-        var carousel = n$2(selectors$j.carouselSlide, content);
+        content.innerHTML = n$2(selectors$k.recommendations, container).innerHTML;
+        var carousel = n$2(selectors$k.carouselSlide, content);
         _this.productItem = ProductItem(_this.container);
 
         if (shouldAnimate(_this.container)) {
@@ -10952,7 +11121,7 @@ register("recommended-products", {
   }
 });
 
-var selectors$i = {
+var selectors$j = {
   slide: "[data-slide]",
   swiper: ".swiper",
   navigationPrev: ".slideshow-navigation__navigation-button--previous",
@@ -10971,15 +11140,15 @@ register("slideshow", {
     this.enableAutoplay = this.container.dataset.enableAutoplay;
     this.autoplayDuration = this.container.dataset.autoplay;
     this.slideshow = null;
-    this.slideshowContainer = n$2(selectors$i.swiper, this.container);
-    this.slides = t$2(selectors$i.slide, this.container);
+    this.slideshowContainer = n$2(selectors$j.swiper, this.container);
+    this.slides = t$2(selectors$j.slide, this.container);
     this.events.push(e$2(this.container, "focusin", function () {
       return _this.handleFocus();
     }));
 
     if (shouldAnimate(this.container)) {
       this.slideAnimations = this.slides.map(function (slide) {
-        return delayOffset(slide, [selectors$i.animatableItems], 3);
+        return delayOffset(slide, [selectors$j.animatableItems], 3);
       });
       this.observer = intersectionWatcher(this.container);
     }
@@ -10990,9 +11159,10 @@ register("slideshow", {
             Navigation = _ref.Navigation,
             Autoplay = _ref.Autoplay,
             Pagination = _ref.Pagination,
-            EffectFade = _ref.EffectFade;
+            EffectFade = _ref.EffectFade,
+            EffectCreative = _ref.EffectCreative;
         var swiperOptions = {
-          modules: [Navigation, Pagination, EffectFade],
+          modules: [Navigation, Pagination],
           slidesPerView: 1,
           grabCursor: true,
           effect: "fade",
@@ -11002,13 +11172,13 @@ register("slideshow", {
           watchSlidesProgress: true,
           loop: true,
           navigation: {
-            nextEl: selectors$i.navigationNext,
-            prevEl: selectors$i.navigationPrev
+            nextEl: selectors$j.navigationNext,
+            prevEl: selectors$j.navigationPrev
           },
           pagination: {
-            el: selectors$i.navigationDots,
+            el: selectors$j.navigationDots,
             clickable: true,
-            bulletActiveClass: selectors$i.activeDot,
+            bulletActiveClass: selectors$j.activeDot,
             bulletClass: "slideshow-navigation__dot",
             renderBullet: function renderBullet(_, className) {
               return "\n                <button class=\"".concat(className, "\" type=\"button\">\n                  <div class=\"slideshow-navigation__dot-loader\"></div>\n                </button>");
@@ -11029,11 +11199,30 @@ register("slideshow", {
           }
         };
 
-        if (_this.enableAutoplay === "true" && !prefersReducedMotion()) {
+        if (_this.enableAutoplay === "true") {
           swiperOptions.modules.push(Autoplay);
           swiperOptions.autoplay = {
             delay: _this.autoplayDuration,
             disableOnInteraction: false
+          };
+        }
+
+        if (!prefersReducedMotion()) {
+          swiperOptions.modules.push(EffectFade);
+          swiperOptions.effect = "fade";
+          swiperOptions.fadeEffect = {
+            crossFade: false
+          };
+        } else {
+          swiperOptions.modules.push(EffectCreative);
+          swiperOptions.effect = "creative";
+          swiperOptions.creativeEffect = {
+            prev: {
+              opacity: 0.99
+            },
+            next: {
+              opacity: 1
+            }
           };
         }
 
@@ -11050,7 +11239,7 @@ register("slideshow", {
   handleBulletLabels: function handleBulletLabels() {
     var _this2 = this;
 
-    var bullets = t$2(selectors$i.navigationDot, this.container);
+    var bullets = t$2(selectors$j.navigationDot, this.container);
     bullets.forEach(function (bullet, index) {
       var associatedSlide = _this2.slides[index];
       var bulletLabel = associatedSlide.dataset.bulletLabel;
@@ -11061,7 +11250,7 @@ register("slideshow", {
     this.slideshow.slideTo(parseInt(slideIndex, 10));
     this.slideshow.autoplay.stop(); // Pause all loading animations
 
-    t$2(selectors$i.navigationLoader, this.container).forEach(function (loader) {
+    t$2(selectors$j.navigationLoader, this.container).forEach(function (loader) {
       loader.style.animationPlayState = "paused";
     });
   },
@@ -11070,7 +11259,7 @@ register("slideshow", {
 
     (_this$slideshow = this.slideshow) === null || _this$slideshow === void 0 ? void 0 : _this$slideshow.autoplay.start(); // Resume all loading animations
 
-    t$2(selectors$i.navigationLoader, this.container).forEach(function (loader) {
+    t$2(selectors$j.navigationLoader, this.container).forEach(function (loader) {
       loader.style.animationPlayState = "running";
     });
   },
@@ -11109,6 +11298,175 @@ register("slideshow", {
       return unsubscribe();
     });
     (_this$observer = this.observer) === null || _this$observer === void 0 ? void 0 : _this$observer.destroy();
+  }
+});
+
+var loaded$1 = null;
+function loadYouTubeAPI() {
+  // Loading was triggered by a previous call to function
+  if (loaded$1 !== null) return loaded$1; // API has already loaded
+
+  if (window.YT && window.YT.loaded) {
+    loaded$1 = Promise.resolve();
+    return loaded$1;
+  } // Otherwise, load API
+
+
+  loaded$1 = new Promise(function (resolve) {
+    window.onYouTubeIframeAPIReady = function () {
+      resolve();
+    };
+
+    var tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.body.appendChild(tag);
+  });
+  return loaded$1;
+}
+
+var loaded = null;
+function loadVimeoAPI() {
+  // Loading was triggered by a previous call to function
+  if (loaded !== null) return loaded; // API has already loaded
+
+  if (window.Vimeo) {
+    loaded = Promise.resolve();
+    return loaded;
+  } // Otherwise, load API
+
+
+  loaded = new Promise(function (resolve) {
+    var tag = document.createElement("script");
+    tag.src = "https://player.vimeo.com/api/player.js";
+    tag.onload = resolve;
+    document.body.appendChild(tag);
+  });
+  return loaded;
+}
+
+var selectors$i = {
+  video: ".video__video",
+  videoExternal: "[data-video-external-target]",
+  image: ".video__image",
+  overlay: ".video__overlay",
+  text: ".video__text-container-wrapper",
+  playTrigger: ".video__text-container-wrapper"
+};
+var classes$6 = {
+  visible: "visible"
+};
+register("video", {
+  onLoad: function onLoad() {
+    var _this = this;
+
+    this.events = [];
+    var playTrigger = n$2(selectors$i.playTrigger, this.container);
+    var video = n$2(selectors$i.video, this.container);
+    var videoExternal = n$2(selectors$i.videoExternal, this.container);
+    var image = n$2(selectors$i.image, this.container);
+    var overlay = n$2(selectors$i.overlay, this.container);
+    var text = n$2(selectors$i.text, this.container);
+
+    if (videoExternal) {
+      var _videoExternal$datase = videoExternal.dataset,
+          videoProvider = _videoExternal$datase.videoProvider,
+          videoId = _videoExternal$datase.videoId,
+          loop = _videoExternal$datase.loop;
+
+      switch (videoProvider) {
+        case "youtube":
+          loadYouTubeAPI().then(function () {
+            var player = new window.YT.Player(videoExternal, {
+              videoId: videoId,
+              playerVars: {
+                autohide: 0,
+                cc_load_policy: 0,
+                controls: 1,
+                iv_load_policy: 3,
+                modestbranding: 1,
+                playsinline: 1,
+                rel: 0,
+                loop: loop,
+                playlist: videoId
+              },
+              events: {
+                onReady: function onReady() {
+                  player.getIframe().tabIndex = "-1";
+
+                  _this.events.push(e$2(playTrigger, "click", function () {
+                    player.playVideo();
+                  }));
+                },
+                onStateChange: function onStateChange(event) {
+                  if (event.data == YT.PlayerState.PLAYING) {
+                    player.getIframe().tabIndex = "0";
+                    hideCover();
+                  }
+                }
+              }
+            });
+          });
+          break;
+
+        case "vimeo":
+          loadVimeoAPI().then(function () {
+            var player = new window.Vimeo.Player(videoExternal, {
+              id: videoId,
+              controls: true,
+              keyboard: false
+            });
+            player.element.tabIndex = "-1";
+
+            if (loop === "true") {
+              player.setLoop(1);
+            }
+
+            _this.events.push(e$2(playTrigger, "click", function () {
+              player.play();
+              player.element.tabIndex = "0";
+              hideCover();
+            }));
+          });
+          break;
+      }
+    }
+
+    if (playTrigger) {
+      if (video) {
+        this.events.push(e$2(playTrigger, "click", function () {
+          video.play();
+        }));
+      }
+    }
+
+    if (video) {
+      this.events.push(e$2(video, "playing", function () {
+        video.setAttribute("controls", "");
+        hideCover();
+      }));
+    }
+
+    function hideCover() {
+      i$1(overlay, classes$6.visible);
+      i$1(text, classes$6.visible);
+      image && i$1(image, classes$6.visible);
+    }
+
+    if (shouldAnimate(this.container)) {
+      this.animateVideo = animateVideo(this.container);
+    }
+  },
+  onUnload: function onUnload() {
+    var _this$animateVideo;
+
+    this.playButtons && this.playButtons.forEach(function (button) {
+      return button.unload();
+    });
+    this.events.forEach(function (unsubscribe) {
+      return unsubscribe();
+    });
+    this.videoHandler && this.videoHandler();
+    (_this$animateVideo = this.animateVideo) === null || _this$animateVideo === void 0 ? void 0 : _this$animateVideo.destroy();
   }
 });
 
@@ -12172,7 +12530,7 @@ register("newsletter-compact", {
 
 var selectors$5 = {
   listContainer: "[data-events-eventbrite-container]",
-  skeletonList: ".event-item--skeleton"
+  skeletonList: ".events__list--skeleton"
 };
 var endpoints = {
   org: function org(token) {
@@ -12462,7 +12820,8 @@ var selectors$3 = {
   cartUpdateButton: ".cart__update",
   quantityInput: ".cart .quantity-input__input",
   quantityItem: "[data-input-item]",
-  freeShippingBar: "[data-free-shipping-bar]"
+  freeShippingBar: "[data-free-shipping-bar]",
+  crossSells: "[data-cross-sells]"
 };
 var classes$4 = {
   updatingQuantity: "has-quantity-update",
@@ -12479,24 +12838,26 @@ register("cart", {
       freeShippingBar(freeShippingBar$1);
     }
 
+    this._initCrossSells();
+
     if (cartNoteTrigger) this.cartNoteToggle = CartNoteToggle(this.container);
     this.quantityButtons = QuantityButtons(this.container); // Events are all on events trigger by other components / functions
 
     this.events = [c("cart:updated", function () {
       return _this.refreshCart();
     }), c("cart:error", function (_, _ref) {
-      var id = _ref.id,
+      var key = _ref.key,
           errorMessage = _ref.errorMessage;
 
-      _this.handleErrorMessage(id, errorMessage);
+      _this.handleErrorMessage(key, errorMessage);
     }), c(["quantity-update:subtract", "quantity-update:add"], function (_, _ref2) {
-      var itemId = _ref2.itemId;
+      var key = _ref2.key;
 
-      _this.handleQuantityUpdate(itemId);
+      _this.handleQuantityUpdate(key);
     }), c("quantity-update:remove", function (_, _ref3) {
-      var itemId = _ref3.itemId;
+      var key = _ref3.key;
 
-      _this.handleItemRemoval(itemId);
+      _this.handleItemRemoval(key);
     })]; // Delegate handles all click events due to rendering different content
     // within cart
 
@@ -12525,28 +12886,37 @@ register("cart", {
       if (freeShippingBar$1) {
         freeShippingBar(freeShippingBar$1);
       }
+
+      _this2._initCrossSells();
     });
   },
-  handleErrorMessage: function handleErrorMessage(itemId) {
-    var item = n$2("[data-id=\"".concat(itemId, "\"]"), this.container);
+  handleErrorMessage: function handleErrorMessage(key) {
+    var item = n$2("[data-key=\"".concat(key, "\"]"), this.container);
     i$1(n$2(selectors$3.cartError, item), "hidden");
     i$1(item, classes$4.updatingQuantity);
   },
   handleQuantityInputChange: function handleQuantityInputChange(_ref4) {
     var target = _ref4.target;
     var item = target.closest(selectors$3.quantityItem);
-    var itemId = item.dataset.id;
-    cart.updateItem(itemId, target.value);
-    this.handleQuantityUpdate(itemId);
+    var key = item.dataset.key;
+    cart.updateItem(key, target.value);
+    this.handleQuantityUpdate(key);
   },
-  handleQuantityUpdate: function handleQuantityUpdate(itemId) {
-    var item = n$2("[data-id=\"".concat(itemId, "\"]"), this.container);
+  handleQuantityUpdate: function handleQuantityUpdate(key) {
+    var item = n$2("[data-key=\"".concat(key, "\"]"), this.container);
     u$1(item, classes$4.updatingQuantity);
   },
-  handleItemRemoval: function handleItemRemoval(itemId) {
-    var item = n$2("[data-id=\"".concat(itemId, "\"]"), this.container);
+  handleItemRemoval: function handleItemRemoval(key) {
+    var item = n$2("[data-key=\"".concat(key, "\"]"), this.container);
     u$1(item, classes$4.removed);
     u$1(item, classes$4.updatingQuantity);
+  },
+  _initCrossSells: function _initCrossSells() {
+    var crossSells = n$2(selectors$3.crossSells, this.container);
+
+    if (crossSells) {
+      this.crossSells = CrossSells(crossSells);
+    }
   },
   onUnload: function onUnload() {
     var _this$cartNoteToggle;
@@ -14318,4 +14688,4 @@ headerOverlay(headerOverlayContainer); // Init back to top button
 backToTop(); // Make it easy to see exactly what theme version
 // this is by commit SHA
 
-window.SHA = "240e404511";
+window.SHA = "36aa4d0278";
