@@ -166,7 +166,7 @@ Pass in:
           %}
         {%- endif -%}
       {%- when 'featured_products' -%}
-        {%- render 'product-block-featured-products', block: block -%}
+        {%- render 'product-block-featured-products', block: block, product: prod -%}
 
       {%- when 'image' -%}
         <div

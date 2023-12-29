@@ -11,7 +11,7 @@
 {%- endcapture -%}
 
 <script>
-  console.log('Stiletto v1.5.0 by Fluorescent');
+  console.log('Stiletto v1.6.0 by Fluorescent');
 
   document.documentElement.className = document.documentElement.className.replace('no-js', '');
   if (window.matchMedia(`(prefers-reduced-motion: reduce)`) === true || window.matchMedia(`(prefers-reduced-motion: reduce)`).matches === true) {
@@ -19,7 +19,7 @@
   }
 
   window.theme = {
-    version: 'v1.5.0',
+    version: 'v1.6.0',
     moneyFormat: {{ shop.money_format | json }},
     strings: {
       name: {{ shop.name | json }},
@@ -44,7 +44,8 @@
       },
       cart: {
         editCartNote: {{ 'cart.general.order_note_button_edit' | t | json }},
-        addCartNote: {{ 'cart.general.order_note_button_add' | t | json }}
+        addCartNote: {{ 'cart.general.order_note_button_add' | t | json }},
+        quantityError: {{ 'cart.general.error' | t | json }}
       },
       pagination: {
         viewing: {{ 'general.pagination.viewing' | t | json }},

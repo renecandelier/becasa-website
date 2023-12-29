@@ -40,10 +40,11 @@
     {%- endfor -%}
   {%- endif -%}
 {%- endcapture -%}
-
+ {% comment %}		***&&&***
+ deleted article-item		
+ {% endcomment %}
 <div
   class="
-    article-item
     {% if blog_article != blank and blog_article.image == blank or show_featured_image != true %}article-item--has-no-image{% endif %}
     {% if is_featured %}article-item--is-featured{% endif %}
     animation--article-item

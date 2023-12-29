@@ -39,12 +39,26 @@ pass in :
     --z-index-item: {{ forloop.index }};
   "
 >
+  {% assign variantURL = prod.url %}		
+  {% if selectedVariant != null %}		
+      {% assign variantURL = variantURL | append: "?variant=" | append: selectedVariant.id %}		
+      {% endif %}
   <div class="product-item__inner">
     <div class="product-item__media{% if show_multiple_images %} product-item__media--multiple-images{% endif %}">
-      <a class="product-item__image-link" href="{{ prod.url | within: collection }}" aria-label="{{ prod.title }}">
+      <a class="product-item__image-link" href="{{ variantURL | within: collection }}" aria-label="{{ prod.title }}">
         {%- if show_multiple_images -%}
+           {%- assign productImage = prod.featured_image -%}		
+          {%- if indexForVariant>0 -%}		
+              {%- assign productImage = prod.media[indexForVariant] -%}		
+              {%- endif -%}		
+                    {%- if indexForVariant == 0 -%}		
+        {%- assign second_image = prod.media[1].preview_image -%}		
+              {%- else  -%}		
+              {%- assign next = indexForVariant | plus: 1 -%}		
+              {%- assign second_image = prod.media[next] -%}		
+              {%- endif -%}
           {% render 'image' with
-            image: prod.media[0].preview_image,
+            image: productImage,
             wrapper_class: 'product-item__image product-item__image--one',
             aspect_ratio: settings.product_listing_aspect_ratio,
             object_fit: settings.product_listing_media_fit
@@ -53,7 +67,7 @@ pass in :
             src_set_type: "grid"
           %}
           {% render 'image' with
-            image: prod.media[1].preview_image,
+            image: second_image,
             wrapper_class: 'product-item__image product-item__image--two',
             aspect_ratio: settings.product_listing_aspect_ratio,
             object_fit: settings.product_listing_media_fit
@@ -86,12 +100,12 @@ pass in :
 
       {% if settings.enable_quick_view and quick_view_is_beneath != true %}
         <div class="product-item__hover-action-wrap">
-          <button class="btn btn--tertiary btn--x-small show-product-quickview" tabindex="0" href="{{ prod.url | within: collection }}">{{ 'products.product.quick_view' | t }}</button>
+          <button class="btn btn--tertiary btn--x-small show-product-quickview" tabindex="0" href="{{ variantURL | within: collection }}">{{ 'products.product.quick_view' | t }}</button>
         </div>
       {% endif %}
 
       {% if settings.enable_quick_view %}
-        <button class="product-item__hoverless-quick-view-button btn btn--rounded show-product-quickview" tabindex="0" href="{{ prod.url | within: collection }}" title="{{ 'products.product.quick_view' | t }}">
+        <button class="product-item__hoverless-quick-view-button btn btn--rounded show-product-quickview" tabindex="0" href="{{ variantURL | within: collection }}" title="{{ 'products.product.quick_view' | t }}">
           {% render 'icon' with icon: 'quick-buy' %}
         </button>
       {% endif %}
@@ -103,7 +117,8 @@ pass in :
           {%- if placeholder -%}
             {{ 'homepage.onboarding.product_title' | t }}
           {%- else -%}
-            <a href="{{ prod.url | within: collection }}">{{ prod.title }}</a>
+            <a href="{{ variantURL | within: collection }}">{{ prod.title }}</a>
+
           {%- endif -%}
         </h4>
 
@@ -168,6 +183,8 @@ pass in :
       {%- endif -%}
 
     </div>
+                {% comment %}
     <div class="product-item__hover-container"></div>
+    {% endcomment %}
   </div>
 </div>

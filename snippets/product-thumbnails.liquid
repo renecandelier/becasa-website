@@ -17,9 +17,9 @@
     </button>
     <div class="product-thumbnails__viewport" data-scroll-container-viewport>
       <div class="scroll-sentinal scroll-sentinal--start" data-position="start"></div>
-      <ul class="product-thumbnails__items">
+      <ul class="product-thumbnails__items" >
         {% for media in product.media %}
-          <li class="product-thumbnails__item">
+          <li class="product-thumbnails__item" {% if product.selected_or_first_available_variant.featured_media.alt != blank and product.selected_or_first_available_variant.featured_media.alt != media.alt %}style="display: none"{% endif %}>
             <button
               type="button"
               class="product-thumbnails__item-link{% if media.id == featured_media.id %} active{% endif %}"
@@ -30,7 +30,7 @@
               {%
                 render 'image' with
                 image: media.preview_image,
-                id: media.id
+                id: media.id,
                 wrapper_class: 'product-thumbnails__item-image',
                 aspect_ratio: aspect_ratio
               %}

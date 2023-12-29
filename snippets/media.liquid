@@ -21,7 +21,7 @@
     {%- capture media_atributes -%}
       href="{{ link }}"
       {% if enable_product_lightbox %}
-        class="lightbox-image no-transition" data-pswp-src="{{ media.src | image_url }}" data-pswp-width="
+        class="lightbox-image no-transition {% if product.selected_or_first_available_variant.featured_media.alt != blank and product.selected_or_first_available_variant.featured_media.alt != media.alt %} lighthouse__hide_img {% else %} lighthouse__visible_img  {% endif %} " data-pswp-src="{{ media.src | image_url }}" data-pswp-width="
         {{- media.width -}}
         " data-pswp-height="{{ media.height }}"
       {% endif %}
@@ -38,13 +38,13 @@
       %}
     </a>
   {%- elsif media.media_type == 'video' -%}
-    {{ media | video_tag: image_size: "1024x" }}
+    {{ media | video_tag: autoplay: true, image_size: '1024x' }}
   {%- elsif media.media_type == 'external_video' -%}
     {%- liquid
       if loop_video
-        assign loop_binary = "1"
+        assign loop_binary = '1'
       else
-        assign loop_binary = "0"
+        assign loop_binary = '0'
       endif
     -%}
 
@@ -52,7 +52,12 @@
       external_video_tag will include the wrong origin parameter when viewing a shopify preview URL, the replace here is to work around that
     {% endcomment %}
     {% assign shop_domain = shop.secure_url | replace: 'https://', '' %}
-    {{ media | external_video_url: playlist: media.external_id, loop: loop_binary | external_video_tag | replace: shop_domain, request.host }}
+    {{
+      media
+      | external_video_url: playlist: media.external_id, loop: loop_binary
+      | external_video_tag
+      | replace: shop_domain, request.host
+    }}
     {% if within_carousel %}
       <div class="external-video-overlay"></div>
     {% endif %}
