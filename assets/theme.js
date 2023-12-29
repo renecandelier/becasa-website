@@ -7459,7 +7459,7 @@ var quickViewModal = function quickViewModal(node) {
 
 var icons$1 = window.theme.icons;
 function productLightbox() {
-  // ***&&&*** variant Project
+  // ***&&&*** variant Project 7463 & 7472
   var lightboxImages = t$2(".lightbox-image.lighthouse__visible_img", document);
   console.log("lightboxImages", lightboxImages)
   if (!lightboxImages.length) return;
