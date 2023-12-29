@@ -12,6 +12,8 @@
       "day": {{ day | json }},
       "hour": {{ hour | json }},
       "minute": {{ minute | json }},
+      "shopTimezone": {{ 'now' | date: '%z' | json }},
+      "timeZoneSelection": {{ time_zone_selection | json }},
       "hideTimerOnComplete": {{ hide_timer_on_complete | json }}
     }
   </script>

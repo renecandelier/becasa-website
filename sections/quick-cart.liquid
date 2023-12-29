@@ -1,9 +1,4 @@
 {%- if section.settings.enable_quick_cart -%}
-  {%- liquid
-    # Needed to input related theme settings into section
-    assign enable_confirmation_popup = settings.enable_confirmation_popup
-    assign cart_item_aspect_ratio = settings.cart_item_aspect_ratio
-  -%}
   <div
     class="
       quick-cart
@@ -26,7 +21,7 @@
             class="quick-cart__close-icon"
             aria-label="{{ 'general.accessibility.close_modal' | t }}"
           >
-            {% render 'icon-button' with small: true, icon: 'close' %}
+            {% render 'icon-button', small: true, icon: 'close' %}
           </button>
         </div>
 
@@ -36,10 +31,10 @@
               {%- render 'free-shipping-bar' %}
 
               {%- for item in cart.items -%}
-                <div class='quick-cart__item' data-input-item data-id="{{ item.id }}">
+                <div class='quick-cart__item' data-input-item data-id="{{ item.id }}" data-key="{{ item.key }}">
                   <div class='quick-cart__item-image'>
                     <a href="{{ item.url }}" class="quick-cart__item-link">
-                      {%- render 'image' with
+                      {%- render 'image',
                         image: item.image,
                         sizes: "120px",
                         prioritize_loading: true
@@ -68,17 +63,20 @@
                         <div class="quick-cart__form-item-properties fs-body-60 t-opacity-80">
                           {% for p in item.properties %}
                             {% unless p.last == blank %}
-                            <p>{{ p.first }}:
+                              <p>{{ p.first }}:
 
-                            {% if p.last contains '/uploads/' %}
-                              <a href="{{ p.last }}">{{ p.last | split: '/' | last }}</a>
-                            {% else %}
-                              {{ p.last }}
-                            {% endif %}
-                            </p>
+                              {% if p.last contains '/uploads/' %}
+                                <a href="{{ p.last }}">{{ p.last | split: '/' | last }}</a>
+                              {% else %}
+                                {{ p.last }}
+                              {% endif %}
+                              </p>
                             {% endunless %}
                           {% endfor %}
                         </div>
+                          <script type="application/json" data-item-properties>
+                            {{ item.properties | json }}
+                          </script>
                       {% endif %}
 
                       <div class="quick-cart__item-price-wrapper fs-body-75">
@@ -94,8 +92,8 @@
                       {% if item.line_level_discount_allocations.size > 0 %}
                         <ul class="quick-cart__item-discounts">
                         {% for discount_allocation in item.line_level_discount_allocations %}
-                          <li class="quick-cart__item-discount fs-body-75">
-                            {%- render 'icon' with icon: 'discount-badge' -%}
+                          <li class="quick-cart__item-discount fs-body-60">
+                            {%- render 'icon', icon: 'discount-badge' -%}
                             {{ discount_allocation.discount_application.title }} (-{{ discount_allocation.amount | money }})
                           </li>
                         {% endfor %}
@@ -104,14 +102,36 @@
                     </div>
 
                     <div class='quick-cart__item-bottom'>
-                      {% render 'quantity-input' with id: item.id, initial_value: item.quantity %}
-                      <button type="button" data-remove-item class="quick-cart__item-remove fs-body-75 t-subdued btn btn--text-link">{{ 'cart.general.remove' | t }}</button>
                       <p class="quick-cart__item-error fs-body-50 hidden">{{ 'cart.general.error' | t }}</p>
+
+                      {%- if settings.enable_low_inventory_warning -%}
+                        {%- liquid
+                          assign item_variants = item.product.variants
+                          assign item_variant = item_variants | where: "id", item.id | first
+                        -%}
+
+                        {%- if item_variant.inventory_management != blank and item_variant.inventory_policy == 'deny' and item_variant.inventory_quantity < settings.low_inventory_warning_threshold -%}
+                          <p class="quick-cart__inventory-warning fs-body-50">
+                            {{ 'cart.general.inventory_warning' | t: amount: item_variant.inventory_quantity }}
+                          </p>
+                        {%- endif -%}
+                      {%- endif -%}
+
+                      {% render 'quantity-input', id: item.id, initial_value: item.quantity %}
+
+                      <button type="button" data-remove-item class="quick-cart__item-remove fs-body-75 t-subdued btn btn--text-link">{{ 'cart.general.remove' | t }}</button>
                     </div>
 
                   </div>
                 </div>
               {%- endfor -%}
+              {%- if settings.enable_cross_sells -%}
+                {%- render 'cross-sells',
+                  cart: cart,
+                  cart_items: cart.items,
+                  is_slider: true,
+                -%}
+              {%- endif -%}
             </div>
             <div class="quick-cart__footer animation--quick-cart-footer">
               <div class="quick-cart__footer-inner">
@@ -119,8 +139,8 @@
                   <div class="quick-cart__footer-order-note-wrapper" aria-expanded="false" aria-hidden="true">
                     <button type="button" class="quick-cart__footer-order-note-trigger fs-body-75 btn btn--text-link" data-order-note-trigger>
                       <div class="quick-cart__footer-order-note-trigger-icons">
-                        {% render 'icon', with icon: 'plus-small' %}
-                        {% render 'icon', with icon: 'minus-small', class: 'hidden' %}
+                        {% render 'icon', icon: 'plus-small' %}
+                        {% render 'icon', icon: 'minus-small', class: 'hidden' %}
                       </div>
                       <span class="quick-cart__footer-order-note-trigger-text" data-cart-not-trigger-text>
                         {{ 'cart.general.order_note_button_add' | t }}
@@ -136,8 +156,8 @@
                 {%- if cart.cart_level_discount_applications.size > 0 -%}
                   <ul class="quick-cart__item-discounts">
                     {% for discount_application in cart.cart_level_discount_applications %}
-                      <li class="quick-cart__item-discount fs-body-75">
-                        {%- render 'icon' with icon: 'discount-badge' -%}
+                      <li class="quick-cart__item-discount fs-body-60">
+                        {%- render 'icon', icon: 'discount-badge' -%}
                         {{ discount_application.title }} (-{{ discount_application.total_allocated_amount | money }})
                       </li>
                     {% endfor %}
@@ -172,7 +192,7 @@
                 <div class="quick-cart__empty-state-promot-text rte ff-body fs-body-100">{{ section.settings.promotion_text }}</div>
               {%- endif -%}
               {%- for collection in section.settings.collection_list -%}
-                {%- render 'button-block' with
+                {%- render 'button-block',
                   wrapper_class: "quick-cart__empty-state-promo-button",
                   link: collection.url,
                   label: collection.title,
@@ -182,7 +202,7 @@
               {%- endfor -%}
             {%- else -%}
               {%- assign empty_label = 'cart.general.continue_shopping' | t -%}
-              {%- render 'button-block' with
+              {%- render 'button-block',
                 wrapper_class: "quick-cart__empty-state-promo-button",
                 link: routes.collections_url,
                 label: empty_label,

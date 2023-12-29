@@ -46,6 +46,7 @@
   },
   "cart": {
     "general": {
+      "add": "Ajouter",
       "cart": "Votre panier",
       "checkout": "Voir le site",
       "confirmation_popup_heading": "Article ajouté au panier",
@@ -57,6 +58,7 @@
       "free_shipping": "Votre commande bénéficie de la livraison gratuite !",
       "free_shipping_remaining_html": "Seulement {{ remaining_amount }} de la livraison gratuite !",
       "go_to_cart": "Aller au panier",
+      "inventory_warning": "Plus que {{ amount }}  !",
       "items_with_count": {
         "one": "{{ count }} item",
         "other": "{{ count }} éléments"

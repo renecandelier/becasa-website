@@ -11,7 +11,7 @@
 {%- endcomment -%}
 {%- liquid
   if focal_point
-    assign focal_alignment = focal_point | replace: "_", " "
+    assign focal_alignment = focal_point | replace: '_', ' '
   endif
 
   assign video_should_loop = true
@@ -46,5 +46,7 @@
       poster="{{poster}}"
     {% endif %}
   ></video>
+  {%- comment -%} ***&&&***
   {% render 'video-pause' %}
+  {%- endcomment -%}
 </div>

@@ -46,6 +46,7 @@
   },
   "cart": {
     "general": {
+      "add": "Hinzufügen",
       "cart": "Ihr Warenkorb",
       "checkout": "Auschecken",
       "confirmation_popup_heading": "Artikel wurde in den Warenkorb gelegt",
@@ -57,6 +58,7 @@
       "free_shipping": "Ihre Bestellung ist für den kostenlosen Versand qualifiziert!",
       "free_shipping_remaining_html": "Nur {{ remaining_amount }} vom kostenlosen Versand entfernt!",
       "go_to_cart": "In den Warenkorb gehen",
+      "inventory_warning": "Nur noch {{ amount }} übrig!",
       "items_with_count": {
         "one": "{{ count }} article",
         "other": "{{ count }} Artikel"

@@ -14,7 +14,7 @@
           </div>
 
           {%- for item in cart.items -%}
-            <div class='cart__form-item' data-input-item data-id="{{ item.id }}">
+            <div class='cart__form-item' data-input-item data-id="{{ item.id }}" data-key="{{ item.key }}">
               <div class='cart__form-item-image'>
                 <a href="{{ item.url }}" class="cart__form-item-link">
                   {%- render 'image' with
@@ -86,7 +86,22 @@
                 <div class='cart__form-item-quantity-wrapper'>
                   <p class="cart__form-item-error fs-body-50 hidden">{{ 'cart.general.error' | t }}</p>
 
+                  {% comment %} Low inventory warning {% endcomment %}
+                  {%- if settings.enable_low_inventory_warning -%}
+                    {%- liquid
+                      assign item_variants = item.product.variants
+                      assign item_variant = item_variants | where: "id", item.id | first
+                    -%}
+
+                    {%- if item_variant.inventory_management != blank and item_variant.inventory_policy == 'deny' and item_variant.inventory_quantity < settings.low_inventory_warning_threshold -%}
+                      <p class="cart__inventory-warning fs-body-50">
+                        {{ 'cart.general.inventory_warning' | t: amount: item_variant.inventory_quantity }}
+                      </p>
+                    {%- endif -%}
+                  {%- endif -%}
+
                   {% render 'quantity-input' with id: item.id, initial_value: item.quantity %}
+
                   <div class="cart__form-item-remove-wrapper">
                     <button type="button" data-remove-item class="cart__form-item-remove fs-body-75 t-subdued btn btn--text-link">{{ 'cart.general.remove' | t }}</button>
                   </div>
@@ -95,6 +110,12 @@
               </div>
             </div>
           {%- endfor -%}
+          {%- if section.settings.cross_sells_position == "below-line-items" -%}
+            {%- render 'cross-sells',
+              cart: cart,
+              cart_items: cart.items
+            -%}
+          {%- endif -%}
         </div>
 
         <div class="cart__footer-wrapper">
@@ -159,6 +180,12 @@
                 </div>
               {%- endif -%}
             </div>
+            {%- if section.settings.cross_sells_position == "below-subtotal" -%}
+              {%- render 'cross-sells',
+                cart: cart,
+                cart_items: cart.items
+              -%}
+            {%- endif -%}
           </div>
         </div>
       </form>
@@ -213,6 +240,30 @@
         "type": "checkbox",
         "label": "t:sections.main_cart.settings.show_product_currency.label",
         "default": true
+      },
+      {
+        "type": "header",
+        "content": "t:settings_schema.cart.settings.header__cross_sells.content"
+      },
+      {
+        "type": "paragraph",
+        "content": "t:sections.main_cart.settings.paragraph__cross_sells.content"
+      },
+      {
+        "id": "cross_sells_position",
+        "type": "select",
+        "label": "t:sections.main_cart.settings.cross_sells_position.label",
+        "default": "below-line-items",
+        "options": [
+          {
+            "value": "below-subtotal",
+            "label": "t:sections.main_cart.settings.cross_sells_position.option_1"
+          },
+          {
+            "value": "below-line-items",
+            "label": "t:sections.main_cart.settings.cross_sells_position.option_2"
+          }
+        ]
       }
     ]
   }
