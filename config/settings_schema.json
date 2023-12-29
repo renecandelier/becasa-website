@@ -2,7 +2,7 @@
   {
     "name": "theme_info",
     "theme_name": "Stiletto",
-    "theme_version": "1.5.0",
+    "theme_version": "1.6.0",
     "theme_author": "Fluorescent Design Inc.",
     "theme_documentation_url": "https://fluorescent.co/help/stiletto",
     "theme_support_url": "https://fluorescent.co/help/contact"
@@ -748,6 +748,91 @@
         "label": "t:settings_schema.cart.settings.free_shipping_threshold.label",
         "info": "t:settings_schema.cart.settings.free_shipping_threshold.info",
         "default": "100.00"
+      },
+      {
+        "type": "header",
+        "content": "t:settings_schema.cart.settings.header__low_inventory_warning.content"
+      },
+      {
+        "type": "paragraph",
+        "content": "t:settings_schema.cart.settings.paragraph__low_inventory_warning.content"
+      },
+      {
+        "id": "enable_low_inventory_warning",
+        "type": "checkbox",
+        "label": "t:settings_schema.cart.settings.enable_low_inventory_warning.label",
+        "default": true
+      },
+      {
+        "type": "range",
+        "id": "low_inventory_warning_threshold",
+        "label": "t:settings_schema.cart.settings.low_inventory_warning_threshold.label",
+        "min": 1,
+        "max": 50,
+        "step": 1,
+        "default": 5
+      },
+      {
+        "type": "header",
+        "content": "t:settings_schema.cart.settings.header__cross_sells.content"
+      },
+      {
+        "type": "paragraph",
+        "content": "t:settings_schema.cart.settings.paragraph__cross_sells.content"
+      },
+      {
+        "id": "enable_cross_sells",
+        "type": "checkbox",
+        "label": "t:settings_schema.cart.settings.enable_cross_sells.label",
+        "info": "t:settings_schema.cart.settings.enable_cross_sells.info",
+        "default": false
+      },
+      {
+        "id": "cross_sells_heading",
+        "type": "text",
+        "label": "t:settings_schema.cart.settings.cross_sells_heading.label",
+        "default": "Customers also bought"
+      },
+      {
+        "id": "cross_sells_show_thumbnails",
+        "type": "checkbox",
+        "label": "t:settings_schema.cart.settings.cross_sells_show_thumbnails.label",
+        "default": true
+      },
+      {
+        "id": "cross_sells_max_products",
+        "type": "range",
+        "label": "t:settings_schema.cart.settings.cross_sells_max_products.label",
+        "min": 3,
+        "max": 9,
+        "step": 1,
+        "default": 3
+      },
+      {
+        "id": "cross_sells_recommendations_type",
+        "type": "radio",
+        "label": "t:settings_schema.cart.settings.cross_sells_recommendations_type.label",
+        "options": [
+          {
+            "label": "t:settings_schema.cart.settings.cross_sells_recommendations_type.option_collection",
+            "value": "collection"
+          },
+          {
+            "label": "t:settings_schema.cart.settings.cross_sells_recommendations_type.option_product_list",
+            "value": "product-list"
+          }
+        ],
+        "default": "collection"
+      },
+      {
+        "id": "collection",
+        "type": "collection",
+        "label": "t:sections.collection_sections_shared.settings.collection.label"
+      },
+      {
+        "id": "product_list",
+        "type": "product_list",
+        "label": "t:sections.collection_sections_shared.settings.product_list.label"
       }
     ]
   },
