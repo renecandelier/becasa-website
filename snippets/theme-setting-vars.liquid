@@ -83,6 +83,7 @@
     --color-background-meta: {{ color_background_meta }};
     --color-background-meta-alpha: {{ color_background_meta | color_modify: 'alpha', 0.6 }};
     --color-background-darker-meta: {{ color_background_meta | color_darken: 5 }};
+    --color-background-darker-meta-alpha: {{ color_background_meta | color_darken: 5 | color_modify: 'alpha', 0.6 }};
     --color-background-placeholder: {{  color_background_meta | color_darken: 5 }};
     --color-background-placeholder-lighter: {{ color_background_meta | color_darken: 2 }};
     --color-foreground-placeholder: {{ settings.color_text | color_modify: 'alpha', 0.4 }};

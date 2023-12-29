@@ -279,18 +279,18 @@
       "tags": "Tagged \"{{ tags }}\""
     },
     "month_abbreviations": {
-      "April": "April",
+      "April": "Apr",
       "August": "Aug",
       "December": "Dez",
-      "February": "Feb.",
-      "January": "Jan",
+      "February": "Feb",
+      "January": "Jän",
       "July": "Juli",
       "June": "Juni",
-      "March": "Beschädigen",
-      "May": "Kann",
+      "March": "März",
+      "May": "Mai",
       "November": "Nov",
       "October": "Okt",
-      "September": "Sep"
+      "September": "Sept"
     },
     "navigation": {
       "home": "Startseite",
@@ -485,7 +485,7 @@
       "search_view_all": "Alle anzeigen"
     },
     "events": {
-      "learn_more": "Mehr erfahren"
+      "learn_more": "Mehr Informationen"
     },
     "featured_product": {
       "placeholder": {

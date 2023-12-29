@@ -279,18 +279,18 @@
       "tags": "Contrassegnato da \"{{ tags }}\""
     },
     "month_abbreviations": {
-      "April": "Aprile",
-      "August": "Agosto",
-      "December": "Dicembre",
-      "February": "Febbraio",
-      "January": "Jan",
+      "April": "apr",
+      "August": "ag",
+      "December": "dic",
+      "February": "febbr",
+      "January": "genn",
       "July": "Luglio",
-      "June": "Giugno",
-      "March": "MAR",
-      "May": "potrebbe",
-      "November": "Novembre",
-      "October": "Ottobre",
-      "September": "Settembre"
+      "June": "luglio",
+      "March": "mar",
+      "May": "magg",
+      "November": "nov",
+      "October": "ott",
+      "September": "sett"
     },
     "navigation": {
       "home": "Home",
@@ -485,7 +485,7 @@
       "search_view_all": "Visualizza tutto"
     },
     "events": {
-      "learn_more": "Per saperne di più"
+      "learn_more": "Maggiori informazioni"
     },
     "featured_product": {
       "placeholder": {

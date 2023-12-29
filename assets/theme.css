@@ -2124,6 +2124,7 @@ button.swiper-pagination-bullet{border:none;margin:0;padding:0;box-shadow:none;-
   --duration-slow:1200ms;
   --delay-small:33ms;
   --delay-normal:67ms;
+  --delay-long:133ms;
 }
 html{
   background-color:var(--color-background)
@@ -2442,24 +2443,39 @@ input[type="number"]::-webkit-outer-spin-button,
   }
 input[type="checkbox"]{
     position:relative;
-    width:calc(4px * 5);
-    width:var(--spacing-5);
-    height:calc(4px * 5);
-    height:var(--spacing-5);
+    vertical-align:middle;
+    width:0.9em;
+    width:var(--font-size-body-75, 0.9em);
+    height:0.9em;
+    height:var(--font-size-body-75, 0.9em);
     margin:0;
     border:1px solid var(--color-border-input);
     cursor:pointer
   }
+input[type="checkbox"]:before{
+      content:"";
+      position:absolute;
+      top:0;
+      right:0;
+      bottom:0;
+      left:0;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m1.88 11.988 6.21 6.103L22.467 3.83' stroke='currentColor' stroke-width='3.055'/%3E%3C/svg%3E");
+      transform:scale(0.75);
+      opacity:0;
+      transition:opacity 0.3s;
+    }
+input[type="checkbox"]:checked{
+      border-color:var(--color-text)
+    }
 input[type="checkbox"]:checked:before{
-        content:"";
-        position:absolute;
-        top:0;
-        right:0;
-        bottom:0;
-        left:0;
-        background-color:var(--color-text-input);
-        transform:scale(0.75);
+        opacity:1;
       }
+input[type="checkbox"] + label{
+      display:inline-block;
+      vertical-align:middle;
+      padding-left:calc(4px * 1);
+      padding-left:var(--spacing-1);
+    }
 input{
 }
 input[type="number"]::-webkit-outer-spin-button,
@@ -4848,19 +4864,16 @@ html:not(.no-js) body.template-password header.header--transparent .header__inne
   );
   margin-right:auto;
   margin-left:auto;
-  padding:calc(4px * 2) 3.3vw 0;
-  padding:var(--spacing-2) var(--space-outer) 0;
+  padding:calc(4px * 2) 3.3vw calc(4px * 6);
+  padding:var(--spacing-2) var(--space-outer) var(--spacing-6);
 }
-.customer .page__inner{
-    padding-bottom:calc(4px * 6);
-    padding-bottom:var(--spacing-6);
+.section .page__inner{
+    padding-bottom:0;
   }
 @media (min-width: 720px){
 .page__inner{
     padding-top:calc(4px * 6);
-    padding-top:var(--spacing-6);
-    padding-bottom:calc(4px * 6);
-    padding-bottom:var(--spacing-6)
+    padding-top:var(--spacing-6)
 }
   }
 .page__header{
@@ -7250,7 +7263,8 @@ p + .account__cta-wrap{
 .collapsible-row-list__heading{
   text-align:var(--heading-alignment);
 }
-.collapsible-row-list__heading + .collapsible-row-list-item{
+.collapsible-row-list__heading + .collapsible-row-list-item,
+.collapsible-row-list__subheading + .collapsible-row-list-item{
   margin-top:calc(4px * 7);
   margin-top:var(--spacing-7);
 }
@@ -7824,6 +7838,266 @@ html:not(.no-js):not(.prefers-reduced-motion) .animation .featured-collection-sl
 .featured-product{
   margin:0;
 }
+.image-compare{
+  --text-container-outer:10%;
+  --text-container-outer-large:14%
+}
+.image-compare.image-compare--image-right.image-compare--justify-left .image-compare__text-container-inner{
+      padding-left:0;
+    }
+.image-compare.image-compare--image-right.image-compare--justify-right .image-compare__text-container-inner{
+      padding-left:0;
+    }
+.image-compare.image-compare--image-left.image-compare--justify-right .image-compare__text-container-inner{
+      padding-right:0;
+    }
+.image-compare.image-compare--image-left.image-compare--justify-left .image-compare__text-container-inner{
+      padding-right:0;
+    }
+.image-compare__inner{
+  display:flex;
+  align-items:center;
+}
+.image-compare__inner .image-compare__text-container,
+  .image-compare__inner .image-compare__image-container{
+    width:100%;
+    height:100%;
+  }
+.image-compare--image-below .image-compare__inner{
+    flex-direction:column;
+  }
+.image-compare--image-left .image-compare__inner{
+    flex-direction:row-reverse;
+  }
+.image-compare--image-right .image-compare__inner{
+    flex-direction:row;
+  }
+@media (max-width: 719px){
+
+  .image-compare .image-compare__inner{
+      flex-direction:column
+  }
+    }
+.image-compare__text-container{
+  display:flex;
+  flex:0.5;
+  flex-direction:column;
+  justify-content:center;
+  text-align:var(--text-alignment);
+}
+@media (min-width: 720px){
+  .image-compare--image-left .image-compare__text-container-inner,
+  .image-compare--image-right .image-compare__text-container-inner{
+      padding-right:var(--text-container-outer);
+      padding-left:var(--text-container-outer)
+  }
+    }
+@media (min-width: 1200px){
+  .image-compare--image-left .image-compare__text-container-inner,
+  .image-compare--image-right .image-compare__text-container-inner{
+      padding-right:var(--text-container-outer-large);
+      padding-left:var(--text-container-outer-large)
+  }
+    }
+@media (min-width: 720px){
+
+    .image-compare--image-left .image-compare__text-container-inner .section-introduction__subheading, .image-compare--image-right .image-compare__text-container-inner .section-introduction__subheading{
+        margin-bottom:0
+    }
+      }
+.image-compare__image-container{
+  position:relative;
+  display:flex;
+  flex:0.5;
+  max-width:var(--image-max-width);
+  margin:0 auto;
+  --position:50%;
+}
+.image-compare__image-container-inner{
+  position:relative;
+  width:100%;
+}
+.image-compare__image-container-inner .image-compare__image-after{
+    position:absolute;
+    top:0;
+    right:0;
+    bottom:0;
+    left:0;
+  }
+.image-compare--horizontal .image-compare__image-container-inner .image-compare__image-after{
+      -webkit-clip-path:inset(0 0 0 var(--position));
+              clip-path:inset(0 0 0 var(--position));
+    }
+.image-compare--vertical .image-compare__image-container-inner .image-compare__image-after{
+      -webkit-clip-path:inset(calc(100% - var(--position)) 0 0 0);
+              clip-path:inset(calc(100% - var(--position)) 0 0 0);
+    }
+.image-compare__image--blur .image-compare__image{
+    filter:blur(var(--filter-amount));
+  }
+.image-compare__image--brightness .image-compare__image{
+    filter:brightness(var(--filter-amount));
+  }
+.image-compare__image--contrast .image-compare__image{
+    filter:contrast(var(--filter-amount));
+  }
+.image-compare__image--grayscale .image-compare__image{
+    filter:grayscale(var(--filter-amount));
+  }
+.image-compare__image--invert .image-compare__image{
+    filter:invert(var(--filter-amount));
+  }
+.image-compare__image--saturate .image-compare__image{
+    filter:saturate(var(--filter-amount));
+  }
+.image-compare__image--sepia .image-compare__image{
+    filter:sepia(var(--filter-amount));
+  }
+.image-compare__overlay{
+  position:absolute;
+  top:0;
+  right:0;
+  bottom:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:var(--overlay-background);
+  background:var(--overlay-background-gradient, var(--overlay-background));
+  opacity:var(--overlay-opacity);
+}
+.image-compare__image-wrapper{
+  overflow:hidden;
+}
+.image-compare__image-wrapper .placeholder-image__inner{
+    overflow:hidden;
+  }
+.image-compare__label-container-wrapper{
+  display:flex;
+  position:absolute;
+  top:0;
+  right:0;
+  bottom:0;
+  left:0;
+  justify-content:var(--text-horizontal-position);
+  align-items:var(--text-vertical-position);
+  max-width:calc(1400px + calc(3.3vw * 2));
+  max-width:calc(var(--max-width) + calc(var(--space-outer) * 2));
+  margin:0 auto;
+  padding:calc(4px * 2) calc(4px * 2);
+  padding:var(--spacing-2) var(--spacing-2);
+  color:var(--color-text)
+}
+@media (min-width: 720px){
+.image-compare__label-container-wrapper{
+    padding:calc(4px * 3) calc(4px * 3);
+    padding:var(--spacing-3) var(--spacing-3)
+}
+  }
+.image-compare__label-container{
+  background-color:var(--color-text-container);
+  padding:calc(4px * 1) calc(4px * 3);
+  padding:var(--spacing-1) var(--spacing-3);
+  max-width:600px;
+  transition:opacity 500ms cubic-bezier(0.33, 0, 0, 1);
+  transition:opacity var(--duration-normal) var(--easing);
+}
+.image-compare__slider{
+  position:absolute;
+  top:0;
+  right:0;
+  bottom:0;
+  left:0;
+  cursor:ew-resize;
+  opacity:0;
+  width:100%;
+  height:100%;
+}
+.image-compare--vertical .image-compare__slider{
+    cursor:ns-resize;
+    -ms-writing-mode:bt-lr;
+        writing-mode:bt-lr;
+    -webkit-appearance:slider-vertical;
+  }
+.image-compare__slider.focus-visible ~ .image-compare__slider-button{
+  outline:2px solid;
+  outline-offset:3px;
+}
+.image-compare__slider:focus-visible ~ .image-compare__slider-button{
+  outline:2px solid;
+  outline-offset:3px;
+}
+.image-compare__slider-line{
+  position:absolute;
+  background-color:var(--slider-color);
+  pointer-events:none;
+}
+.image-compare--horizontal .image-compare__slider-line{
+    width:2px;
+    height:100%;
+    transform:translateX(-50%);
+    left:var(--position);
+  }
+.image-compare--vertical .image-compare__slider-line{
+    width:100%;
+    height:2px;
+    transform:translateY(50%);
+    bottom:var(--position);
+  }
+.image-compare__slider-button{
+  height:40px;
+  width:40px;
+  position:absolute;
+  display:grid;
+  align-items:center;
+  justify-items:center;
+  place-items:center;
+  background-color:var(--slider-color);
+  color:black;
+  border-radius:50%;
+  pointer-events:none;
+  box-shadow:1px 1px 1px hsl(0, 50%, 2%, 0.5);
+}
+.image-compare--horizontal .image-compare__slider-button{
+    transform:translate(-50%, -50%);
+    top:50%;
+    left:var(--position);
+  }
+.image-compare--horizontal .image-compare__slider-button .image-compare__slider-button-arrows{
+      grid-template-columns:repeat(2, 1fr);
+    }
+.image-compare--horizontal .image-compare__slider-button .image-compare__slider-button-arrow-before .icon{
+          transform:rotate(90deg);
+        }
+.image-compare--horizontal .image-compare__slider-button .image-compare__slider-button-arrow-after .icon{
+          transform:rotate(-90deg);
+        }
+.image-compare--vertical .image-compare__slider-button{
+    transform:translate(-50%, 50%);
+    left:50%;
+    bottom:var(--position);
+  }
+.image-compare--vertical .image-compare__slider-button .image-compare__slider-button-arrows{
+      grid-template-rows:repeat(2, 1fr);
+    }
+.image-compare--vertical .image-compare__slider-button .image-compare__slider-button-arrow-before .icon{
+          transform:rotate(180deg);
+        }
+.image-compare__slider-button-arrows{
+  display:grid;
+  align-items:center;
+  justify-items:center;
+  place-items:center;
+  height:20px;
+  width:20px;
+}
+.image-compare__slider-button-arrow{
+  color:var(--slider-arrows-color);
+  line-height:0;
+}
+.image-compare__slider-button-arrow .icon{
+    width:10px;
+    height:10px;
+  }
 .image-hero{
   position:relative;
   color:var(--color-text)
@@ -10094,17 +10368,21 @@ body.template-password.header-transparent-on-home
   margin-top:calc(4px * 3);
   margin-top:var(--spacing-3);
 }
-.sales-banner{
+.sales-banner,
+.promo-banner{
   --min-height:0px;
   --min-height-mobile:0px;
   color:var(--color-text);
 }
-.sales-banner__inner{
+.sales-banner__inner,
+.promo-banner__inner{
   position:relative;
   background-color:var(--color-background);
 }
 .sales-banner__image,
-.sales-banner__image.image .image__img{
+.sales-banner__image.image .image__img,
+.promo-banner__image,
+.promo-banner__image.image .image__img{
   display:block;
   position:absolute;
   -o-object-fit:cover;
@@ -10118,20 +10396,36 @@ body.template-password.header-transparent-on-home
   width:100%;
   height:100%
 }
-.sales-banner__image.sales-banner__image--mobile, .sales-banner__image.image .image__img.sales-banner__image--mobile{
+.sales-banner__image.sales-banner__image--mobile,
+  .sales-banner__image.promo-banner__image--mobile,
+  .sales-banner__image.image .image__img.sales-banner__image--mobile,
+  .sales-banner__image.image .image__img.promo-banner__image--mobile,
+  .promo-banner__image.sales-banner__image--mobile,
+  .promo-banner__image.promo-banner__image--mobile,
+  .promo-banner__image.image .image__img.sales-banner__image--mobile,
+  .promo-banner__image.image .image__img.promo-banner__image--mobile{
     display:none
   }
 @media (max-width: 719px){
-.sales-banner__image.sales-banner__image--mobile, .sales-banner__image.image .image__img.sales-banner__image--mobile{
+.sales-banner__image.sales-banner__image--mobile,
+  .sales-banner__image.promo-banner__image--mobile,
+  .sales-banner__image.image .image__img.sales-banner__image--mobile,
+  .sales-banner__image.image .image__img.promo-banner__image--mobile,
+  .promo-banner__image.sales-banner__image--mobile,
+  .promo-banner__image.promo-banner__image--mobile,
+  .promo-banner__image.image .image__img.sales-banner__image--mobile,
+  .promo-banner__image.image .image__img.promo-banner__image--mobile{
       display:block
   }
     }
 @media (max-width: 719px){
-.sales-banner__image.sales-banner__image--mobile + .sales-banner__image{
+.sales-banner__image.sales-banner__image--mobile + .sales-banner__image,
+.promo-banner__image.promo-banner__image--mobile + .promo-banner__image{
     display:none
 }
   }
-.sales-banner__overlay{
+.sales-banner__overlay,
+.promo-banner__overlay{
   position:absolute;
   top:0;
   right:0;
@@ -10141,7 +10435,8 @@ body.template-password.header-transparent-on-home
   background:var(--overlay-background-gradient, var(--overlay-background));
   opacity:var(--overlay-opacity);
 }
-.sales-banner__content{
+.sales-banner__content,
+.promo-banner__content{
   position:relative;
   display:flex;
   flex-direction:column;
@@ -10152,13 +10447,19 @@ body.template-password.header-transparent-on-home
   padding:var(--spacing-4);
   overflow:hidden;
 }
-.sales-banner--bar .sales-banner__content{
+.sales-banner--bar .sales-banner__content,
+  .promo-banner--bar .sales-banner__content,
+  .sales-banner--bar .promo-banner__content,
+  .promo-banner--bar .promo-banner__content{
     padding-right:3.3vw;
     padding-right:var(--space-outer);
     padding-left:3.3vw;
     padding-left:var(--space-outer);
   }
-.sales-banner--frame .sales-banner__content::before{
+.sales-banner--frame .sales-banner__content::before,
+  .promo-banner--frame .sales-banner__content::before,
+  .sales-banner--frame .promo-banner__content::before,
+  .promo-banner--frame .promo-banner__content::before{
     content:"";
     position:absolute;
     top:calc(4px * 4);
@@ -10172,13 +10473,17 @@ body.template-password.header-transparent-on-home
     border:solid 1px var(--color-text);
   }
 @media (min-width: 720px){
-.sales-banner__content{
+.sales-banner__content,
+.promo-banner__content{
     min-height:var(--min-height);
     padding:calc(4px * 5);
     padding:var(--spacing-5);
 }
 
-    .sales-banner--frame .sales-banner__content::before{
+    .sales-banner--frame .sales-banner__content::before,
+    .promo-banner--frame .sales-banner__content::before,
+    .sales-banner--frame .promo-banner__content::before,
+    .promo-banner--frame .promo-banner__content::before{
       top:calc(4px * 5);
       top:var(--spacing-5);
       left:calc(4px * 5);
@@ -10189,7 +10494,8 @@ body.template-password.header-transparent-on-home
       bottom:var(--spacing-5);
     }
   }
-.sales-banner__two-columns{
+.sales-banner__columns,
+.promo-banner__columns{
   position:relative;
   width:100%;
   padding:calc(4px * 4);
@@ -10197,32 +10503,79 @@ body.template-password.header-transparent-on-home
 }
 @media (max-width: 719px){
 
-  .sales-banner--frame .sales-banner__two-columns{
+  .sales-banner--frame .sales-banner__columns,
+  .promo-banner--frame .sales-banner__columns,
+  .sales-banner--frame .promo-banner__columns,
+  .promo-banner--frame .promo-banner__columns{
       padding:calc(4px * 8);
       padding:var(--spacing-8)
   }
     }
 @media (min-width: 720px){
-.sales-banner__two-columns{
+.sales-banner__columns,
+.promo-banner__columns{
     padding:calc(4px * 10) calc(4px * 5);
     padding:var(--spacing-10) var(--spacing-5)
 }
   }
-.sales-banner__two-columns-inner{
+@media (min-width: 720px){
+.promo-banner__columns{
+    padding:calc(4px * 10) calc(4px * 12);
+    padding:var(--spacing-10) var(--spacing-12)
+}
+  }
+@media (min-width: 1200px){
+.promo-banner__columns{
+    padding:calc(4px * 10) calc(4px * 15);
+    padding:var(--spacing-10) var(--spacing-15)
+}
+  }
+.sales-banner__columns-inner{
   max-width:1400px;
   max-width:var(--max-width);
   margin:0 auto
 }
 @media (min-width: 720px){
-.sales-banner__two-columns-inner{
+.sales-banner__columns-inner{
     display:flex;
-    justify-content:center
+    justify-content:center;
 }
+
+    .sales-banner--layout-one-column .sales-banner__columns-inner{
+      flex-direction:column;
+      align-items:center;
+    }
+  }
+.promo-banner__columns-inner{
+  max-width:1400px;
+  max-width:var(--max-width);
+  margin:0 auto
+}
+@media (min-width: 960px){
+.promo-banner__columns-inner{
+    display:flex;
+    justify-content:center;
+}
+
+    .sales-banner--layout-one-column .promo-banner__columns-inner{
+      flex-direction:column;
+      align-items:center;
+    }
   }
 .sales-banner__column{
   padding-bottom:calc(4px * 12);
   padding-bottom:var(--spacing-12);
 }
+.sales-banner--layout-one-column .sales-banner__column{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    padding-bottom:0;
+  }
+.sales-banner--layout-one-column .sales-banner__column + .sales-banner__column::before{
+    content:none;
+  }
 .sales-banner__column + .sales-banner__column{
     position:relative
   }
@@ -10264,26 +10617,135 @@ body.template-password.header-transparent-on-home
         width:1px;
         height:auto;
       }
+
+    .sales-banner--layout-one-column .sales-banner__column{
+      flex-basis:50%;
+      flex-shrink:0;
+      width:50%;
+      align-items:center;
+      padding:0;
+    }
+
+    .sales-banner--layout-one-column .sales-banner__column + .sales-banner__column{
+      align-items:center;
+      margin-top:calc(4px * 9);
+      margin-top:var(--spacing-9);
+    }
   }
 @media (min-width: 1200px){
 .sales-banner__column{
     padding:0 6.5%
 }
   }
-.sales-banner__column-inner{
+.promo-banner__column.promo-banner__column--alignment-center{
+    text-align:center;
+  }
+.promo-banner__column.promo-banner__column--alignment-right{
+    text-align:right;
+  }
+@media (max-width: 959px){
+.promo-banner__column.promo-banner__column--alignment-mobile-center{
+      text-align:center
+  }
+    }
+@media (max-width: 959px){
+.promo-banner__column.promo-banner__column--alignment-mobile-right{
+      text-align:right
+  }
+    }
+.promo-banner__column + .promo-banner__column{
+    padding-top:calc(4px * 12);
+    padding-top:var(--spacing-12);
+  }
+@media (min-width: 960px){
+.promo-banner__column{
+    flex-shrink:0;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding-right:5%
+}
+
+    .promo-banner__column:first-of-type{
+      flex-basis:50%;
+      flex-basis:var(--left-column-width, 50%);
+      max-width:50%;
+      max-width:var(--left-column-width, 50%);
+    }
+
+    .promo-banner__column:last-of-type{
+      flex-basis:50%;
+      flex-basis:var(--right-column-width, 50%);
+      width:50%;
+      width:var(--right-column-width, 50%);
+    }
+
+    .promo-banner__column + .promo-banner__column{
+      padding-top:0;
+      padding-right:0;
+      padding-left:5%;
+    }
+  }
+@media (min-width: 1200px){
+.promo-banner__column{
+    padding-right:6.5%;
+}
+
+    .promo-banner__column + .promo-banner__column{
+      padding-right:0;
+      padding-left:6.5%;
+    }
+  }
+.sales-banner__column-inner,
+.promo-banner__column-inner{
   display:inline-block;
 }
-.sales-banner__button-group{
+.sales-banner--layout-one-column .sales-banner__column-inner, .sales-banner--layout-one-column .promo-banner__column-inner{
+    text-align:center;
+  }
+.sales-banner__button-group,
+.promo-banner__button-group{
   display:flex;
   flex-wrap:wrap;
   align-items:center;
   margin:calc(calc(4px * 2) * -1);
   margin:calc(var(--spacing-2) * -1);
 }
-.sales-banner__button{
+.sales-banner--layout-one-column .sales-banner__button-group, .sales-banner--layout-one-column .promo-banner__button-group{
+    justify-content:center;
+  }
+.promo-banner__column--alignment-center .sales-banner__button-group, .promo-banner__column--alignment-center .promo-banner__button-group{
+    justify-content:center;
+  }
+.promo-banner__column--alignment-right .sales-banner__button-group, .promo-banner__column--alignment-right .promo-banner__button-group{
+    justify-content:flex-end;
+  }
+@media (max-width: 959px){
+
+  .promo-banner__column--alignment-mobile-center .sales-banner__button-group, .promo-banner__column--alignment-mobile-center .promo-banner__button-group{
+      justify-content:center
+  }
+    }
+@media (max-width: 959px){
+
+  .promo-banner__column--alignment-mobile-right .sales-banner__button-group, .promo-banner__column--alignment-mobile-right .promo-banner__button-group{
+      justify-content:flex-end
+  }
+    }
+.sales-banner__button,
+.promo-banner__button{
   margin:calc(4px * 2);
   margin:var(--spacing-2);
 }
+.promo-banner__giant-heading{
+  font-size:var(--giant-heading-font-size-mobile);
+  line-height:var(--line-height-heading)
+}
+@media (min-width: 960px){
+.promo-banner__giant-heading{
+    font-size:var(--giant-heading-font-size)
+}
+  }
 .sales-banner__bar{
   width:100%
 }
@@ -10990,6 +11452,9 @@ body.template-password.header-transparent-on-home
 .events{
   --date-badge-min-width:50px;
   --date-badge-min-width-large:65px;
+
+  background-color:var(--section-background-color);
+  color:var(--color-text);
 }
 .events__header{
   width:100%;
@@ -11048,14 +11513,14 @@ body.template-password.header-transparent-on-home
   margin-bottom:var(--spacing-1);
 }
 .event-item__date{
-  color:var(--color-text-meta)
+  color:var(--color-text-alpha-60)
 }
 .event-item__date.skeleton{
     margin-bottom:calc(4px * 1);
     margin-bottom:var(--spacing-1);
   }
 .event-item__venue{
-  color:var(--color-text-meta);
+  color:var(--color-text-alpha-60);
 }
 .event-item__summary{
   margin-top:calc(4px * 3);
@@ -11082,8 +11547,9 @@ body.template-password.header-transparent-on-home
   min-width:var(--date-badge-min-width);
   padding:calc(4px * 1) calc(4px * 2);
   padding:var(--spacing-1) var(--spacing-2);
-  border:solid 1px var(--color-text);
-  background-color:var(--color-background);
+  border:solid 1px var(--color-badge-text);
+  background-color:var(--color-badge-background);
+  color:var(--color-badge-text);
   text-align:center
 }
 @media (min-width: 960px){
@@ -11119,8 +11585,180 @@ body.template-password.header-transparent-on-home
     margin-top:var(--spacing-1);
     padding-top:calc(4px * 1);
     padding-top:var(--spacing-1);
-    border-top:solid 1px var(--color-text-alpha);
+    border-top:solid 1px var(--color-badge-text-alpha-30);
   }
+.product-tabs{
+  background-color:var(--section-background-color);
+  color:var(--color-text);
+}
+.product-tabs .accordion{
+    margin-top:0
+  }
+.product-tabs .accordion:last-of-type{
+      margin-bottom:0;
+    }
+.product-tabs .accordion + .accordion > .accordion__inner{
+    border-top:0;
+  }
+.product-tabs .accordion__label{
+    text-align:left;
+  }
+.product-tabs .accordion__content{
+    padding-top:calc(4px * 5);
+    padding-top:var(--spacing-5);
+  }
+.product-tabs .accordion__label-icons .icon{
+    position:static;
+  }
+.product-tabs__tab-buttons{
+  display:flex;
+  align-items:flex-end;
+  padding:0;
+  margin:0;
+  margin-bottom:calc(4px * 11);
+  margin-bottom:var(--spacing-11);
+  border-bottom:solid 1px var(--color-border);
+  list-style:none;
+}
+.product-tabs__tab-buttons li{
+    margin-right:--spacing-6;
+    margin-right:var(--tab-spacing, --spacing-6);
+  }
+.product-tabs--center .product-tabs__tab-buttons{
+    justify-content:center;
+  }
+.product-tabs--center .product-tabs__tab-buttons li{
+      margin-right:calc(--spacing-6 / 2);
+      margin-right:calc(var(--tab-spacing, --spacing-6) / 2);
+      margin-left:calc(--spacing-6 / 2);
+      margin-left:calc(var(--tab-spacing, --spacing-6) / 2);
+    }
+.no-js .product-tabs__tab-buttons{
+    display:none;
+  }
+@media (max-width: 959px){
+.product-tabs__tab-buttons{
+    display:none
+}
+  }
+.product-tabs__tab-button{
+  display:flex;
+  flex-direction:column;
+  margin-bottom:-1px;
+  opacity:0.7
+}
+.product-tabs__tab-button[aria-expanded="true"]{
+    opacity:1;
+  }
+.product-tabs__tab-button[aria-expanded="true"] .indicator{
+      width:100%;
+    }
+.product-tabs__tab-button .indicator{
+    margin:calc(4px * 2) auto 0;
+    margin:var(--spacing-2) auto 0;
+    width:0%;
+    height:2px;
+    background-color:var(--color-text);
+    transition:width 500ms cubic-bezier(0.33, 0, 0, 1);
+    transition:width var(--duration-normal) var(--easing);
+  }
+.product-tabs__tab-list{
+  position:relative;
+  display:block;
+  margin:0;
+  padding:0;
+  list-style:none;
+  z-index:1;
+  overflow:hidden;
+  transition:height 500ms cubic-bezier(0.33, 0, 0, 1);
+  transition:height var(--duration-normal) var(--easing)
+}
+@media (max-width: 959px){
+.product-tabs__tab-list{
+    display:none
+}
+  }
+.product-tabs__tab-item{
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  z-index:1;
+  visibility:hidden;
+  opacity:0;
+  transition:opacity 500ms cubic-bezier(0.33, 0, 0, 1), visibility 0s 0s;
+  transition:opacity var(--duration-normal) var(--easing), visibility 0s 0s;
+}
+html.no-js .product-tabs__tab-item{
+    position:static;
+    opacity:1;
+    visibility:visible;
+  }
+.product-tabs__tab-item[aria-hidden="false"]{
+    z-index:2;
+    opacity:1;
+    visibility:visible;
+    transition:opacity 500ms cubic-bezier(0.33, 0, 0, 1);
+    transition:opacity var(--duration-normal) var(--easing);
+  }
+@media (min-width: 960px){
+.product-tabs__mobile-accordions{
+    display:none
+}
+  }
+.product-tabs__tab-item-content{
+  display:grid;
+  grid-template-columns:repeat(1, 1fr);
+  grid-gap:calc(4px * 5);
+  gap:calc(4px * 5);
+  grid-gap:var(--spacing-5);
+  gap:var(--spacing-5)
+}
+@media (min-width: 720px){
+.product-tabs__tab-item-content{
+    max-width:var(--text-max-width)
+}
+  }
+@media (min-width: 960px){
+
+  .product-tabs--center .product-tabs__tab-item-content{
+      margin-right:auto;
+      margin-left:auto
+  }
+    }
+@media (min-width: 960px){
+.product-tabs__tab-item-content{
+    grid-template-columns:repeat(1, 1fr);
+    grid-template-columns:repeat(var(--grid-columns-desktop, 1), 1fr);
+    grid-gap:var(--spacing-5);
+    gap:var(--spacing-5);
+    grid-gap:var(--grid-gap-column-desktop, var(--spacing-5));
+    gap:var(--grid-gap-column-desktop, var(--spacing-5))
+}
+  }
+.product-tabs__tab-item-content.product-tabs__tab-item-content--vertical-alignment-center{
+    align-items:center;
+  }
+.product-tabs__tab-item-content.product-tabs__tab-item-content--vertical-alignment-bottom{
+    align-items:flex-end;
+  }
+.product-tabs__tab-image-figure{
+  max-width:var(--image-max-width);
+  margin:0;
+}
+.product-tabs__tab-text-container > :first-child{
+    margin-top:0;
+  }
+.product-tabs__tab-text-container + .product-tabs__tab-image-figure,
+.product-tabs__tab-image-figure + .product-tabs__tab-text-container{
+  margin-top:calc(4px * 7);
+  margin-top:var(--spacing-7);
+}
+.product-tabs__tab-heading,
+.product-tabs__tab-text{
+  margin-top:calc(4px * 4);
+  margin-top:var(--spacing-4);
+}
 .breadcrumbs{
   display:flex;
 }
@@ -11380,6 +12018,64 @@ body.template-password.header-transparent-on-home
     transform:translateX(0%);
   }
 }
+.gallery-item__image-wrapper{
+  position:relative;
+  display:block;
+  overflow:hidden;
+}
+.gallery-item__image-wrapper .gallery-item__label{
+    position:absolute;
+    bottom:0;
+    width:100%;
+    padding:calc(4px * 3) calc(4px * 4);
+    padding:var(--spacing-3) var(--spacing-4);
+    color:var(--color-background);
+    color:var(--overlay-text-color, var(--color-background));
+  }
+.gallery-item--label-background-solid .gallery-item__image-wrapper .gallery-item__label{
+      background-color:var(--label-background);
+    }
+.gallery-item--label-background-gradient .gallery-item__image-wrapper .gallery-item__label{
+      background:linear-gradient(
+        to top,
+        var(--label-gradient-start) 0%,
+        var(--label-gradient-mid) 30%,
+        var(--label-gradient-end) 100%
+      );
+      padding-top:100px;
+    }
+.gallery-item__image-wrapper .gallery-item__label .gallery-item__title{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      word-break:break-word;
+    }
+.gallery-item__image-wrapper + .gallery-item__label{
+    margin-top:calc(4px * 4);
+    margin-top:var(--spacing-4);
+  }
+@media (max-width: 719px){
+    .gallery-item--label-overlay .gallery-item__image-wrapper .gallery-item__label{
+        display:none
+    }
+      }
+@media (min-width: 720px){
+
+    .gallery-item--label-overlay .gallery-item__image-wrapper + .gallery-item__label{
+        display:none
+    }
+      }
+.gallery-item__label a{
+    text-decoration:underline;
+    transition:opacity 0.25s
+  }
+.gallery-item__label a:hover{
+      opacity:0.6;
+    }
+.gallery-item__label .gallery-item__title + p{
+      margin-top:calc(4px * 1);
+      margin-top:var(--spacing-1);
+    }
 .disclosure-form{
   position:relative;
   align-self:center;
@@ -11536,12 +12232,14 @@ body.template-password.header-transparent-on-home
   .image.aspect-ratio--square,
   .image.aspect-ratio--landscape_alt,
   .image.aspect-ratio--portrait_alt,
+  .image.aspect-ratio--landscape_wide_alt,
   .image.aspect-ratio--externally_set,
   .video-wrapper.aspect-ratio--landscape,
   .video-wrapper.aspect-ratio--portrait,
   .video-wrapper.aspect-ratio--square,
   .video-wrapper.aspect-ratio--landscape_alt,
   .video-wrapper.aspect-ratio--portrait_alt,
+  .video-wrapper.aspect-ratio--landscape_wide_alt,
   .video-wrapper.aspect-ratio--externally_set{
     position:relative;
     height:0;
@@ -11561,6 +12259,9 @@ body.template-password.header-transparent-on-home
     .image.aspect-ratio--portrait_alt .image__img,
     .image.aspect-ratio--portrait_alt .image__inner,
     .image.aspect-ratio--portrait_alt .video,
+    .image.aspect-ratio--landscape_wide_alt .image__img,
+    .image.aspect-ratio--landscape_wide_alt .image__inner,
+    .image.aspect-ratio--landscape_wide_alt .video,
     .image.aspect-ratio--externally_set .image__img,
     .image.aspect-ratio--externally_set .image__inner,
     .image.aspect-ratio--externally_set .video,
@@ -11579,6 +12280,9 @@ body.template-password.header-transparent-on-home
     .video-wrapper.aspect-ratio--portrait_alt .image__img,
     .video-wrapper.aspect-ratio--portrait_alt .image__inner,
     .video-wrapper.aspect-ratio--portrait_alt .video,
+    .video-wrapper.aspect-ratio--landscape_wide_alt .image__img,
+    .video-wrapper.aspect-ratio--landscape_wide_alt .image__inner,
+    .video-wrapper.aspect-ratio--landscape_wide_alt .video,
     .video-wrapper.aspect-ratio--externally_set .image__img,
     .video-wrapper.aspect-ratio--externally_set .image__inner,
     .video-wrapper.aspect-ratio--externally_set .video{
@@ -11608,6 +12312,9 @@ body.template-password.header-transparent-on-home
   }
 .image.aspect-ratio--portrait_alt, .video-wrapper.aspect-ratio--portrait_alt{
     padding-top:calc((5 / 4) * 100%);
+  }
+.image.aspect-ratio--landscape_wide_alt, .video-wrapper.aspect-ratio--landscape_wide_alt{
+    padding-top:calc((9 / 16) * 100%);
   }
 .image.aspect-ratio--square, .video-wrapper.aspect-ratio--square{
     padding-top:100%;
@@ -16070,6 +16777,9 @@ html.sticky-header-active .quick-search{
       margin-top:calc(4px * 2);
       margin-top:var(--spacing-2);
     }
+.product-card-mini .product-card-mini__meta .product-card-mini__price .sale{
+        color:var(--color-products-sale-price);
+      }
 .product-card-mini .product-card-mini__quick-view-button{
     margin:calc(4px * 3) auto 0;
     margin:var(--spacing-3) auto 0;
@@ -17153,7 +17863,10 @@ body.template-password.header-transparent-on-home
     border-color:var(--color-text);
   }
 .quantity-input input{
-    width:24px;
+    width:48px;
+    margin:0 calc(calc(4px * 3) * -1);
+    margin:0 calc(var(--spacing-3) * -1);
+    padding:0;
     border:0;
     overflow:visible;
     text-align:center
@@ -17162,12 +17875,16 @@ body.template-password.header-transparent-on-home
     .quantity-input input::-webkit-inner-spin-button{
       -webkit-appearance:none;
     }
+.no-js .quantity-input input{
+      margin:0;
+    }
 .has-quantity-update .quantity-input{
     opacity:0.4;
     cursor:default;
     pointer-events:none;
   }
 .quantity-input__button{
+  position:relative;
   height:100%;
   cursor:pointer;
   color:var(--color-text);
@@ -17175,11 +17892,12 @@ body.template-password.header-transparent-on-home
   border:0;
   transition:background-color 0.25s ease-in-out;
   padding:6px calc(4px * 3);
-  padding:6px var(--spacing-3)
+  padding:6px var(--spacing-3);
+  z-index:1
 }
 .quantity-input__button:hover,
   .quantity-input__button:focus{
-    background-color:var(--color-background-meta);
+    background-color:var(--color-background-darker-meta-alpha);
   }
 .quantity-input__button:active{
     background-color:var(--color-background-darker-meta);
@@ -17201,6 +17919,9 @@ body.template-password.header-transparent-on-home
   padding:var(--spacing-3);
   width:100%
 }
+.free-shipping-bar.free-shipping-bar--loaded .inventory-counter__message-wrapper{
+      visibility:visible;
+    }
 .free-shipping-bar:after{
     content:"";
     position:absolute;
@@ -17226,6 +17947,7 @@ body.template-password.header-transparent-on-home
   display:flex;
   justify-content:center;
   color:var(--color-text);
+  visibility:hidden;
 }
 .inventory-counter__message-wrapper .icon{
     width:1.25em;
@@ -17252,10 +17974,12 @@ body.template-password.header-transparent-on-home
   }
 .free-shipping-bar__bar-progress{
   height:4px;
-  width:var(--progress-width);
+  width:0;
+  width:var(--progress-width, 0);
   background-color:var(--color-text);
   position:absolute;
   left:0;
+  transition:width 0.2s ease;
 }
 .border-block{
   height:1px;
@@ -19187,6 +19911,45 @@ html:not(.no-js):not(.prefers-reduced-motion)
       opacity:1;
       transform:unset;
     }
+html:not(.no-js):not(.prefers-reduced-motion)
+  .animation.animation--gallery-carousel .animation--controls{
+    --delay-amount:var(--delay-normal);
+    --duration-amount:var(--duration-normal);
+    opacity:0;
+    transform:translateY(20px);
+    transition:transform var(--duration-amount) cubic-bezier(0.33, 0, 0, 1),
+    opacity var(--duration-amount) cubic-bezier(0.33, 0, 0, 1);
+    transition:transform var(--duration-amount) var(--easing),
+    opacity var(--duration-amount) var(--easing);
+    transition-delay:calc(
+    var(--delay-amount) * 0);
+    transition-delay:calc(
+    var(--delay-amount) * var(--delay-offset-multiplier, 0)
+  );
+  }
+html:not(.no-js):not(.prefers-reduced-motion)
+  .animation.animation--gallery-carousel .animation--item{
+    --delay-amount:var(--delay-small);
+    --duration-amount:var(--duration-normal);
+    opacity:0;
+    transform:translateY(40px);
+    transition:transform var(--duration-amount) cubic-bezier(0.33, 0, 0, 1),
+    opacity var(--duration-amount) cubic-bezier(0.33, 0, 0, 1);
+    transition:transform var(--duration-amount) var(--easing),
+    opacity var(--duration-amount) var(--easing);
+    transition-delay:calc(
+    var(--delay-amount) * 0);
+    transition-delay:calc(
+    var(--delay-amount) * var(--delay-offset-multiplier, 0)
+  );
+  }
+html:not(.no-js):not(.prefers-reduced-motion)
+  .animation.animation--gallery-carousel.is-visible .animation--controls,
+    html:not(.no-js):not(.prefers-reduced-motion)
+  .animation.animation--gallery-carousel.is-visible .animation--item{
+      opacity:1;
+      transform:unset;
+    }
 @media (min-width: 720px){
     html:not(.no-js):not(.prefers-reduced-motion)
   .animation.animation--testimonials .animation--item .testimonials__item-stars,
@@ -19623,6 +20386,118 @@ html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--image-hero .
     transition:opacity 1200ms cubic-bezier(0.33, 0, 0, 1);
     transition:opacity var(--duration-slow) var(--easing);
   }
+html:not(.no-js):not(.prefers-reduced-motion)
+  .animation.animation--image-compare .image_compare__image .image__img{
+      transition-duration:1200ms;
+      transition-duration:var(--duration-slow);
+    }
+html:not(.no-js):not(.prefers-reduced-motion)
+  .animation.animation--image-compare .animation--label{
+    opacity:0;
+    transition:opacity 500ms cubic-bezier(0.33, 0, 0, 1);
+    transition:opacity var(--duration-normal) var(--easing);
+    transition-delay:calc(
+    67ms * 0);
+    transition-delay:calc(
+    var(--delay-normal) * var(--delay-offset-multiplier, 0)
+  );
+  }
+html:not(.no-js):not(.prefers-reduced-motion)
+  .animation.animation--image-compare.image-compare--horizontal .image-compare__slider-line,
+    html:not(.no-js):not(.prefers-reduced-motion)
+  .animation.animation--image-compare.image-compare--horizontal .image-compare__slider-button{
+      opacity:0;
+      left:0;
+    }
+html:not(.no-js):not(.prefers-reduced-motion)
+  .animation.animation--image-compare.image-compare--horizontal .image-compare__image-container-inner .image-compare__image-after{
+        opacity:0;
+        -webkit-clip-path:inset(0 0 0 0);
+                clip-path:inset(0 0 0 0);
+      }
+html:not(.no-js):not(.prefers-reduced-motion)
+  .animation.animation--image-compare.image-compare--vertical .image-compare__slider-line,
+    html:not(.no-js):not(.prefers-reduced-motion)
+  .animation.animation--image-compare.image-compare--vertical .image-compare__slider-button{
+      opacity:0;
+      bottom:100%;
+    }
+html:not(.no-js):not(.prefers-reduced-motion)
+  .animation.animation--image-compare.image-compare--vertical .image-compare__image-container-inner .image-compare__image-after{
+        opacity:0;
+        -webkit-clip-path:inset(0 0 0 0);
+                clip-path:inset(0 0 0 0);
+      }
+html:not(.no-js):not(.prefers-reduced-motion)
+  .animation.animation--image-compare.is-visible .animation--label{
+      transition-duration:1200ms;
+      transition-duration:var(--duration-slow);
+      transition-delay:133ms;
+      transition-delay:var(--delay-long);
+      opacity:1;
+    }
+html:not(.no-js):not(.prefers-reduced-motion)
+  .animation.animation--image-compare.is-visible.image-compare--horizontal .image-compare__slider-line,
+      html:not(.no-js):not(.prefers-reduced-motion)
+  .animation.animation--image-compare.is-visible.image-compare--horizontal .image-compare__slider-button{
+        opacity:1;
+        left:var(--position);
+        transition:opacity 500ms cubic-bezier(0.33, 0, 0, 1),
+          left 1200ms cubic-bezier(0.33, 0, 0, 1);
+        transition:opacity var(--duration-normal) var(--easing),
+          left var(--duration-slow) var(--easing);
+      }
+html:not(.no-js):not(.prefers-reduced-motion)
+  .animation.animation--image-compare.is-visible.image-compare--horizontal .image-compare__image-container-inner .image-compare__image-after{
+          opacity:1;
+          -webkit-clip-path:inset(0 0 0 var(--position));
+                  clip-path:inset(0 0 0 var(--position));
+          transition:opacity 1200ms cubic-bezier(0.33, 0, 0, 1),
+            -webkit-clip-path 1200ms cubic-bezier(0.33, 0, 0, 1);
+          transition:opacity 1200ms cubic-bezier(0.33, 0, 0, 1),
+            clip-path 1200ms cubic-bezier(0.33, 0, 0, 1);
+          transition:opacity 1200ms cubic-bezier(0.33, 0, 0, 1),
+            clip-path 1200ms cubic-bezier(0.33, 0, 0, 1),
+            -webkit-clip-path 1200ms cubic-bezier(0.33, 0, 0, 1);
+          transition:opacity var(--duration-slow) var(--easing),
+            -webkit-clip-path var(--duration-slow) var(--easing);
+          transition:opacity var(--duration-slow) var(--easing),
+            clip-path var(--duration-slow) var(--easing);
+          transition:opacity var(--duration-slow) var(--easing),
+            clip-path var(--duration-slow) var(--easing),
+            -webkit-clip-path var(--duration-slow) var(--easing);
+        }
+html:not(.no-js):not(.prefers-reduced-motion)
+  .animation.animation--image-compare.is-visible.image-compare--vertical .image-compare__slider-line,
+      html:not(.no-js):not(.prefers-reduced-motion)
+  .animation.animation--image-compare.is-visible.image-compare--vertical .image-compare__slider-button{
+        opacity:1;
+        bottom:var(--position);
+        transition:opacity 500ms cubic-bezier(0.33, 0, 0, 1),
+          bottom 1200ms cubic-bezier(0.33, 0, 0, 1);
+        transition:opacity var(--duration-normal) var(--easing),
+          bottom var(--duration-slow) var(--easing);
+      }
+html:not(.no-js):not(.prefers-reduced-motion)
+  .animation.animation--image-compare.is-visible.image-compare--vertical .image-compare__image-container-inner .image-compare__image-after{
+          opacity:1;
+          -webkit-clip-path:inset(calc(100% - var(--position)) 0 0 0);
+                  clip-path:inset(calc(100% - var(--position)) 0 0 0);
+          transition:opacity 1200ms cubic-bezier(0.33, 0, 0, 1),
+            -webkit-clip-path 1200ms cubic-bezier(0.33, 0, 0, 1);
+          transition:opacity 1200ms cubic-bezier(0.33, 0, 0, 1),
+            clip-path 1200ms cubic-bezier(0.33, 0, 0, 1);
+          transition:opacity 1200ms cubic-bezier(0.33, 0, 0, 1),
+            clip-path 1200ms cubic-bezier(0.33, 0, 0, 1),
+            -webkit-clip-path 1200ms cubic-bezier(0.33, 0, 0, 1);
+          transition:opacity var(--duration-slow) var(--easing),
+            -webkit-clip-path var(--duration-slow) var(--easing);
+          transition:opacity var(--duration-slow) var(--easing),
+            clip-path var(--duration-slow) var(--easing);
+          transition:opacity var(--duration-slow) var(--easing),
+            clip-path var(--duration-slow) var(--easing),
+            -webkit-clip-path var(--duration-slow) var(--easing);
+        }
 html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--video-hero.is-visible .video-hero__overlay{
       opacity:var(--overlay-opacity);
     }
@@ -19744,7 +20619,7 @@ html:not(.no-js):not(.prefers-reduced-motion) .animation .animation--filter-bar.
       opacity:1;
       transform:unset;
     }
-html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner .animation--sale-amount, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar .animation--sale-amount, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner .animation--sale-amount, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar .animation--sale-amount{
+html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner .animation--sale-amount, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar .animation--sale-amount, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner .animation--sale-amount, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar .animation--sale-amount, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner .animation--sale-amount{
       transform:scale(0.8);
       opacity:0;
       transition:transform 500ms cubic-bezier(0.33, 0, 0, 1),
@@ -19757,7 +20632,7 @@ html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner
     var(--delay-normal) * var(--delay-offset-multiplier, 0)
   );
     }
-html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner .animation--banner-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar .animation--banner-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner .animation--banner-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar .animation--banner-divider::before{
+html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner .animation--banner-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar .animation--banner-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner .animation--banner-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar .animation--banner-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner .animation--banner-divider::before{
       width:10%;
       opacity:0;
       transition:width 500ms cubic-bezier(0.33, 0, 0, 1),
@@ -19767,7 +20642,7 @@ html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner
     }
 @media (min-width: 720px){
 
-    html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner .animation--banner-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar .animation--banner-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner .animation--banner-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar .animation--banner-divider::before{
+    html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner .animation--banner-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar .animation--banner-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner .animation--banner-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar .animation--banner-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner .animation--banner-divider::before{
         width:1px;
         top:auto;
         height:80%;
@@ -19777,7 +20652,7 @@ html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner
           opacity var(--duration-normal) var(--easing)
     }
       }
-html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner .animation--bar-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar .animation--bar-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner .animation--bar-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar .animation--bar-divider::before{
+html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner .animation--bar-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar .animation--bar-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner .animation--bar-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar .animation--bar-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner .animation--bar-divider::before{
       width:5%;
       opacity:0;
       transition:width 500ms cubic-bezier(0.33, 0, 0, 1),
@@ -19787,7 +20662,7 @@ html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner
     }
 @media (min-width: 720px){
 
-    html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner .animation--bar-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar .animation--bar-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner .animation--bar-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar .animation--bar-divider::before{
+    html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner .animation--bar-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar .animation--bar-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner .animation--bar-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar .animation--bar-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner .animation--bar-divider::before{
         width:1px;
         top:auto;
         height:80%;
@@ -19804,6 +20679,7 @@ html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner
     html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner .countdown-banner__bar-item--timer,
     html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner .countdown-banner__bar-text,
     html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner .countdown-banner__button,
+    html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner .animation--giant-heading,
     html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar .sales-banner__bar-item--heading,
     html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar .sales-banner__bar-text,
     html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar .sales-banner__button,
@@ -19811,6 +20687,7 @@ html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner
     html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar .countdown-banner__bar-item--timer,
     html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar .countdown-banner__bar-text,
     html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar .countdown-banner__button,
+    html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar .animation--giant-heading,
     html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner .sales-banner__bar-item--heading,
     html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner .sales-banner__bar-text,
     html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner .sales-banner__button,
@@ -19818,13 +20695,23 @@ html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner
     html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner .countdown-banner__bar-item--timer,
     html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner .countdown-banner__bar-text,
     html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner .countdown-banner__button,
+    html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner .animation--giant-heading,
     html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar .sales-banner__bar-item--heading,
     html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar .sales-banner__bar-text,
     html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar .sales-banner__button,
     html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar .countdown-banner__bar-item--heading,
     html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar .countdown-banner__bar-item--timer,
     html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar .countdown-banner__bar-text,
-    html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar .countdown-banner__button{
+    html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar .countdown-banner__button,
+    html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar .animation--giant-heading,
+    html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner .sales-banner__bar-item--heading,
+    html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner .sales-banner__bar-text,
+    html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner .sales-banner__button,
+    html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner .countdown-banner__bar-item--heading,
+    html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner .countdown-banner__bar-item--timer,
+    html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner .countdown-banner__bar-text,
+    html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner .countdown-banner__button,
+    html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner .animation--giant-heading{
       --delay-amount:var(--delay-normal);
       --duration-amount:var(--duration-normal);
       opacity:0;
@@ -19870,7 +20757,15 @@ html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner
     html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar .sale-promotion__amount,
     html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar .sale-promotion__per-month,
     html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar .sale-promotion__per-year,
-    html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar .sale-promotion__terms{
+    html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar .sale-promotion__terms,
+    html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner .sale-promotion__type,
+    html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner .sale-promotion__unit-currency,
+    html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner .sale-promotion__unit-percent,
+    html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner .sale-promotion__unit-off,
+    html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner .sale-promotion__amount,
+    html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner .sale-promotion__per-month,
+    html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner .sale-promotion__per-year,
+    html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner .sale-promotion__terms{
       opacity:0;
       transition:opacity 500ms cubic-bezier(0.33, 0, 0, 1);
       transition:opacity var(--duration-normal) var(--easing);
@@ -19880,7 +20775,7 @@ html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner
     var(--delay-normal) * var(--delay-offset-multiplier, 0)
   );
     }
-html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner.is-visible .animation--sale-amount, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar.is-visible .animation--sale-amount, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner.is-visible .animation--sale-amount, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar.is-visible .animation--sale-amount{
+html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner.is-visible .animation--sale-amount, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar.is-visible .animation--sale-amount, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner.is-visible .animation--sale-amount, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar.is-visible .animation--sale-amount, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner.is-visible .animation--sale-amount{
         opacity:1;
         transform:unset;
       }
@@ -19891,6 +20786,7 @@ html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner
       html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner.is-visible .countdown-banner__bar-item--timer,
       html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner.is-visible .countdown-banner__bar-text,
       html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner.is-visible .countdown-banner__button,
+      html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner.is-visible .animation--giant-heading,
       html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar.is-visible .sales-banner__bar-item--heading,
       html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar.is-visible .sales-banner__bar-text,
       html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar.is-visible .sales-banner__button,
@@ -19898,6 +20794,7 @@ html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner
       html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar.is-visible .countdown-banner__bar-item--timer,
       html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar.is-visible .countdown-banner__bar-text,
       html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar.is-visible .countdown-banner__button,
+      html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar.is-visible .animation--giant-heading,
       html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner.is-visible .sales-banner__bar-item--heading,
       html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner.is-visible .sales-banner__bar-text,
       html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner.is-visible .sales-banner__button,
@@ -19905,13 +20802,23 @@ html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner
       html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner.is-visible .countdown-banner__bar-item--timer,
       html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner.is-visible .countdown-banner__bar-text,
       html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner.is-visible .countdown-banner__button,
+      html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner.is-visible .animation--giant-heading,
       html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar.is-visible .sales-banner__bar-item--heading,
       html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar.is-visible .sales-banner__bar-text,
       html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar.is-visible .sales-banner__button,
       html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar.is-visible .countdown-banner__bar-item--heading,
       html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar.is-visible .countdown-banner__bar-item--timer,
       html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar.is-visible .countdown-banner__bar-text,
-      html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar.is-visible .countdown-banner__button{
+      html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar.is-visible .countdown-banner__button,
+      html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar.is-visible .animation--giant-heading,
+      html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner.is-visible .sales-banner__bar-item--heading,
+      html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner.is-visible .sales-banner__bar-text,
+      html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner.is-visible .sales-banner__button,
+      html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner.is-visible .countdown-banner__bar-item--heading,
+      html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner.is-visible .countdown-banner__bar-item--timer,
+      html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner.is-visible .countdown-banner__bar-text,
+      html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner.is-visible .countdown-banner__button,
+      html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner.is-visible .animation--giant-heading{
         opacity:1;
         transform:unset;
       }
@@ -19946,27 +20853,35 @@ html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner
       html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar.is-visible .sale-promotion__amount,
       html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar.is-visible .sale-promotion__per-month,
       html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar.is-visible .sale-promotion__per-year,
-      html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar.is-visible .sale-promotion__terms{
+      html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar.is-visible .sale-promotion__terms,
+      html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner.is-visible .sale-promotion__type,
+      html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner.is-visible .sale-promotion__unit-currency,
+      html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner.is-visible .sale-promotion__unit-percent,
+      html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner.is-visible .sale-promotion__unit-off,
+      html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner.is-visible .sale-promotion__amount,
+      html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner.is-visible .sale-promotion__per-month,
+      html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner.is-visible .sale-promotion__per-year,
+      html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner.is-visible .sale-promotion__terms{
         opacity:1;
       }
-html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner.is-visible .animation--banner-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar.is-visible .animation--banner-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner.is-visible .animation--banner-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar.is-visible .animation--banner-divider::before{
+html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner.is-visible .animation--banner-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar.is-visible .animation--banner-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner.is-visible .animation--banner-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar.is-visible .animation--banner-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner.is-visible .animation--banner-divider::before{
         width:30%;
         opacity:1
       }
 @media (min-width: 720px){
 
-      html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner.is-visible .animation--banner-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar.is-visible .animation--banner-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner.is-visible .animation--banner-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar.is-visible .animation--banner-divider::before{
+      html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner.is-visible .animation--banner-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar.is-visible .animation--banner-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner.is-visible .animation--banner-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar.is-visible .animation--banner-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner.is-visible .animation--banner-divider::before{
           width:1px;
           height:100%
       }
         }
-html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner.is-visible .animation--bar-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar.is-visible .animation--bar-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner.is-visible .animation--bar-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar.is-visible .animation--bar-divider::before{
+html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner.is-visible .animation--bar-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar.is-visible .animation--bar-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner.is-visible .animation--bar-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar.is-visible .animation--bar-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner.is-visible .animation--bar-divider::before{
         width:15%;
         opacity:1
       }
 @media (min-width: 720px){
 
-      html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner.is-visible .animation--bar-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar.is-visible .animation--bar-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner.is-visible .animation--bar-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar.is-visible .animation--bar-divider::before{
+      html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--sales-banner.is-visible .animation--bar-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promotion-bar.is-visible .animation--bar-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-banner.is-visible .animation--bar-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--countdown-bar.is-visible .animation--bar-divider::before, html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--promo-banner.is-visible .animation--bar-divider::before{
           width:1px;
           height:100%
       }
@@ -20651,3 +21566,63 @@ html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--events.is-vi
 html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--events.is-visible.animate-event-items .event-item{
       opacity:1;
     }
+html:not(.no-js):not(.prefers-reduced-motion)
+  .animation.animation--product-tabs.is-visible .product-tabs__tab-list-wrapper,
+    html:not(.no-js):not(.prefers-reduced-motion)
+  .animation.animation--product-tabs.is-visible .product-tabs__tab-buttons{
+      opacity:1;
+      transform:unset;
+    }
+html:not(.no-js):not(.prefers-reduced-motion)
+  .animation.animation--product-tabs.is-visible .accordion{
+      opacity:1;
+      transform:unset;
+    }
+html:not(.no-js):not(.prefers-reduced-motion)
+  .animation.animation--product-tabs .product-tabs__tab-buttons{
+    --delay-amount:var(--delay-normal);
+    --duration-amount:var(--duration-normal);
+    opacity:0;
+    transform:translateY(20px);
+    transition:transform var(--duration-amount) cubic-bezier(0.33, 0, 0, 1),
+    opacity var(--duration-amount) cubic-bezier(0.33, 0, 0, 1);
+    transition:transform var(--duration-amount) var(--easing),
+    opacity var(--duration-amount) var(--easing);
+    transition-delay:calc(
+    var(--delay-amount) * 0);
+    transition-delay:calc(
+    var(--delay-amount) * var(--delay-offset-multiplier, 0)
+  );
+  }
+html:not(.no-js):not(.prefers-reduced-motion)
+  .animation.animation--product-tabs .product-tabs__tab-list-wrapper{
+    --delay-amount:var(--delay-small);
+    --duration-amount:var(--duration-normal);
+    opacity:0;
+    transform:translateY(40px);
+    transition:transform var(--duration-amount) cubic-bezier(0.33, 0, 0, 1),
+    opacity var(--duration-amount) cubic-bezier(0.33, 0, 0, 1);
+    transition:transform var(--duration-amount) var(--easing),
+    opacity var(--duration-amount) var(--easing);
+    transition-delay:calc(
+    var(--delay-amount) * 0);
+    transition-delay:calc(
+    var(--delay-amount) * var(--delay-offset-multiplier, 0)
+  );
+  }
+html:not(.no-js):not(.prefers-reduced-motion)
+  .animation.animation--product-tabs .accordion{
+    --delay-amount:var(--delay-normal);
+    --duration-amount:var(--duration-normal);
+    opacity:0;
+    transform:translateY(20px);
+    transition:transform var(--duration-amount) cubic-bezier(0.33, 0, 0, 1),
+    opacity var(--duration-amount) cubic-bezier(0.33, 0, 0, 1);
+    transition:transform var(--duration-amount) var(--easing),
+    opacity var(--duration-amount) var(--easing);
+    transition-delay:calc(
+    var(--delay-amount) * 0);
+    transition-delay:calc(
+    var(--delay-amount) * var(--delay-offset-multiplier, 0)
+  );
+  }

@@ -217,6 +217,33 @@
   ],
   "blocks": [
     {
+      "type": "description",
+      "name": "t:sections.main_product_overview.blocks.description.name",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "select",
+          "id": "text_font_class",
+          "label": "t:shared.settings.text_font_class.label",
+          "default": "fs-body-100",
+          "options": [
+            {
+              "value": "fs-body-75",
+              "label": "t:shared.settings.text_font_class.option_small"
+            },
+            {
+              "value": "fs-body-100",
+              "label": "t:shared.settings.text_font_class.option_regular"
+            },
+            {
+              "value": "fs-body-200",
+              "label": "t:shared.settings.text_font_class.option_large"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "type": "quantity_selector",
       "name": "t:sections.main_product_overview.blocks.quantity_selector.name",
       "limit": 1,
@@ -226,6 +253,86 @@
           "id": "show_labels",
           "label": "t:sections.main_product_overview.blocks.quantity_selector.settings.show_labels.label",
           "default": true
+        }
+      ]
+    },
+    {
+      "type": "share",
+      "name": "t:sections.main_product_overview.blocks.share.name",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "paragraph",
+          "content": "t:sections.main_product_overview.blocks.share.settings.paragraph__1.content"
+        },
+        {
+          "type": "paragraph",
+          "content": "t:sections.main_product_overview.blocks.share.settings.paragraph__2.content"
+        }
+      ]
+    },
+    {
+      "type": "inventory-counter",
+      "name": "t:sections.main_product_overview.blocks.inventory_counter.name",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "text",
+          "id": "label",
+          "label": "t:sections.main_product_overview.blocks.inventory_counter.settings.label.label",
+          "default": "Availability"
+        },
+        {
+          "type": "text",
+          "id": "inventory_max",
+          "label": "t:sections.main_product_overview.blocks.inventory_counter.settings.inventory_max.label",
+          "info": "t:sections.main_product_overview.blocks.inventory_counter.settings.inventory_max.info",
+          "default": "100"
+        },
+        {
+          "type": "text",
+          "id": "low_inventory_threshold",
+          "label": "t:sections.main_product_overview.blocks.inventory_counter.settings.low_inventory_threshold.label",
+          "info": "t:sections.main_product_overview.blocks.inventory_counter.settings.low_inventory_threshold.info",
+          "default": "40"
+        },
+        {
+          "type": "checkbox",
+          "id": "show_status_bar",
+          "label": "t:sections.main_product_overview.blocks.inventory_counter.settings.show_status_bar.label",
+          "default": true
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "name": "t:sections.main_product_overview.blocks.text.name",
+      "settings": [
+        {
+          "type": "select",
+          "id": "text_font_class",
+          "label": "t:shared.settings.text_font_class.label",
+          "default": "fs-body-100",
+          "options": [
+            {
+              "value": "fs-body-75",
+              "label": "t:shared.settings.text_font_class.option_small"
+            },
+            {
+              "value": "fs-body-100",
+              "label": "t:shared.settings.text_font_class.option_regular"
+            },
+            {
+              "value": "fs-body-200",
+              "label": "t:shared.settings.text_font_class.option_large"
+            }
+          ]
+        },
+        {
+          "type": "richtext",
+          "id": "text",
+          "label": "t:sections.main_product_overview.blocks.text.settings.text.label",
+          "default": "<p>Add some text to tell customers more about your product.</p>"
         }
       ]
     },
@@ -313,113 +420,6 @@
               "label": "t:sections.main_product_overview.blocks.variant_picker.settings.chip_layout.option_natural"
             }
           ]
-        }
-      ]
-    },
-    {
-      "type": "description",
-      "name": "t:sections.main_product_overview.blocks.description.name",
-      "limit": 1,
-      "settings": [
-        {
-          "type": "select",
-          "id": "text_font_class",
-          "label": "t:shared.settings.text_font_class.label",
-          "default": "fs-body-100",
-          "options": [
-            {
-              "value": "fs-body-75",
-              "label": "t:shared.settings.text_font_class.option_small"
-            },
-            {
-              "value": "fs-body-100",
-              "label": "t:shared.settings.text_font_class.option_regular"
-            },
-            {
-              "value": "fs-body-200",
-              "label": "t:shared.settings.text_font_class.option_large"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "type": "text",
-      "name": "t:sections.main_product_overview.blocks.text.name",
-      "settings": [
-        {
-          "type": "select",
-          "id": "text_font_class",
-          "label": "t:shared.settings.text_font_class.label",
-          "default": "fs-body-100",
-          "options": [
-            {
-              "value": "fs-body-75",
-              "label": "t:shared.settings.text_font_class.option_small"
-            },
-            {
-              "value": "fs-body-100",
-              "label": "t:shared.settings.text_font_class.option_regular"
-            },
-            {
-              "value": "fs-body-200",
-              "label": "t:shared.settings.text_font_class.option_large"
-            }
-          ]
-        },
-        {
-          "type": "richtext",
-          "id": "text",
-          "label": "t:sections.main_product_overview.blocks.text.settings.text.label",
-          "default": "<p>Add some text to tell customers more about your product.</p>"
-        }
-      ]
-    },
-    {
-      "type": "share",
-      "name": "t:sections.main_product_overview.blocks.share.name",
-      "limit": 1,
-      "settings": [
-        {
-          "type": "paragraph",
-          "content": "t:sections.main_product_overview.blocks.share.settings.paragraph__1.content"
-        },
-        {
-          "type": "paragraph",
-          "content": "t:sections.main_product_overview.blocks.share.settings.paragraph__2.content"
-        }
-      ]
-    },
-    {
-      "type": "inventory-counter",
-      "name": "t:sections.main_product_overview.blocks.inventory_counter.name",
-      "limit": 1,
-      "settings": [
-        {
-          "type": "text",
-          "id": "label",
-          "label": "t:sections.main_product_overview.blocks.inventory_counter.settings.label.label",
-          "default": "Availability"
-        },
-        {
-          "type": "text",
-          "id": "inventory_max",
-          "label": "t:sections.main_product_overview.blocks.inventory_counter.settings.inventory_max.label",
-          "info": "t:sections.main_product_overview.blocks.inventory_counter.settings.inventory_max.info",
-          "default": "100"
-        },
-        {
-          "type": "text",
-          "id": "low_inventory_threshold",
-          "label": "t:sections.main_product_overview.blocks.inventory_counter.settings.low_inventory_threshold.label",
-          "info": "t:sections.main_product_overview.blocks.inventory_counter.settings.low_inventory_threshold.info",
-          "default": "40"
-        },
-        {
-          "type": "checkbox",
-          "id": "show_status_bar",
-          "label": "t:sections.main_product_overview.blocks.inventory_counter.settings.show_status_bar.label",
-          "default": true
         }
       ]
     }

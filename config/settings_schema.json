@@ -2,7 +2,7 @@
   {
     "name": "theme_info",
     "theme_name": "Stiletto",
-    "theme_version": "1.4.0",
+    "theme_version": "1.5.0",
     "theme_author": "Fluorescent Design Inc.",
     "theme_documentation_url": "https://fluorescent.co/help/stiletto",
     "theme_support_url": "https://fluorescent.co/help/contact"
@@ -730,10 +730,6 @@
       {
         "type": "header",
         "content": "t:settings_schema.cart.settings.header__free_shipping_bar.content"
-      },
-      {
-        "type": "paragraph",
-        "content": "t:settings_schema.cart.settings.paragraph__free_shipping_bar_disclaimer.content"
       },
       {
         "type": "paragraph",

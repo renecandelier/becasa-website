@@ -2896,12 +2896,12 @@ function wrapTables () {
   });
 }
 
-var classes$C = {
+var classes$E = {
   visible: "is-visible",
   active: "active",
   fixed: "is-fixed"
 };
-var selectors$1v = {
+var selectors$1B = {
   closeBtn: "[data-modal-close]",
   wash: ".modal__wash",
   modalContent: ".modal__content"
@@ -2911,12 +2911,12 @@ var modal = function modal(node) {
   var focusTrap = createFocusTrap(node, {
     allowOutsideClick: true
   });
-  var modalContent = n$2(selectors$1v.modalContent, node);
+  var modalContent = n$2(selectors$1B.modalContent, node);
   var delegate = new Delegate(document);
-  delegate.on("click", selectors$1v.wash, function () {
+  delegate.on("click", selectors$1B.wash, function () {
     return _close();
   });
-  var events = [e$2(n$2(selectors$1v.closeBtn, node), "click", function (e) {
+  var events = [e$2(n$2(selectors$1B.closeBtn, node), "click", function (e) {
     e.preventDefault();
 
     _close();
@@ -2945,7 +2945,7 @@ var modal = function modal(node) {
   var _open = function _open() {
     // Due to this component being shared between templates we have to
     // animate around it being fixed to the window
-    u$1(node, classes$C.active);
+    u$1(node, classes$E.active);
     focusTrap.activate();
     disableBodyScroll(node, {
       allowTouchMove: function allowTouchMove(el) {
@@ -2963,7 +2963,7 @@ var modal = function modal(node) {
 
   var _close = function _close() {
     focusTrap.deactivate();
-    i$1(node, classes$C.active);
+    i$1(node, classes$E.active);
     enableBodyScroll(node);
     setTimeout(function () {
       modalContent.innerHTML = "";
@@ -3187,7 +3187,7 @@ var shouldAnimate = (function (node) {
   return a$1(node, "animation") && !a$1(document.documentElement, "prefers-reduced-motion");
 });
 
-var selectors$1u = {
+var selectors$1A = {
   sectionBlockItems: ".section-blocks > *",
   image: ".image-with-text__image .image__img",
   imageSmall: ".image-with-text__small-image .image__img",
@@ -3195,8 +3195,8 @@ var selectors$1u = {
 };
 var animateImageWithText = (function (node) {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1u.image, selectors$1u.imageSmall, selectors$1u.imageCaption]);
-  delayOffset(node, [selectors$1u.sectionBlockItems], 6);
+  delayOffset(node, [selectors$1A.image, selectors$1A.imageSmall, selectors$1A.imageCaption]);
+  delayOffset(node, [selectors$1A.sectionBlockItems], 6);
   var observer = intersectionWatcher(node);
   return {
     destroy: function destroy() {
@@ -3205,14 +3205,14 @@ var animateImageWithText = (function (node) {
   };
 });
 
-var selectors$1t = {
+var selectors$1z = {
   sectionBlockItems: ".section-blocks > *",
   image: ".image-with-text-split__image .image__img"
 };
 var animateImageWithTextSplit = (function (node) {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1t.image]);
-  delayOffset(node, [selectors$1t.sectionBlockItems], 6);
+  delayOffset(node, [selectors$1z.image]);
+  delayOffset(node, [selectors$1z.sectionBlockItems], 6);
   var observer = intersectionWatcher(node);
   return {
     destroy: function destroy() {
@@ -3221,49 +3221,49 @@ var animateImageWithTextSplit = (function (node) {
   };
 });
 
-var selectors$1s = {
+var selectors$1y = {
   content: ".testimonials__item-content > *",
   image: ".testimonials__item-product-image",
   imageCaption: ".testimonials__item-product-title",
   item: ".animation--item"
 };
-var classes$B = {
+var classes$D = {
   imageRight: "testimonials__item--image-placement-right"
 };
 var animateTestimonials = (function (node) {
   var delayItems = []; // Create an array of selectors for the animation elements
   // in the order they should animate in
 
-  if (a$1(node, classes$B.imageRight)) {
-    delayItems.push(selectors$1s.content);
-    delayItems.push(selectors$1s.image);
-    delayItems.push(selectors$1s.imageCaption);
+  if (a$1(node, classes$D.imageRight)) {
+    delayItems.push(selectors$1y.content);
+    delayItems.push(selectors$1y.image);
+    delayItems.push(selectors$1y.imageCaption);
   } else {
-    delayItems.push(selectors$1s.image);
-    delayItems.push(selectors$1s.imageCaption);
-    delayItems.push(selectors$1s.content);
+    delayItems.push(selectors$1y.image);
+    delayItems.push(selectors$1y.imageCaption);
+    delayItems.push(selectors$1y.content);
   } // Add the animation delay offset variables
 
 
   delayOffset(node, delayItems, 2);
-  delayOffset(node, [selectors$1s.item]);
+  delayOffset(node, [selectors$1y.item]);
 });
 
-var selectors$1r = {
+var selectors$1x = {
   content: ".quote__item-inner > *"
 };
 var animateQuotes = (function (node) {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1r.content]);
+  delayOffset(node, [selectors$1x.content]);
 });
 
-var selectors$1q = {
+var selectors$1w = {
   sectionBlockItems: ".animation--section-introduction > *",
   controls: ".animation--controls",
   items: ".animation--item"
 };
 var animateListSlider = (function (node) {
-  var delayItems = [selectors$1q.sectionBlockItems, selectors$1q.controls, selectors$1q.items]; // Add the animation delay offset variables
+  var delayItems = [selectors$1w.sectionBlockItems, selectors$1w.controls, selectors$1w.items]; // Add the animation delay offset variables
 
   delayOffset(node, delayItems);
   var observer = intersectionWatcher(node);
@@ -3274,28 +3274,28 @@ var animateListSlider = (function (node) {
   };
 });
 
-var selectors$1p = {
+var selectors$1v = {
   introductionItems: ".section-introduction > *",
   image: ".complete-the-look__image-wrapper .image__img",
   product: ".complete-the-look__product",
   products: ".complete-the-look__products"
 };
-var classes$A = {
+var classes$C = {
   imageLeft: "complete-the-look--image-left"
 };
 var animateCompleteTheLook = (function (node) {
   var delayItems = [];
-  delayItems.push(selectors$1p.introductionItems); // Create an array of selectors for the animation elements
+  delayItems.push(selectors$1v.introductionItems); // Create an array of selectors for the animation elements
   // in the order they should animate in
 
-  if (a$1(node, classes$A.imageLeft) || window.matchMedia(getMediaQuery("below-720")).matches) {
-    delayItems.push(selectors$1p.image);
-    delayItems.push(selectors$1p.products);
-    delayItems.push(selectors$1p.product);
+  if (a$1(node, classes$C.imageLeft) || window.matchMedia(getMediaQuery("below-720")).matches) {
+    delayItems.push(selectors$1v.image);
+    delayItems.push(selectors$1v.products);
+    delayItems.push(selectors$1v.product);
   } else {
-    delayItems.push(selectors$1p.products);
-    delayItems.push(selectors$1p.product);
-    delayItems.push(selectors$1p.image);
+    delayItems.push(selectors$1v.products);
+    delayItems.push(selectors$1v.product);
+    delayItems.push(selectors$1v.image);
   } // Add the animation delay offset variables
 
 
@@ -3308,14 +3308,14 @@ var animateCompleteTheLook = (function (node) {
   };
 });
 
-var selectors$1o = {
+var selectors$1u = {
   introductionItems: ".section-introduction > *",
   image: ".shoppable-image__image-wrapper .image__img",
   hotspots: ".shoppable-item__hotspot-wrapper"
 };
 var animateShoppableImage = (function (node) {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1o.introductionItems, selectors$1o.image, selectors$1o.hotspots]);
+  delayOffset(node, [selectors$1u.introductionItems, selectors$1u.image, selectors$1u.hotspots]);
   var observer = intersectionWatcher(node);
   return {
     destroy: function destroy() {
@@ -3324,7 +3324,7 @@ var animateShoppableImage = (function (node) {
   };
 });
 
-var selectors$1n = {
+var selectors$1t = {
   introductionItems: ".section-introduction > *",
   carousel: ".shoppable-feature__secondary-content .shoppable-feature__carousel-outer",
   hotspots: ".shoppable-item__hotspot-wrapper",
@@ -3332,10 +3332,10 @@ var selectors$1n = {
 };
 var animateShoppableFeature = (function (node) {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1n.introductionItems, selectors$1n.carousel], 1);
-  delayOffset(node, [selectors$1n.hotspots], 1); // Add separate delay offsets for mobile drawer
+  delayOffset(node, [selectors$1t.introductionItems, selectors$1t.carousel], 1);
+  delayOffset(node, [selectors$1t.hotspots], 1); // Add separate delay offsets for mobile drawer
 
-  delayOffset(node, [selectors$1n.mobileDrawerItems], 1);
+  delayOffset(node, [selectors$1t.mobileDrawerItems], 1);
   var observer = intersectionWatcher(node);
   return {
     destroy: function destroy() {
@@ -3344,20 +3344,20 @@ var animateShoppableFeature = (function (node) {
   };
 });
 
-var selectors$1m = {
+var selectors$1s = {
   textContent: ".image-hero-split-item__text-container-inner > *"
 };
 var animateImageHeroSplit = (function (node) {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1m.textContent], 1);
+  delayOffset(node, [selectors$1s.textContent], 1);
 });
 
-var selectors$1l = {
+var selectors$1r = {
   textContent: ".image-hero__text-container-inner > *"
 };
 var animateImageHero = (function (node) {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1l.textContent], 3);
+  delayOffset(node, [selectors$1r.textContent], 3);
   var observer = intersectionWatcher(node);
   return {
     destroy: function destroy() {
@@ -3366,12 +3366,49 @@ var animateImageHero = (function (node) {
   };
 });
 
-var selectors$1k = {
+var classes$B = {
+  animation: "animation--image-compare"
+};
+var selectors$1q = {
+  introductionItems: ".animation--section-introduction > *",
+  image: ".image_compare__image-wrapper .image__img",
+  labels: ".image-compare__label-container",
+  sliderLine: ".image-compare__slider-line",
+  sliderButton: ".image-compare__slider-button"
+};
+var animateImageCompare = (function (node) {
+  delayOffset(node, [selectors$1q.introductionItems, selectors$1q.image, selectors$1q.labels, selectors$1q.sliderLine, selectors$1q.sliderButton]);
+  var margin = window.matchMedia(getMediaQuery("above-720")).matches ? 200 : 100;
+  var threshold = Math.min(margin / node.offsetHeight, 0.5);
+  var observer = new IntersectionObserver(function (_ref) {
+    var _ref2 = _slicedToArray(_ref, 1),
+        visible = _ref2[0].isIntersecting;
+
+    if (visible) {
+      u$1(node, "is-visible"); // Enable slider controls by removing animation class after animation duration
+
+      setTimeout(function () {
+        i$1(node, classes$B.animation);
+      }, 1200);
+      observer.disconnect();
+    }
+  }, {
+    threshold: threshold
+  });
+  observer.observe(node);
+  return {
+    destroy: function destroy() {
+      observer.destroy();
+    }
+  };
+});
+
+var selectors$1p = {
   textContent: ".video-hero__text-container > *"
 };
 var animateVideoHero = (function (node) {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1k.textContent], 3);
+  delayOffset(node, [selectors$1p.textContent], 3);
   var observer = intersectionWatcher(node);
   return {
     destroy: function destroy() {
@@ -3380,15 +3417,15 @@ var animateVideoHero = (function (node) {
   };
 });
 
-var selectors$1j = {
+var selectors$1o = {
   articleHeading: "\n    .article__image-container,\n    .article__header-inner > *\n  ",
   articleContent: ".article__content"
 };
 var animateArticle = (function (node) {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1j.articleHeading, selectors$1j.articleContent]);
-  var articleHeading = t$2(selectors$1j.articleHeading, node);
-  var articleContent = n$2(selectors$1j.articleContent, node);
+  delayOffset(node, [selectors$1o.articleHeading, selectors$1o.articleContent]);
+  var articleHeading = t$2(selectors$1o.articleHeading, node);
+  var articleContent = n$2(selectors$1o.articleContent, node);
   var observers = articleHeading.map(function (item) {
     return intersectionWatcher(item);
   });
@@ -3402,13 +3439,13 @@ var animateArticle = (function (node) {
   };
 });
 
-var selectors$1i = {
+var selectors$1n = {
   image: ".collection-banner__image-container",
   content: ".collection-banner__text-container-inner > *"
 };
 var animateCollectionBanner = (function (node) {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1i.image, selectors$1i.content]);
+  delayOffset(node, [selectors$1n.image, selectors$1n.content]);
   var observer = intersectionWatcher(node);
   return {
     destroy: function destroy() {
@@ -3417,20 +3454,20 @@ var animateCollectionBanner = (function (node) {
   };
 });
 
-var selectors$1h = {
+var selectors$1m = {
   partial: "[data-partial]",
   filterBar: "[data-filter-bar]",
   mobileFilterBar: "[data-mobile-filters]",
   productItems: ".animation--item:not(.animation--item-revealed)"
 };
-var classes$z = {
+var classes$A = {
   hideProducts: "animation--collection-products-hide",
   itemRevealed: "animation--item-revealed"
 };
 var animateCollection = (function (node) {
-  var partial = n$2(selectors$1h.partial, node);
-  var filterbarEl = n$2(selectors$1h.filterBar, node);
-  var mobileFilterBarEl = n$2(selectors$1h.mobileFilterBar, node);
+  var partial = n$2(selectors$1m.partial, node);
+  var filterbarEl = n$2(selectors$1m.filterBar, node);
+  var mobileFilterBarEl = n$2(selectors$1m.mobileFilterBar, node);
   var filterbarObserver = null;
 
   if (filterbarEl) {
@@ -3446,10 +3483,10 @@ var animateCollection = (function (node) {
   setupProductItem();
 
   function setupProductItem() {
-    var productItems = t$2(selectors$1h.productItems, node);
-    delayOffset(node, [selectors$1h.productItems]);
+    var productItems = t$2(selectors$1m.productItems, node);
+    delayOffset(node, [selectors$1m.productItems]);
     setTimeout(function () {
-      u$1(productItems, classes$z.itemRevealed);
+      u$1(productItems, classes$A.itemRevealed);
     }, 0);
   } // Scroll to top of collection grid after applying filters
   // to show the newly filtered list of products
@@ -3466,7 +3503,7 @@ var animateCollection = (function (node) {
   function updateContents() {
     setupProductItem(); // Remove the fade out class
 
-    i$1(partial, classes$z.hideProducts);
+    i$1(partial, classes$A.hideProducts);
 
     _scrollIntoView();
   }
@@ -3487,14 +3524,14 @@ var animateCollection = (function (node) {
   };
 });
 
-var selectors$1g = {
+var selectors$1l = {
   saleAmount: ".animation--sale-amount",
   sectionBlockItems: ".animation--section-blocks > *",
   saleItems: ".sale-promotion .sale-promotion__type,\n  .sale-promotion .sale-promotion__unit-currency,\n  .sale-promotion .sale-promotion__unit-percent,\n  .sale-promotion .sale-promotion__unit-off,\n  .sale-promotion .sale-promotion__amount,\n  .sale-promotion .sale-promotion__per-month,\n  .sale-promotion .sale-promotion__per-year,\n  .sale-promotion .sale-promotion__terms,\n  .sale-promotion .sales-banner__button"
 };
 var animateSalesBanner = (function (node) {
-  var leftColumnDelayItems = [selectors$1g.saleAmount, selectors$1g.saleItems];
-  var rightColumnDelayItems = [selectors$1g.sectionBlockItems]; // Add the animation delay offset variables
+  var leftColumnDelayItems = [selectors$1l.saleAmount, selectors$1l.saleItems];
+  var rightColumnDelayItems = [selectors$1l.sectionBlockItems]; // Add the animation delay offset variables
 
   delayOffset(node, leftColumnDelayItems);
   delayOffset(node, rightColumnDelayItems, 1);
@@ -3506,12 +3543,12 @@ var animateSalesBanner = (function (node) {
   };
 });
 
-var selectors$1f = {
+var selectors$1k = {
   sectionBlockItems: ".section-blocks > *"
 };
 var animateCountdownBanner = (function (node) {
   var observer = intersectionWatcher(node);
-  delayOffset(node, [selectors$1f.sectionBlockItems]);
+  delayOffset(node, [selectors$1k.sectionBlockItems]);
   return {
     destroy: function destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
@@ -3519,12 +3556,12 @@ var animateCountdownBanner = (function (node) {
   };
 });
 
-var selectors$1e = {
+var selectors$1j = {
   items: "\n  .sales-banner__bar-item--heading,\n  .sales-banner__bar-text,\n  .sales-banner__button,\n  .countdown-banner__bar-item--heading,\n  .countdown-banner__bar-item--timer,\n  .countdown-banner__bar-text,\n  .countdown-banner__button"
 };
 var animateCountdownBar = (function (node) {
   var observer = intersectionWatcher(node);
-  delayOffset(node, [selectors$1e.items]);
+  delayOffset(node, [selectors$1j.items]);
   return {
     destroy: function destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
@@ -3541,13 +3578,13 @@ var animatePromotionBar = (function (node) {
   };
 });
 
-var selectors$1d = {
+var selectors$1i = {
   headerItems: ".animation--blog-header > *",
   articleItem: ".article-item",
   pagination: ".blog__pagination"
 };
 var animateBlog = (function (node) {
-  delayOffset(node, [selectors$1d.headerItems, selectors$1d.articleItem, selectors$1d.pagination]);
+  delayOffset(node, [selectors$1i.headerItems, selectors$1i.articleItem, selectors$1i.pagination]);
   var observer = intersectionWatcher(node, true);
   return {
     destroy: function destroy() {
@@ -3556,30 +3593,30 @@ var animateBlog = (function (node) {
   };
 });
 
-var selectors$1c = {
+var selectors$1h = {
   flyouts: "[data-filter-modal]",
   animationFilterDrawerItem: ".animation--filter-drawer-item"
 };
-var classes$y = {
+var classes$z = {
   animationRevealed: "animation--filter-bar-revealed",
   animationFilterDrawerItem: "animation--filter-drawer-item"
 };
 var animateFilterDrawer = (function (node) {
-  var flyouts = t$2(selectors$1c.flyouts, node);
+  var flyouts = t$2(selectors$1h.flyouts, node);
   flyouts.forEach(_setupItemOffsets); // Set the position offset on each time to be animated
 
   function _setupItemOffsets(flyout) {
-    delayOffset(flyout, [selectors$1c.animationFilterDrawerItem]);
+    delayOffset(flyout, [selectors$1h.animationFilterDrawerItem]);
   } // Trigger the reveal animation when the drawer is opened
 
 
   function open(flyout) {
-    u$1(flyout, classes$y.animationRevealed);
+    u$1(flyout, classes$z.animationRevealed);
   } // Reset the reveal animation when the drawer is closed
 
 
   function close(flyouts) {
-    i$1(flyouts, classes$y.animationRevealed);
+    i$1(flyouts, classes$z.animationRevealed);
   }
 
   return {
@@ -3588,25 +3625,25 @@ var animateFilterDrawer = (function (node) {
   };
 });
 
-var selectors$1b = {
+var selectors$1g = {
   animationItem: ".animation--drawer-menu-item"
 };
-var classes$x = {
+var classes$y = {
   animationRevealed: "animation--drawer-menu-revealed"
 };
 var animateDrawerMenu = (function (node) {
-  delayOffset(node, [selectors$1b.animationItem]); // Trigger the reveal animation when the drawer is opened
+  delayOffset(node, [selectors$1g.animationItem]); // Trigger the reveal animation when the drawer is opened
 
   function open() {
     if (shouldAnimate(node)) {
-      u$1(node, classes$x.animationRevealed);
+      u$1(node, classes$y.animationRevealed);
     }
   } // Trigger the reveal animation when the drawer is opened
 
 
   function close() {
     if (shouldAnimate(node)) {
-      i$1(node, classes$x.animationRevealed);
+      i$1(node, classes$y.animationRevealed);
     }
   }
 
@@ -3616,27 +3653,27 @@ var animateDrawerMenu = (function (node) {
   };
 });
 
-var selectors$1a = {
+var selectors$1f = {
   animationItem: ".animation--quick-cart-items > *, .animation--quick-cart-footer"
 };
-var classes$w = {
+var classes$x = {
   animationRevealed: "animation--quick-cart-revealed"
 };
 var animateQuickCart = (function (node) {
   setup(); // Trigger the reveal animation when the drawer is opened
 
   function open() {
-    u$1(node, classes$w.animationRevealed);
+    u$1(node, classes$x.animationRevealed);
   } // Reset the reveal animation when the drawer is closed
 
 
   function close() {
-    i$1(node, classes$w.animationRevealed);
+    i$1(node, classes$x.animationRevealed);
   } // Setup delay offsets
 
 
   function setup() {
-    delayOffset(node, [selectors$1a.animationItem]);
+    delayOffset(node, [selectors$1f.animationItem]);
   }
 
   return {
@@ -3646,26 +3683,26 @@ var animateQuickCart = (function (node) {
   };
 });
 
-var selectors$19 = {
+var selectors$1e = {
   animationItems: ".animation--quick-view-items > *"
 };
-var classes$v = {
+var classes$w = {
   animationRevealed: "animation--quick-view-revealed"
 };
 var animateQuickView = (function (node) {
   function animate() {
     // Add the animation delay offset variables
-    delayOffset(node, [selectors$19.animationItems]); // Trigger the reveal animation when the quick view is opened.
+    delayOffset(node, [selectors$1e.animationItems]); // Trigger the reveal animation when the quick view is opened.
     // We can't use the `.is-visible` class added in `quick-view-modal.js`
     // because it can be added before the content is fetched.
 
     setTimeout(function () {
-      u$1(node, classes$v.animationRevealed);
+      u$1(node, classes$w.animationRevealed);
     }, 0);
   }
 
   function reset() {
-    i$1(node, classes$v.animationRevealed);
+    i$1(node, classes$w.animationRevealed);
   }
 
   return {
@@ -3674,7 +3711,7 @@ var animateQuickView = (function (node) {
   };
 });
 
-var selectors$18 = {
+var selectors$1d = {
   columns: ".meganav__list-parent > li",
   image: ".meganav__promo-image .image__img",
   overlay: ".meganav__secondary-promo-overlay",
@@ -3684,12 +3721,12 @@ var selectors$18 = {
 };
 var animateMeganav = (function (node) {
   var delayItems = [];
-  var columnItems = t$2(selectors$18.columns, node);
+  var columnItems = t$2(selectors$1d.columns, node);
 
-  if (a$1(node, selectors$18.hasPromo)) {
-    delayOffset(node, [selectors$18.image, selectors$18.overlay, selectors$18.promoItems]);
+  if (a$1(node, selectors$1d.hasPromo)) {
+    delayOffset(node, [selectors$1d.image, selectors$1d.overlay, selectors$1d.promoItems]);
 
-    if (a$1(node, selectors$18.promoLeft)) {
+    if (a$1(node, selectors$1d.promoLeft)) {
       // Set columnItem initial delay to i + 1 of previously delayed
       assignColumnDelays(columnItems, 4);
     } else {
@@ -3719,12 +3756,12 @@ var animateMeganav = (function (node) {
   }
 });
 
-var selectors$17 = {
+var selectors$1c = {
   heading: ".list-collections__heading",
   productItems: ".animation--item"
 };
 var animateListCollections = (function (node) {
-  delayOffset(node, [selectors$17.heading, selectors$17.productItems]);
+  delayOffset(node, [selectors$1c.heading, selectors$1c.productItems]);
   var observer = intersectionWatcher(node, true);
   return {
     destroy: function destroy() {
@@ -3733,11 +3770,11 @@ var animateListCollections = (function (node) {
   };
 });
 
-var selectors$16 = {
+var selectors$1b = {
   gridItems: ".grid-item"
 };
 var animateGrid = (function (node) {
-  delayOffset(node, [selectors$16.gridItems]);
+  delayOffset(node, [selectors$1b.gridItems]);
   var observer = intersectionWatcher(node);
   return {
     destroy: function destroy() {
@@ -3746,18 +3783,134 @@ var animateGrid = (function (node) {
   };
 });
 
-var selectors$15 = {
+var selectors$1a = {
   animationItems: ".animation--purchase-confirmation-item",
   animationFooterItems: ".animation--purchase-confirmation-footer-item"
 };
-var classes$u = {
+var classes$v = {
   animationRevealed: "animation--purchase-confirmation-revealed"
 };
 var animatePurchaseConfirmation = (function (node) {
   function animate() {
     // Add the animation delay offset variables
-    delayOffset(node, [selectors$15.animationItems]);
-    delayOffset(node, [selectors$15.animationFooterItems]); // Trigger the reveal animation when the quick view is opened.
+    delayOffset(node, [selectors$1a.animationItems]);
+    delayOffset(node, [selectors$1a.animationFooterItems]); // Trigger the reveal animation when the quick view is opened.
+
+    setTimeout(function () {
+      u$1(node, classes$v.animationRevealed);
+    }, 0);
+  }
+
+  function reset() {
+    i$1(node, classes$v.animationRevealed);
+  }
+
+  return {
+    animate: animate,
+    reset: reset
+  };
+});
+
+var selectors$19 = {
+  pageItems: ".page-section__inner > *"
+};
+var animatePage = (function (node) {
+  // Add the animation delay offset variables
+  delayOffset(node, [selectors$19.pageItems]);
+  var observer = intersectionWatcher(node, true);
+  return {
+    destroy: function destroy() {
+      observer.forEach(function (observer) {
+        return observer.destroy();
+      });
+    }
+  };
+});
+
+var selectors$18 = {
+  items: ".collapsible-row-list__inner > *"
+};
+var animateCollapsibleRowList = (function (node) {
+  // Add the animation delay offset variables
+  delayOffset(node, [selectors$18.items]);
+  var observer = intersectionWatcher(node);
+  return {
+    destroy: function destroy() {
+      observer === null || observer === void 0 ? void 0 : observer.destroy();
+    }
+  };
+});
+
+var selectors$17 = {
+  items: ".animation--section-blocks > *"
+};
+var animateRichText = (function (node) {
+  delayOffset(node, [selectors$17.items]);
+  var observer = intersectionWatcher(node, true);
+  return {
+    destroy: function destroy() {
+      observer === null || observer === void 0 ? void 0 : observer.destroy();
+    }
+  };
+});
+
+var selectors$16 = {
+  headerItems: ".animation--section-introduction > *",
+  articleItem: ".article-item"
+};
+var animateBlogPosts = (function (node) {
+  delayOffset(node, [selectors$16.headerItems, selectors$16.articleItem]);
+  var observer = intersectionWatcher(node, true);
+  return {
+    destroy: function destroy() {
+      observer === null || observer === void 0 ? void 0 : observer.destroy();
+    }
+  };
+});
+
+var selectors$15 = {
+  intro: ".animation--section-introduction > *",
+  items: ".animation--item"
+};
+var animateFeaturedCollectionGrid = (function (node) {
+  delayOffset(node, [selectors$15.intro, selectors$15.items]);
+  var observer = intersectionWatcher(node);
+  return {
+    destroy: function destroy() {
+      observer === null || observer === void 0 ? void 0 : observer.destroy();
+    }
+  };
+});
+
+var selectors$14 = {
+  productItems: ".animation--item",
+  introductionItems: ".animation--section-introduction > *"
+};
+var animateCollectionListGrid = (function (node) {
+  delayOffset(node, [selectors$14.introductionItems, selectors$14.productItems]);
+  var observer = intersectionWatcher(node);
+  return {
+    destroy: function destroy() {
+      observer === null || observer === void 0 ? void 0 : observer.destroy();
+    }
+  };
+});
+
+var selectors$13 = {
+  animationItems: ".animation--store-availability-drawer-items > *"
+};
+var classes$u = {
+  animationRevealed: "animation--store-availability-drawer-revealed"
+};
+var animateStoreAvailabilityDrawer = (function (node) {
+  function animate() {
+    // Set the position offset on each time to be animated
+    var items = t$2(selectors$13.animationItems, node);
+    items.forEach(function (item, i) {
+      item.style.setProperty("--position-offset-multiplier", i);
+    }); // Trigger the reveal animation when the quick view is opened.
+    // We can't use the `.is-visible` class added in `quick-view-modal.js`
+    // because it can be added before the content is fetched.
 
     setTimeout(function () {
       u$1(node, classes$u.animationRevealed);
@@ -3774,41 +3927,12 @@ var animatePurchaseConfirmation = (function (node) {
   };
 });
 
-var selectors$14 = {
-  pageItems: ".page-section__inner > *"
-};
-var animatePage = (function (node) {
-  // Add the animation delay offset variables
-  delayOffset(node, [selectors$14.pageItems]);
-  var observer = intersectionWatcher(node, true);
-  return {
-    destroy: function destroy() {
-      observer.forEach(function (observer) {
-        return observer.destroy();
-      });
-    }
-  };
-});
-
-var selectors$13 = {
-  items: ".collapsible-row-list__inner > *"
-};
-var animateCollapsibleRowList = (function (node) {
-  // Add the animation delay offset variables
-  delayOffset(node, [selectors$13.items]);
-  var observer = intersectionWatcher(node);
-  return {
-    destroy: function destroy() {
-      observer === null || observer === void 0 ? void 0 : observer.destroy();
-    }
-  };
-});
-
 var selectors$12 = {
-  items: ".animation--section-blocks > *"
+  media: ".animation--product-media"
 };
-var animateRichText = (function (node) {
-  delayOffset(node, [selectors$12.items]);
+var animateProduct = (function (node) {
+  // Add the animation delay offset variables
+  delayOffset(node, [selectors$12.media]);
   var observer = intersectionWatcher(node, true);
   return {
     destroy: function destroy() {
@@ -3819,10 +3943,10 @@ var animateRichText = (function (node) {
 
 var selectors$11 = {
   headerItems: ".animation--section-introduction > *",
-  articleItem: ".article-item"
+  animationItem: ".animation--item"
 };
-var animateBlogPosts = (function (node) {
-  delayOffset(node, [selectors$11.headerItems, selectors$11.articleItem]);
+var animateContactForm = (function (node) {
+  delayOffset(node, [selectors$11.headerItems, selectors$11.animationItem]);
   var observer = intersectionWatcher(node, true);
   return {
     destroy: function destroy() {
@@ -3832,106 +3956,19 @@ var animateBlogPosts = (function (node) {
 });
 
 var selectors$10 = {
-  intro: ".animation--section-introduction > *",
-  items: ".animation--item"
-};
-var animateFeaturedCollectionGrid = (function (node) {
-  delayOffset(node, [selectors$10.intro, selectors$10.items]);
-  var observer = intersectionWatcher(node);
-  return {
-    destroy: function destroy() {
-      observer === null || observer === void 0 ? void 0 : observer.destroy();
-    }
-  };
-});
-
-var selectors$$ = {
-  productItems: ".animation--item",
-  introductionItems: ".animation--section-introduction > *"
-};
-var animateCollectionListGrid = (function (node) {
-  delayOffset(node, [selectors$$.introductionItems, selectors$$.productItems]);
-  var observer = intersectionWatcher(node);
-  return {
-    destroy: function destroy() {
-      observer === null || observer === void 0 ? void 0 : observer.destroy();
-    }
-  };
-});
-
-var selectors$_ = {
-  animationItems: ".animation--store-availability-drawer-items > *"
-};
-var classes$t = {
-  animationRevealed: "animation--store-availability-drawer-revealed"
-};
-var animateStoreAvailabilityDrawer = (function (node) {
-  function animate() {
-    // Set the position offset on each time to be animated
-    var items = t$2(selectors$_.animationItems, node);
-    items.forEach(function (item, i) {
-      item.style.setProperty("--position-offset-multiplier", i);
-    }); // Trigger the reveal animation when the quick view is opened.
-    // We can't use the `.is-visible` class added in `quick-view-modal.js`
-    // because it can be added before the content is fetched.
-
-    setTimeout(function () {
-      u$1(node, classes$t.animationRevealed);
-    }, 0);
-  }
-
-  function reset() {
-    i$1(node, classes$t.animationRevealed);
-  }
-
-  return {
-    animate: animate,
-    reset: reset
-  };
-});
-
-var selectors$Z = {
-  media: ".animation--product-media"
-};
-var animateProduct = (function (node) {
-  // Add the animation delay offset variables
-  delayOffset(node, [selectors$Z.media]);
-  var observer = intersectionWatcher(node, true);
-  return {
-    destroy: function destroy() {
-      observer === null || observer === void 0 ? void 0 : observer.destroy();
-    }
-  };
-});
-
-var selectors$Y = {
-  headerItems: ".animation--section-introduction > *",
-  animationItem: ".animation--item"
-};
-var animateContactForm = (function (node) {
-  delayOffset(node, [selectors$Y.headerItems, selectors$Y.animationItem]);
-  var observer = intersectionWatcher(node, true);
-  return {
-    destroy: function destroy() {
-      observer === null || observer === void 0 ? void 0 : observer.destroy();
-    }
-  };
-});
-
-var selectors$X = {
   partial: "[data-partial]",
   filterBar: "[data-filter-bar]",
   mobileFilterBar: "[data-mobile-filters]",
   productItems: ".animation--item:not(.animation--item-revealed)"
 };
-var classes$s = {
+var classes$t = {
   hideProducts: "animation--search-products-hide",
   itemRevealed: "animation--item-revealed"
 };
 var animateSearch = (function (node) {
-  var partial = n$2(selectors$X.partial, node);
-  var filterbarEl = n$2(selectors$X.filterBar, node);
-  var mobileFilterBarEl = n$2(selectors$X.mobileFilterBar, node);
+  var partial = n$2(selectors$10.partial, node);
+  var filterbarEl = n$2(selectors$10.filterBar, node);
+  var mobileFilterBarEl = n$2(selectors$10.mobileFilterBar, node);
   var filterbarObserver = null;
 
   if (filterbarEl) {
@@ -3947,10 +3984,10 @@ var animateSearch = (function (node) {
   _setupProductItem();
 
   function _setupProductItem() {
-    var productItems = t$2(selectors$X.productItems, node);
-    delayOffset(node, [selectors$X.productItems]);
+    var productItems = t$2(selectors$10.productItems, node);
+    delayOffset(node, [selectors$10.productItems]);
     setTimeout(function () {
-      u$1(productItems, classes$s.itemRevealed);
+      u$1(productItems, classes$t.itemRevealed);
     }, 0);
   } // Scroll to top of search grid after applying filters
   // to show the newly filtered list of products
@@ -3968,7 +4005,7 @@ var animateSearch = (function (node) {
     _setupProductItem(); // Remove the fade out class
 
 
-    i$1(partial, classes$s.hideProducts);
+    i$1(partial, classes$t.hideProducts);
 
     _scrollIntoView();
   }
@@ -3989,12 +4026,12 @@ var animateSearch = (function (node) {
   };
 });
 
-var selectors$W = {
+var selectors$$ = {
   content: ".animation--section-blocks > *"
 };
 var animateSearchBanner = (function (node) {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$W.content]);
+  delayOffset(node, [selectors$$.content]);
   var observer = intersectionWatcher(node);
   return {
     destroy: function destroy() {
@@ -4003,12 +4040,12 @@ var animateSearchBanner = (function (node) {
   };
 });
 
-var selectors$V = {
+var selectors$_ = {
   headerItems: ".animation--section-introduction > *",
   columnItems: ".multi-column__grid-item"
 };
 var animateMultiColumn = (function (node) {
-  delayOffset(node, [selectors$V.headerItems, selectors$V.columnItems]);
+  delayOffset(node, [selectors$_.headerItems, selectors$_.columnItems]);
   var observer = intersectionWatcher(node);
   return {
     destroy: function destroy() {
@@ -4017,12 +4054,12 @@ var animateMultiColumn = (function (node) {
   };
 });
 
-var selectors$U = {
+var selectors$Z = {
   textContent: ".password__text-container-inner > *"
 };
 var animatePassword = (function (node) {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$U.textContent], 3);
+  delayOffset(node, [selectors$Z.textContent], 3);
   var observer = intersectionWatcher(node);
   return {
     destroy: function destroy() {
@@ -4031,25 +4068,25 @@ var animatePassword = (function (node) {
   };
 });
 
-var selectors$T = {
+var selectors$Y = {
   animationItem: ".animation--popup-item"
 };
-var classes$r = {
+var classes$s = {
   animationRevealed: "animation--popup-revealed"
 };
 var animatePopup = (function (node) {
-  delayOffset(node, [selectors$T.animationItem]); // Trigger the reveal animation when the drawer is opened
+  delayOffset(node, [selectors$Y.animationItem]); // Trigger the reveal animation when the drawer is opened
 
   function open() {
     if (shouldAnimate(node)) {
-      u$1(node, classes$r.animationRevealed);
+      u$1(node, classes$s.animationRevealed);
     }
   } // Trigger the reveal animation when the drawer is opened
 
 
   function close() {
     if (shouldAnimate(node)) {
-      i$1(node, classes$r.animationRevealed);
+      i$1(node, classes$s.animationRevealed);
     }
   }
 
@@ -4059,11 +4096,11 @@ var animatePopup = (function (node) {
   };
 });
 
-var selectors$S = {
+var selectors$X = {
   items: ".animation--section-blocks > *"
 };
 var animateNewsletter = (function (node) {
-  delayOffset(node, [selectors$S.items]);
+  delayOffset(node, [selectors$X.items]);
   var observer = intersectionWatcher(node, true);
   return {
     destroy: function destroy() {
@@ -4072,11 +4109,11 @@ var animateNewsletter = (function (node) {
   };
 });
 
-var selectors$R = {
+var selectors$W = {
   items: ".animation--section-blocks > *"
 };
 var animateNewsletterCompact = (function (node) {
-  delayOffset(node, [selectors$R.items]);
+  delayOffset(node, [selectors$W.items]);
   var observer = intersectionWatcher(node, true);
   return {
     destroy: function destroy() {
@@ -4085,16 +4122,16 @@ var animateNewsletterCompact = (function (node) {
   };
 });
 
-var selectors$Q = {
+var selectors$V = {
   headerItems: ".animation--section-introduction > *",
   eventItems: ".event-item"
 };
 var animateEvents = (function (node) {
-  delayOffset(node, [selectors$Q.headerItems]);
+  delayOffset(node, [selectors$V.headerItems]);
   var observer = intersectionWatcher(node, true);
 
   function animateEventItems() {
-    delayOffset(node, [selectors$Q.eventItems]);
+    delayOffset(node, [selectors$V.eventItems]);
     setTimeout(function () {
       u$1(node, "animate-event-items");
     }, 50);
@@ -4102,6 +4139,38 @@ var animateEvents = (function (node) {
 
   return {
     animateEventItems: animateEventItems,
+    destroy: function destroy() {
+      observer === null || observer === void 0 ? void 0 : observer.destroy();
+    }
+  };
+});
+
+var selectors$U = {
+  giantHeading: ".animation--giant-heading",
+  sectionBlockItems: ".animation--section-blocks > *"
+};
+var animatePromoBanner = (function (node) {
+  // Add the animation delay offset variables
+  delayOffset(node, [selectors$U.giantHeading, selectors$U.sectionBlockItems]);
+  var observer = intersectionWatcher(node);
+  return {
+    destroy: function destroy() {
+      observer === null || observer === void 0 ? void 0 : observer.destroy();
+    }
+  };
+});
+
+var selectors$T = {
+  controls: ".product-tabs__tab-buttons",
+  items: ".product-tabs__tab-list-wrapper",
+  accordionItems: ".accordion"
+};
+var animateProductTabs = (function (node) {
+  // Add the animation delay offset variables
+  delayOffset(node, [selectors$T.controls, selectors$T.items]);
+  delayOffset(node, [selectors$T.accordionItems]);
+  var observer = intersectionWatcher(node);
+  return {
     destroy: function destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
     }
@@ -4129,10 +4198,10 @@ function makeRequest(method, url) {
   });
 }
 
-var classes$q = {
+var classes$r = {
   active: "active"
 };
-var selectors$P = {
+var selectors$S = {
   drawerTrigger: "[data-store-availability-drawer-trigger]",
   closeBtn: "[data-store-availability-close]",
   productTitle: "[data-store-availability-product-title]",
@@ -4147,17 +4216,17 @@ var storeAvailabilityDrawer = function storeAvailabilityDrawer(node) {
   var focusTrap = createFocusTrap(node, {
     allowOutsideClick: true
   });
-  var wash = n$2(selectors$P.wash, node.parentNode);
-  var productTitleContainer = n$2(selectors$P.productTitle);
-  var variantTitleContainer = n$2(selectors$P.variantTitle);
-  var storeListContainer = n$2(selectors$P.storeListContainer, node);
+  var wash = n$2(selectors$S.wash, node.parentNode);
+  var productTitleContainer = n$2(selectors$S.productTitle);
+  var variantTitleContainer = n$2(selectors$S.variantTitle);
+  var storeListContainer = n$2(selectors$S.storeListContainer, node);
   var storeAvailabilityDrawerAnimate = null;
 
   if (shouldAnimate(node)) {
     storeAvailabilityDrawerAnimate = animateStoreAvailabilityDrawer(node);
   }
 
-  var events = [e$2([n$2(selectors$P.closeBtn, node), wash], "click", function (e) {
+  var events = [e$2([n$2(selectors$S.closeBtn, node), wash], "click", function (e) {
     e.preventDefault();
 
     _close();
@@ -4167,7 +4236,7 @@ var storeAvailabilityDrawer = function storeAvailabilityDrawer(node) {
   })];
 
   var _handleClick = function _handleClick(target) {
-    var parentContainer = target.closest(selectors$P.parentWrapper);
+    var parentContainer = target.closest(selectors$S.parentWrapper);
     var _parentContainer$data = parentContainer.dataset,
         baseUrl = _parentContainer$data.baseUrl,
         variantId = _parentContainer$data.variantId,
@@ -4180,14 +4249,14 @@ var storeAvailabilityDrawer = function storeAvailabilityDrawer(node) {
       productTitleContainer.innerText = productTitle; // Shopify returns string null on variant titles for products without varians
 
       variantTitleContainer.innerText = variantTitle === "null" ? "" : variantTitle;
-      var storeList = n$2(selectors$P.storeListContent, container);
+      var storeList = n$2(selectors$S.storeListContent, container);
       storeListContainer.innerHTML = "";
       storeListContainer.appendChild(storeList);
     }).then(_open);
   };
 
   var _open = function _open() {
-    u$1(node, classes$q.active);
+    u$1(node, classes$r.active);
 
     if (shouldAnimate(node)) {
       storeAvailabilityDrawerAnimate.animate();
@@ -4211,7 +4280,7 @@ var storeAvailabilityDrawer = function storeAvailabilityDrawer(node) {
 
   var _close = function _close() {
     focusTrap.deactivate();
-    i$1(node, classes$q.active);
+    i$1(node, classes$r.active);
     node.setAttribute("aria-hidden", "true");
     setTimeout(function () {
       if (shouldAnimate(node)) {
@@ -4223,7 +4292,7 @@ var storeAvailabilityDrawer = function storeAvailabilityDrawer(node) {
   };
 
   var delegate = new Delegate(document.body);
-  delegate.on("click", selectors$P.drawerTrigger, function (_, target) {
+  delegate.on("click", selectors$S.drawerTrigger, function (_, target) {
     return _handleClick(target);
   });
 
@@ -4306,7 +4375,7 @@ function backgroundVideoHandler(container) {
   };
 }
 
-var classes$p = {
+var classes$q = {
   hidden: "hidden"
 };
 var sectionClasses = (function () {
@@ -4315,8 +4384,8 @@ var sectionClasses = (function () {
     sections.forEach(function (section) {
       var child = section.firstElementChild; // Specific to recommended hidden products
 
-      if (child && child.classList.contains(classes$p.hidden)) {
-        u$1(section, classes$p.hidden);
+      if (child && child.classList.contains(classes$q.hidden)) {
+        u$1(section, classes$q.hidden);
       }
     });
   }
@@ -4324,6 +4393,15 @@ var sectionClasses = (function () {
   adjustClasses();
   e$2(document, "shopify:section:load", adjustClasses);
 });
+
+var dispatchCustomEvent = function dispatchCustomEvent(eventName) {
+  var data = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  var detail = {
+    detail: data
+  };
+  var event = new CustomEvent(eventName, data ? detail : null);
+  document.dispatchEvent(event);
+};
 
 /**
  * Returns a product JSON object when passed a product URL
@@ -4482,19 +4560,19 @@ function getUrlWithVariant(url, id) {
   return url.concat('?variant=').concat(id);
 }
 
-var selectors$O = {
+var selectors$R = {
   sentinal: ".scroll-sentinal",
   scrollButtons: ".scroll-button",
   scrollViewport: "[data-scroll-container-viewport]"
 };
 
 var scrollContainer = function scrollContainer(node) {
-  var sentinals = t$2(selectors$O.sentinal, node);
-  var buttons = t$2(selectors$O.scrollButtons, node);
+  var sentinals = t$2(selectors$R.sentinal, node);
+  var buttons = t$2(selectors$R.scrollButtons, node);
   var _node$dataset = node.dataset,
       axis = _node$dataset.axis,
       startAtEnd = _node$dataset.startAtEnd;
-  var scrollerViewport = n$2(selectors$O.scrollViewport, node);
+  var scrollerViewport = n$2(selectors$R.scrollViewport, node);
   window.addEventListener("load", function () {
     u$1(node, "scroll-container-initialized");
 
@@ -4590,7 +4668,7 @@ var sel$3 = {
   copyURLButton: ".social-share__copy-url",
   successMessage: ".social-share__success-message"
 };
-var classes$o = {
+var classes$p = {
   hidden: "hidden",
   linkCopied: "social-sharing__popup--success"
 };
@@ -4603,7 +4681,7 @@ var SocialShare = (function (node) {
   var clickListener = e$2(window, "click", handleClick); // Hide copy button on old browsers
 
   if (!navigator.clipboard || !navigator.clipboard.writeText) {
-    u$1(copyURLButton, classes$o.hidden);
+    u$1(copyURLButton, classes$p.hidden);
   }
 
   function handleClick(evt) {
@@ -4648,11 +4726,11 @@ var SocialShare = (function (node) {
 
   function showMessage(message) {
     successMessage.innerHTML = message;
-    i$1(successMessage, classes$o.hidden);
-    u$1(popup, classes$o.linkCopied);
+    i$1(successMessage, classes$p.hidden);
+    u$1(popup, classes$p.linkCopied);
     setTimeout(function () {
-      u$1(successMessage, classes$o.hidden);
-      i$1(popup, classes$o.linkCopied);
+      u$1(successMessage, classes$p.hidden);
+      i$1(popup, classes$p.linkCopied);
     }, 2000);
   }
 
@@ -4709,15 +4787,6 @@ function setStorage(key, val) {
   localStorage.setItem(PREFIX + key, val);
   return true;
 }
-
-var dispatchCustomEvent = function dispatchCustomEvent(eventName) {
-  var data = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-  var detail = {
-    detail: data
-  };
-  var event = new CustomEvent(eventName, data ? detail : null);
-  document.dispatchEvent(event);
-};
 
 var routes = window.theme.routes.cart || {};
 var paths = {
@@ -5542,7 +5611,7 @@ function Media(node) {
   };
 }
 
-var selectors$N = {
+var selectors$Q = {
   idInput: '[name="id"]',
   optionInput: '[name^="options"]',
   quantityInput: "[data-quantity-input]",
@@ -5600,7 +5669,7 @@ function ProductForm(container, form, prod) {
   };
 
   var setIdInputValue = function setIdInputValue(value) {
-    var idInputElement = form.querySelector(selectors$N.idInput);
+    var idInputElement = form.querySelector(selectors$Q.idInput);
 
     if (!idInputElement) {
       idInputElement = document.createElement("input");
@@ -5631,9 +5700,9 @@ function ProductForm(container, form, prod) {
   };
 
   listeners.push(e$2(form, "submit", onSubmit));
-  var optionInputs = initInputs(selectors$N.optionInput, config.onOptionChange);
-  var formQuantityInput = initInputs(selectors$N.quantityInput, config.onQuantityChange);
-  var propertyInputs = initInputs(selectors$N.propertyInput, config.onPropertyChange);
+  var optionInputs = initInputs(selectors$Q.optionInput, config.onOptionChange);
+  var formQuantityInput = initInputs(selectors$Q.quantityInput, config.onQuantityChange);
+  var propertyInputs = initInputs(selectors$Q.propertyInput, config.onPropertyChange);
 
   var destroy = function destroy() {
     listeners.forEach(function (unsubscribe) {
@@ -5693,20 +5762,20 @@ var preventDefault = (function (fn) {
   };
 });
 
-var selectors$M = {
+var selectors$P = {
   imageById: function imageById(id) {
     return "[data-media-item-id='".concat(id, "']");
   },
   imageWrapper: "[data-product-media-wrapper]",
   inYourSpace: "[data-in-your-space]"
 };
-var classes$n = {
+var classes$o = {
   hidden: "hidden"
 };
 function switchImage (container, imageId, inYourSpaceButton) {
-  var newImage = n$2(selectors$M.imageWrapper + selectors$M.imageById(imageId), container);
-  var otherImages = t$2("".concat(selectors$M.imageWrapper, ":not(").concat(selectors$M.imageById(imageId), ")"), container);
-  i$1(newImage, classes$n.hidden); // Update view in space button
+  var newImage = n$2(selectors$P.imageWrapper + selectors$P.imageById(imageId), container);
+  var otherImages = t$2("".concat(selectors$P.imageWrapper, ":not(").concat(selectors$P.imageById(imageId), ")"), container);
+  i$1(newImage, classes$o.hidden); // Update view in space button
 
   if (inYourSpaceButton) {
     if (newImage.dataset.mediaType === "model") {
@@ -5715,7 +5784,7 @@ function switchImage (container, imageId, inYourSpaceButton) {
   }
 
   otherImages.forEach(function (image) {
-    return u$1(image, classes$n.hidden);
+    return u$1(image, classes$o.hidden);
   });
 }
 
@@ -5754,13 +5823,13 @@ function quantityInput (container) {
   };
 }
 
-var selectors$L = {
+var selectors$O = {
   popupTrigger: "[data-popup-trigger]"
 };
 
 var informationPopup = function informationPopup(node) {
   var events = [];
-  var popupTriggers = t$2(selectors$L.popupTrigger, node);
+  var popupTriggers = t$2(selectors$O.popupTrigger, node);
 
   if (!popupTriggers.length) {
     return;
@@ -5788,7 +5857,7 @@ var informationPopup = function informationPopup(node) {
   };
 };
 
-var selectors$K = {
+var selectors$N = {
   moreButton: "[data-more-media]",
   moreBar: "[data-more-media-bar]",
   productMedia: "[data-product-media]"
@@ -5801,14 +5870,14 @@ var states = {
 };
 
 var moreMedia = function moreMedia(node) {
-  var moreButton = n$2(selectors$K.moreButton, node);
+  var moreButton = n$2(selectors$N.moreButton, node);
 
   if (!moreButton) {
     return;
   }
 
-  var moreBar = n$2(selectors$K.moreBar, node);
-  var productMedia = n$2(selectors$K.productMedia, node);
+  var moreBar = n$2(selectors$N.moreBar, node);
+  var productMedia = n$2(selectors$N.productMedia, node);
   var initialAR = parseFloat(window.getComputedStyle(productMedia).aspectRatio);
   var isOpen = false;
 
@@ -5899,13 +5968,13 @@ var moreMedia = function moreMedia(node) {
 };
 
 var strings$5 = window.theme.strings.products;
-var selectors$J = {
+var selectors$M = {
   price: "[data-price]",
   comparePrice: "[data-compare-price]"
 };
 function updatePrices (container, variant) {
-  var price = t$2(selectors$J.price, container);
-  var comparePrice = t$2(selectors$J.comparePrice, container);
+  var price = t$2(selectors$M.price, container);
+  var comparePrice = t$2(selectors$M.comparePrice, container);
   var unavailableString = strings$5.product.unavailable;
 
   if (!variant) {
@@ -5926,14 +5995,14 @@ function updatePrices (container, variant) {
   });
 }
 
-var selectors$I = {
+var selectors$L = {
   productSku: "[data-product-sku]",
   productSkuContainer: ".product__vendor_and_sku"
 };
 var strings$4 = window.theme.strings.products;
 function updateSku (container, variant) {
-  var skuElement = n$2(selectors$I.productSku, container);
-  var skuContainer = n$2(selectors$I.productSkuContainer, container);
+  var skuElement = n$2(selectors$L.productSku, container);
+  var skuContainer = n$2(selectors$L.productSkuContainer, container);
   if (!skuElement) return;
   var sku = strings$4.product.sku;
 
@@ -5970,26 +6039,26 @@ function updateBuyButton (btn, variant) {
   }
 }
 
-var selectors$H = {
+var selectors$K = {
   accordionShell: ".accordion.product-reviews",
   accordionContent: ".accordion__content"
 };
-var classes$m = {
+var classes$n = {
   hidden: "hidden",
   accordion: "accordion"
 };
 function reviewsHandler (node, container) {
   if (!node) return;
   var parentAppBlockContainer = node.parentNode;
-  var accordion = n$2(selectors$H.accordionShell, container);
-  var accordionContent = n$2(selectors$H.accordionContent, accordion); // Move the contents of the reviews app into the accordion shell
+  var accordion = n$2(selectors$K.accordionShell, container);
+  var accordionContent = n$2(selectors$K.accordionContent, accordion); // Move the contents of the reviews app into the accordion shell
   // Then move the contents with the accrdion back into the original
   // location.
 
   accordionContent.appendChild(node);
   parentAppBlockContainer.appendChild(accordion);
-  u$1(parentAppBlockContainer, classes$m.accordion);
-  i$1(accordion, classes$m.hidden);
+  u$1(parentAppBlockContainer, classes$n.accordion);
+  i$1(accordion, classes$n.hidden);
 }
 
 function OptionButtons(els) {
@@ -6026,13 +6095,13 @@ function createOptionGroup(el) {
   };
 }
 
-var selectors$G = {
+var selectors$J = {
   counterContainer: "[data-inventory-counter]",
   inventoryMessage: ".inventory-counter__message",
   countdownBar: ".inventory-counter__bar",
   progressBar: ".inventory-counter__bar-progress"
 };
-var classes$l = {
+var classes$m = {
   hidden: "hidden",
   inventoryLow: "inventory--low",
   inventoryEmpty: "inventory--empty",
@@ -6041,9 +6110,9 @@ var classes$l = {
 
 var inventoryCounter = function inventoryCounter(container, config) {
   var variantsInventories = config.variantsInventories;
-  var counterContainer = n$2(selectors$G.counterContainer, container);
-  var inventoryMessageElement = n$2(selectors$G.inventoryMessage, container);
-  var progressBar = n$2(selectors$G.progressBar, container);
+  var counterContainer = n$2(selectors$J.counterContainer, container);
+  var inventoryMessageElement = n$2(selectors$J.inventoryMessage, container);
+  var progressBar = n$2(selectors$J.progressBar, container);
   var _counterContainer$dat = counterContainer.dataset,
       lowInventoryThreshold = _counterContainer$dat.lowInventoryThreshold,
       stockCountdownMax = _counterContainer$dat.stockCountdownMax,
@@ -6055,7 +6124,7 @@ var inventoryCounter = function inventoryCounter(container, config) {
 
   var threshold = parseInt(lowInventoryThreshold, 10);
   var countDownMax = parseInt(stockCountdownMax, 10);
-  l(counterContainer, classes$l.hidden, !productIventoryValid(variantsInventories[config.id]));
+  l(counterContainer, classes$m.hidden, !productIventoryValid(variantsInventories[config.id]));
   checkThreshold(variantsInventories[config.id]);
   setProgressBar(variantsInventories[config.id].inventory_quantity);
   setInventoryMessage(variantsInventories[config.id].inventory_message);
@@ -6064,11 +6133,11 @@ var inventoryCounter = function inventoryCounter(container, config) {
     var inventory_policy = _ref.inventory_policy,
         inventory_quantity = _ref.inventory_quantity,
         inventory_management = _ref.inventory_management;
-    i$1(counterContainer, classes$l.inventoryLow);
+    i$1(counterContainer, classes$m.inventoryLow);
 
     if (inventory_management !== null && inventory_policy === "deny") {
       if (inventory_quantity <= 0) {
-        u$1(counterContainer, classes$l.inventoryEmpty);
+        u$1(counterContainer, classes$m.inventoryEmpty);
         counterContainer.setAttribute("data-stock-category", "empty");
       } else if (inventory_quantity <= threshold) {
         counterContainer.setAttribute("data-stock-category", "low");
@@ -6102,15 +6171,15 @@ var inventoryCounter = function inventoryCounter(container, config) {
       return;
     }
 
-    l(counterContainer, classes$l.hidden, !productIventoryValid(variantsInventories[variant.id]));
+    l(counterContainer, classes$m.hidden, !productIventoryValid(variantsInventories[variant.id]));
     checkThreshold(variantsInventories[variant.id]);
     setProgressBar(variantsInventories[variant.id].inventory_quantity);
     setInventoryMessage(variantsInventories[variant.id].inventory_message);
   };
 
   function setUnavailable() {
-    i$1(counterContainer, classes$l.hidden);
-    u$1(counterContainer, classes$l.inventoryUnavailable);
+    i$1(counterContainer, classes$m.hidden);
+    u$1(counterContainer, classes$m.inventoryUnavailable);
     counterContainer.setAttribute("data-stock-category", "unavailable");
     setProgressBar(0);
     setInventoryMessage(unavailableText);
@@ -6131,14 +6200,14 @@ var lerp = function lerp(start, end, amt) {
   return (1 - amt) * start + amt * end;
 };
 
-var selectors$F = {
+var selectors$I = {
   productMeta: ".product__meta"
 };
-var classes$k = {
+var classes$l = {
   hasSticky: "product--has-sticky-scroll"
 };
 function stickyScroll (node) {
-  var productMeta = n$2(selectors$F.productMeta, node);
+  var productMeta = n$2(selectors$I.productMeta, node);
   node.style.setProperty("--product-meta-top", 0); // Init position vars
   // The previous scroll position of the page
 
@@ -6187,11 +6256,11 @@ function stickyScroll (node) {
     // so it won't have room to scroll.
 
     if (metaHeightWithHeader > window.innerHeight && node.offsetHeight > metaHeightWithHeader) {
-      u$1(node, classes$k.hasSticky);
+      u$1(node, classes$l.hasSticky);
 
       _scrollHandler(window.scrollY);
     } else {
-      i$1(node, classes$k.hasSticky);
+      i$1(node, classes$l.hasSticky);
     }
   }
 
@@ -6235,20 +6304,20 @@ function stickyScroll (node) {
   };
 }
 
-var selectors$E = {
+var selectors$H = {
   item: ".product-item",
   itemInner: ".product-item__inner",
   quickViewButton: ".show-product-quickview"
 };
 function ProductItem(container) {
-  var items = t$2(selectors$E.item, container);
+  var items = t$2(selectors$H.item, container);
   if (!items.length) return; // Add z-index for quick-buy overlap
 
   items.forEach(function (item, i) {
     return item.style.setProperty("--z-index-item", items.length - i);
   });
   var productItemAnimations = AnimateProductItem(items);
-  var quickViewButtons = t$2(selectors$E.quickViewButton, container);
+  var quickViewButtons = t$2(selectors$H.quickViewButton, container);
   var events = [e$2(quickViewButtons, "click", function (e) {
     e.preventDefault();
     e.stopPropagation();
@@ -6271,18 +6340,18 @@ function ProductItem(container) {
   };
 }
 
-var selectors$D = {
+var selectors$G = {
   sliderContainer: ".swiper",
   visibleSlides: ".swiper-slide-visible"
 };
-var classes$j = {
+var classes$k = {
   overflow: "has-overflow",
   carousel: "carousel"
 };
 var Carousel = (function (node) {
   var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
   // Pass the swiper container or the contain section
-  var swiperContainer = a$1(node, classes$j.carousel) ? node : n$2(selectors$D.sliderContainer, node);
+  var swiperContainer = a$1(node, classes$k.carousel) ? node : n$2(selectors$G.sliderContainer, node);
   if (!swiperContainer) return;
   var carousel;
   var events = [];
@@ -6306,13 +6375,13 @@ var Carousel = (function (node) {
   var handleOverflow = function handleOverflow(slides) {
     // Allow breakpoints config settings to apply
     setTimeout(function () {
-      var hasOverflow = a$1(swiperContainer, classes$j.overflow);
-      var needsOverflow = t$2(selectors$D.visibleSlides, swiperContainer).length !== slides.length;
+      var hasOverflow = a$1(swiperContainer, classes$k.overflow);
+      var needsOverflow = t$2(selectors$G.visibleSlides, swiperContainer).length !== slides.length;
 
       if (!hasOverflow && needsOverflow) {
-        u$1(swiperContainer, classes$j.overflow);
+        u$1(swiperContainer, classes$k.overflow);
       } else if (hasOverflow && !needsOverflow) {
-        i$1(swiperContainer, classes$j.overflow);
+        i$1(swiperContainer, classes$k.overflow);
       }
     }, 0);
   };
@@ -6370,13 +6439,13 @@ var Carousel = (function (node) {
   };
 });
 
-var selectors$C = {
+var selectors$F = {
   featuredProducts: "[data-featured-products]",
   leftSideMobileFeaturedProducts: ".left-side-blocks.for-mobile [data-featured-products]"
 };
 
 var featuredProducts = function featuredProducts(node) {
-  var featuredProducts = t$2(selectors$C.featuredProducts, node);
+  var featuredProducts = t$2(selectors$F.featuredProducts, node);
   if (!featuredProducts.length) return;
   var productItems = featuredProducts.forEach(function (productContainer) {
     return ProductItem(productContainer);
@@ -6390,7 +6459,7 @@ var featuredProducts = function featuredProducts(node) {
     // ordering with right column blocks on mobile. Here we
     // target the mobile left version if it exists as it requires
     // the potential mobile swiper only.
-    mobileFeaturedProducts = n$2(selectors$C.leftSideMobileFeaturedProducts, node) || n$2(selectors$C.featuredProducts, node);
+    mobileFeaturedProducts = n$2(selectors$F.leftSideMobileFeaturedProducts, node) || n$2(selectors$F.featuredProducts, node);
 
     if (window.matchMedia(getMediaQuery("below-720")).matches) {
       _initMobileSwiper();
@@ -6428,20 +6497,20 @@ var featuredProducts = function featuredProducts(node) {
   };
 };
 
-var classes$i = {
+var classes$j = {
   disabled: "disabled"
 };
-var selectors$B = {
+var selectors$E = {
   variantsWrapper: ".product__variants-wrapper",
   variantsJson: "[data-variant-json]",
   input: ".dynamic-variant-input",
   inputWrap: ".dynamic-variant-input-wrap",
   inputWrapWithValue: function inputWrapWithValue(option) {
-    return "".concat(selectors$B.inputWrap, "[data-index=\"").concat(option, "\"]");
+    return "".concat(selectors$E.inputWrap, "[data-index=\"").concat(option, "\"]");
   },
   buttonWrap: ".dynamic-variant-button",
   buttonWrapWithValue: function buttonWrapWithValue(value) {
-    return "".concat(selectors$B.buttonWrap, "[data-option-value=\"").concat(value, "\"]");
+    return "".concat(selectors$E.buttonWrap, "[data-option-value=\"").concat(value, "\"]");
   }
 };
 /**
@@ -6457,17 +6526,17 @@ var selectors$B = {
  */
 
 function variantAvailability (container) {
-  var variantsWrapper = n$2(selectors$B.variantsWrapper, container); // Variant options block do not exist
+  var variantsWrapper = n$2(selectors$E.variantsWrapper, container); // Variant options block do not exist
 
   if (!variantsWrapper) return;
   var _variantsWrapper$data = variantsWrapper.dataset,
       enableDynamicProductOptions = _variantsWrapper$data.enableDynamicProductOptions,
       currentVariantId = _variantsWrapper$data.currentVariantId;
   if (enableDynamicProductOptions === "false") return;
-  var productVariants = JSON.parse(n$2(selectors$B.variantsJson, container).innerText); // Using associated selects as buy buttons may be disabled.
+  var productVariants = JSON.parse(n$2(selectors$E.variantsJson, container).innerText); // Using associated selects as buy buttons may be disabled.
 
-  var variantSelectors = t$2(selectors$B.input, container);
-  var variantSelectorWrappers = t$2(selectors$B.inputWrap, container);
+  var variantSelectors = t$2(selectors$E.input, container);
+  var variantSelectorWrappers = t$2(selectors$E.inputWrap, container);
   var events = [];
   init();
 
@@ -6589,7 +6658,7 @@ function variantAvailability (container) {
   }
 
   function manageOptionState(option, values) {
-    var group = n$2(selectors$B.inputWrapWithValue(option), container); // Loop through each option value
+    var group = n$2(selectors$E.inputWrapWithValue(option), container); // Loop through each option value
 
     values.forEach(function (obj) {
       toggleVariantOption(group, obj);
@@ -6601,19 +6670,19 @@ function variantAvailability (container) {
     var value = escapeQuotes(obj.value); // Do nothing if the option is a select dropdown
 
     if (a$1(group, "select-wrapper")) return;
-    var button = n$2(selectors$B.buttonWrapWithValue(value), group); // Variant exists - enable & show variant
+    var button = n$2(selectors$E.buttonWrapWithValue(value), group); // Variant exists - enable & show variant
 
-    i$1(button, classes$i.disabled); // Variant sold out - cross out option (remains selectable)
+    i$1(button, classes$j.disabled); // Variant sold out - cross out option (remains selectable)
 
     if (obj.soldOut) {
-      u$1(button, classes$i.disabled);
+      u$1(button, classes$j.disabled);
     }
   }
 
   function disableVariantGroup(group) {
     if (a$1(group, "select-wrapper")) return;
-    t$2(selectors$B.buttonWrap, group).forEach(function (button) {
-      return u$1(button, classes$i.disabled);
+    t$2(selectors$E.buttonWrap, group).forEach(function (button) {
+      return u$1(button, classes$j.disabled);
     });
   }
 
@@ -6639,21 +6708,21 @@ function variantAvailability (container) {
 }
 
 window.theme.strings.products;
-var selectors$A = {
+var selectors$D = {
   unitPriceContainer: "[data-unit-price-container]",
   unitPrice: "[data-unit-price]",
   unitPriceBase: "[data-unit-base]"
 };
-var classes$h = {
+var classes$i = {
   available: "unit-price--available"
 };
 
 var updateUnitPrices = function updateUnitPrices(container, variant) {
-  var unitPriceContainers = t$2(selectors$A.unitPriceContainer, container);
-  var unitPrices = t$2(selectors$A.unitPrice, container);
-  var unitPriceBases = t$2(selectors$A.unitPriceBase, container);
+  var unitPriceContainers = t$2(selectors$D.unitPriceContainer, container);
+  var unitPrices = t$2(selectors$D.unitPrice, container);
+  var unitPriceBases = t$2(selectors$D.unitPriceBase, container);
   var showUnitPricing = !variant || !variant.unit_price;
-  l(unitPriceContainers, classes$h.available, !showUnitPricing);
+  l(unitPriceContainers, classes$i.available, !showUnitPricing);
   if (!variant || !variant.unit_price) return;
 
   _replaceText(unitPrices, formatMoney(variant.unit_price));
@@ -6700,7 +6769,7 @@ var storeAvailability = function storeAvailability(container, product, variant) 
   };
 };
 
-var selectors$z = {
+var selectors$C = {
   form: "[data-product-form]",
   addToCart: "[data-add-to-cart]",
   variantSelect: "[data-variant-select]",
@@ -6746,12 +6815,12 @@ var Product = /*#__PURE__*/function () {
     this.isQuickView = isQuickView;
     this.isFullProduct = isFullProduct;
     this.isFeaturedProduct = isFeaturedProduct;
-    this.formElement = n$2(selectors$z.form, this.container);
-    this.quantityError = n$2(selectors$z.quantityError, this.container);
-    this.displayedDiscount = n$2(selectors$z.displayedDiscount, this.container);
+    this.formElement = n$2(selectors$C.form, this.container);
+    this.quantityError = n$2(selectors$C.quantityError, this.container);
+    this.displayedDiscount = n$2(selectors$C.displayedDiscount, this.container);
     this.viewInYourSpace = n$2("[data-in-your-space]", this.container);
     this.viewInYourSpace && l(this.viewInYourSpace, "visible", isMobile$1());
-    this.photosDesktop = n$2(selectors$z.photosDesktop, this.container);
+    this.photosDesktop = n$2(selectors$C.photosDesktop, this.container);
     this.breakPointHandler = atBreakpointChange(960, function () {
       if (window.matchMedia(getMediaQuery("below-960")).matches) {
         _this._initPhotoCarousel();
@@ -6766,8 +6835,8 @@ var Product = /*#__PURE__*/function () {
       this._initPhotoCarousel();
     }
 
-    this.productThumbnails = n$2(selectors$z.thumbs, this.container);
-    this.productThumbnailItems = t$2(selectors$z.thumb, this.container);
+    this.productThumbnails = n$2(selectors$C.thumbs, this.container);
+    this.productThumbnailItems = t$2(selectors$C.thumb, this.container);
 
     if (this.productThumbnails) {
       this.productThumbnailsScroller = scrollContainer(this.productThumbnails);
@@ -6775,14 +6844,14 @@ var Product = /*#__PURE__*/function () {
 
     this.moreMedia = moreMedia(this.container); // Handle Surface pickup
 
-    this.storeAvailabilityContainer = n$2(selectors$z.storeAvailability, this.container);
+    this.storeAvailabilityContainer = n$2(selectors$C.storeAvailability, this.container);
     this.availability = null; // Handle Shopify Product Reviews if they exist as a product block
 
-    this.reviewsHandler = reviewsHandler(n$2(selectors$z.productReviews, this.container), this.container); // // non-SPR rating display
+    this.reviewsHandler = reviewsHandler(n$2(selectors$C.productReviews, this.container), this.container); // // non-SPR rating display
 
-    var nonSprRatingCount = n$2(selectors$z.nonSprRatingCountLink, this.container);
+    var nonSprRatingCount = n$2(selectors$C.nonSprRatingCountLink, this.container);
 
-    if (nonSprRatingCount && !n$2(selectors$z.productReviews, document)) {
+    if (nonSprRatingCount && !n$2(selectors$C.productReviews, document)) {
       // The rating count links to "#shopify-product-reviews" but
       // if that block doesn't exist we should remove the link
       nonSprRatingCount.removeAttribute("href");
@@ -6829,7 +6898,7 @@ var Product = /*#__PURE__*/function () {
     }
 
     this.quantityInput = quantityInput(this.container);
-    this.customOptionInputs = t$2(selectors$z.customOptionInputs, this.container);
+    this.customOptionInputs = t$2(selectors$C.customOptionInputs, this.container);
     this.socialButtons = t$2("[data-social-share]", this.container);
     this.featuredProducts = featuredProducts(this.container);
 
@@ -6894,7 +6963,7 @@ var Product = /*#__PURE__*/function () {
       if (this.customOptionInputs) {
         this.customOptionInputs.forEach(function (input) {
           var id = input.dataset.customOptionInput;
-          var target = n$2(selectors$z.customOptionInputTargetsById(id), _this2.container);
+          var target = n$2(selectors$C.customOptionInputTargetsById(id), _this2.container);
 
           _this2.events.push(e$2(input, "change", function (e) {
             // Update the hidden input within the form, per type
@@ -6912,7 +6981,7 @@ var Product = /*#__PURE__*/function () {
     value: function _initPhotoCarousel() {
       var _this3 = this;
 
-      var swiperWrapper = n$2(selectors$z.photosMobile, this.container);
+      var swiperWrapper = n$2(selectors$C.photosMobile, this.container);
       import(flu.chunks.swiper).then(function (_ref) {
         var Swiper = _ref.Swiper,
             Pagination = _ref.Pagination;
@@ -6949,16 +7018,16 @@ var Product = /*#__PURE__*/function () {
       var variant = _ref2.dataset.variant,
           srcElement = _ref2.srcElement;
       // Update option label
-      var optionParentWrapper = srcElement.closest(selectors$z.productOption);
-      var optionLabel = n$2(selectors$z.optionLabelValue, optionParentWrapper);
+      var optionParentWrapper = srcElement.closest(selectors$C.productOption);
+      var optionLabel = n$2(selectors$C.optionLabelValue, optionParentWrapper);
 
       if (optionLabel) {
         optionLabel.textContent = srcElement.value;
       }
 
-      var buyButton = n$2(selectors$z.addToCart, this.container);
-      var priceWrapper = n$2(selectors$z.priceWrapper, this.container);
-      l(priceWrapper, "hide", !variant); // Update prices to reflect selected variant
+      var buyButton = n$2(selectors$C.addToCart, this.container);
+      var priceWrapper = n$2(selectors$C.priceWrapper, this.container);
+      priceWrapper && l(priceWrapper, "hide", !variant); // Update prices to reflect selected variant
 
       updatePrices(this.container, variant); // Update buy button
 
@@ -6971,7 +7040,7 @@ var Product = /*#__PURE__*/function () {
       this.availability && this.availability.update(variant); // Update displayed discount
 
       if (this.displayedDiscount) {
-        var newDiscountEl = variant && n$2(selectors$z.displayedDiscountByVariantId(variant.id), this.container);
+        var newDiscountEl = variant && n$2(selectors$C.displayedDiscountByVariantId(variant.id), this.container);
 
         if (variant && newDiscountEl) {
           this.displayedDiscount.textContent = newDiscountEl.textContent;
@@ -6997,7 +7066,7 @@ var Product = /*#__PURE__*/function () {
         path: url
       }, "", url); // We need to set the id input manually so the Dynamic Checkout Button works
 
-      var selectedVariantOpt = n$2("".concat(selectors$z.variantSelect, " ").concat(selectors$z.optionById(variant.id)), this.container);
+      var selectedVariantOpt = n$2("".concat(selectors$C.variantSelect, " ").concat(selectors$C.optionById(variant.id)), this.container);
       selectedVariantOpt.selected = true; // We need to dispatch an event so Shopify pay knows the form has changed
 
       this.formElement.dispatchEvent(new Event("change")); // Update selected variant image and thumb
@@ -7075,14 +7144,14 @@ var Product = /*#__PURE__*/function () {
     value: function onFormSubmit(e) {
       var _this4 = this;
 
-      var purchaseConfirmation = n$2(selectors$z.purchaseConfirmation, document);
-      var quickCart = n$2(selectors$z.quickCart, document);
+      var purchaseConfirmation = n$2(selectors$C.purchaseConfirmation, document);
+      var quickCart = n$2(selectors$C.quickCart, document);
       var isQuickViewForm = Boolean(e.target.closest(".quick-product")); // if quick cart and confirmation popup are enable submit form
 
       if (!purchaseConfirmation && !quickCart && !isQuickViewForm) return;
       e.preventDefault();
       u$1(this.quantityError, "hidden");
-      var button = n$2(selectors$z.addToCart, this.container);
+      var button = n$2(selectors$C.addToCart, this.container);
       u$1(button, "loading");
       cart.addItem(this.formElement).then(function (_ref4) {
         var item = _ref4.item;
@@ -7109,7 +7178,7 @@ var Product = /*#__PURE__*/function () {
         }
 
         i$1(_this4.quantityError, "hidden");
-        var button = n$2(selectors$z.addToCart, _this4.container);
+        var button = n$2(selectors$C.addToCart, _this4.container);
         i$1(button, "loading");
       });
     }
@@ -7138,12 +7207,12 @@ var Product = /*#__PURE__*/function () {
   return Product;
 }();
 
-var classes$g = {
+var classes$h = {
   visible: "is-visible",
   active: "active",
   fixed: "is-fixed"
 };
-var selectors$y = {
+var selectors$B = {
   closeBtn: "[data-modal-close]",
   wash: ".modal__wash",
   modalContent: ".quick-view-modal__content",
@@ -7154,10 +7223,10 @@ var quickViewModal = function quickViewModal(node) {
   var focusTrap = createFocusTrap(node, {
     allowOutsideClick: true
   });
-  var wash = n$2(selectors$y.wash, node);
-  var closeButton = n$2(selectors$y.closeBtn, node);
-  var modalContent = n$2(selectors$y.modalContent, node);
-  var loadingMessage = n$2(selectors$y.loadingMessage, node);
+  var wash = n$2(selectors$B.wash, node);
+  var closeButton = n$2(selectors$B.closeBtn, node);
+  var modalContent = n$2(selectors$B.modalContent, node);
+  var loadingMessage = n$2(selectors$B.loadingMessage, node);
   var quickViewAnimation = null;
 
   if (shouldAnimate(node)) {
@@ -7198,16 +7267,17 @@ var quickViewModal = function quickViewModal(node) {
       }
 
       product = new Product(renderedProductElement);
-      focusTrap.activate();
+      dispatchCustomEvent("quickview:loaded");
     });
   };
 
   var _open = function _open() {
-    u$1(node, classes$g.fixed);
+    u$1(node, classes$h.fixed);
     setTimeout(function () {
-      u$1(node, classes$g.active);
+      u$1(node, classes$h.active);
       setTimeout(function () {
-        u$1(node, classes$g.visible);
+        u$1(node, classes$h.visible);
+        focusTrap.activate();
       }, 50);
     }, 50);
     disableBodyScroll(node, {
@@ -7226,11 +7296,11 @@ var quickViewModal = function quickViewModal(node) {
 
   var _close = function _close() {
     focusTrap.deactivate();
-    i$1(node, classes$g.visible);
-    i$1(node, classes$g.active);
+    i$1(node, classes$h.visible);
+    i$1(node, classes$h.active);
     enableBodyScroll(node);
     setTimeout(function () {
-      i$1(node, classes$g.fixed);
+      i$1(node, classes$h.fixed);
 
       if (shouldAnimate(node)) {
         quickViewAnimation.reset();
@@ -7288,7 +7358,7 @@ function productLightbox() {
   });
 }
 
-var classes$f = {
+var classes$g = {
   visible: "is-visible"
 };
 
@@ -7313,19 +7383,19 @@ var flashAlertModal = function flashAlertModal(node) {
     if (!alertMessage) return;
     var messageContainer = n$2(".flash-alert__container", node);
     messageContainer.innerText = alertMessage;
-    u$1(node, classes$f.visible);
+    u$1(node, classes$g.visible);
     messageContainer.addEventListener("animationend", function () {
-      i$1(node, classes$f.visible);
+      i$1(node, classes$g.visible);
     }, {
       once: true
     });
   };
 };
 
-var selectors$x = {
+var selectors$A = {
   innerOverlay: ".header-overlay__inner"
 };
-var classes$e = {
+var classes$f = {
   isVisible: "is-visible",
   isActive: "is-active"
 };
@@ -7338,7 +7408,7 @@ var events = {
 var headerOverlay = function headerOverlay(node) {
   if (!node) return;
   var overlay = node;
-  var overlayInner = node.querySelector(selectors$x.innerOverlay);
+  var overlayInner = node.querySelector(selectors$A.innerOverlay);
   var overlayShowListener = c(events.show, function () {
     return _showOverlay();
   });
@@ -7350,9 +7420,9 @@ var headerOverlay = function headerOverlay(node) {
     o$1({
       headerOverlayOpen: true
     });
-    overlay.classList.add(classes$e.isActive);
+    overlay.classList.add(classes$f.isActive);
     setTimeout(function () {
-      overlayInner.classList.add(classes$e.isVisible);
+      overlayInner.classList.add(classes$f.isVisible);
     }, 0);
   };
 
@@ -7361,9 +7431,9 @@ var headerOverlay = function headerOverlay(node) {
       headerOverlayOpen: false
     });
     r$1(events.hiding);
-    overlayInner.classList.remove(classes$e.isVisible);
+    overlayInner.classList.remove(classes$f.isVisible);
     setTimeout(function () {
-      overlay.classList.remove(classes$e.isActive);
+      overlay.classList.remove(classes$f.isActive);
     }, 0);
   };
 
@@ -8417,7 +8487,7 @@ function PredictiveSearch(resultsContainer) {
   };
 }
 
-var classes$d = {
+var classes$e = {
   active: "active",
   visible: "quick-search--visible"
 };
@@ -8435,7 +8505,7 @@ function QuickSearch (node, header) {
     var keyCode = _ref.keyCode;
     if (keyCode === 27) close();
   }), c("drawer-menu:open", function () {
-    if (a$1(node, classes$d.active)) close();
+    if (a$1(node, classes$e.active)) close();
   })];
   var trap = createFocusTrap(node, {
     allowOutsideClick: true
@@ -8443,9 +8513,9 @@ function QuickSearch (node, header) {
 
   function handleInput(e) {
     if (e.target.value === "") reset();
-    l(clear, classes$d.visible, e.target.value !== "");
-    l(input.parentNode, classes$d.active, e.target.value !== "");
-    l(form, classes$d.active, e.target.value !== "");
+    l(clear, classes$e.visible, e.target.value !== "");
+    l(input.parentNode, classes$e.active, e.target.value !== "");
+    l(form, classes$e.active, e.target.value !== "");
     predictiveSearch.getSearchResults(e.target.value);
   } // Clear contents of the search input and hide results container
 
@@ -8453,9 +8523,9 @@ function QuickSearch (node, header) {
   function reset(e) {
     e && e.preventDefault();
     input.value = "";
-    i$1(clear, classes$d.visible);
-    i$1(input.parentNode, classes$d.active);
-    i$1(form, classes$d.active);
+    i$1(clear, classes$e.visible);
+    i$1(input.parentNode, classes$e.active);
+    i$1(form, classes$e.active);
     resultsContainer.innerHTML = "";
     input.focus();
   }
@@ -8476,7 +8546,7 @@ function QuickSearch (node, header) {
     searchToggles.forEach(function (searchToggle) {
       searchToggle.setAttribute("aria-expanded", true);
     });
-    u$1(node, classes$d.active);
+    u$1(node, classes$e.active);
     node.setAttribute("aria-hidden", false);
     document.body.setAttribute("quick-search-open", "true");
     trap.activate();
@@ -8499,7 +8569,7 @@ function QuickSearch (node, header) {
       scrollPosition = window.pageYOffset;
       document.body.style.top = "-".concat(scrollPosition, "px");
       document.body.classList.add("scroll-lock");
-      u$1(node, classes$d.visible);
+      u$1(node, classes$e.visible);
     }, 50);
   }
 
@@ -8507,11 +8577,11 @@ function QuickSearch (node, header) {
     searchToggles.forEach(function (searchToggle) {
       searchToggle.setAttribute("aria-expanded", false);
     });
-    i$1(node, classes$d.visible);
+    i$1(node, classes$e.visible);
     document.body.setAttribute("quick-search-open", "false");
     trap.deactivate();
     setTimeout(function () {
-      i$1(node, classes$d.active);
+      i$1(node, classes$e.active);
       node.setAttribute("aria-hidden", true);
       enableBodyScroll(node);
       document.body.classList.remove("scroll-lock");
@@ -8806,7 +8876,7 @@ var sel$2 = {
   localeInput: "[data-locale-input]",
   currencyInput: "[data-currency-input]"
 };
-var classes$c = {
+var classes$d = {
   active: "active",
   visible: "visible",
   countrySelector: "drawer-menu__list--country-selector"
@@ -8844,7 +8914,7 @@ var menu = function menu(node) {
   var currencyInput = node.querySelector(sel$2.currencyInput); // quick-search listener
 
   var quickSearchListener = c("search:open", function () {
-    if (a$1(node, classes$c.active)) close();
+    if (a$1(node, classes$d.active)) close();
   }); // Every individual menu item
 
   var items = node.querySelectorAll(sel$2.item);
@@ -8853,17 +8923,13 @@ var menu = function menu(node) {
   });
 
   function handleItem(e) {
+    var item = e.currentTarget.dataset.item; // Standard link that goes to a different url
+
+    if (item === "link") return;
     e.preventDefault();
-    var item = e.currentTarget.dataset.item;
 
     switch (item) {
-      // Standard link that goes to a different url
-      case "link":
-        close();
-        window.location = e.currentTarget.href;
-        break;
       // Element that will navigate to child navigation list
-
       case "parent":
         clickParent(e);
         break;
@@ -8908,13 +8974,13 @@ var menu = function menu(node) {
 
   function open() {
     r$1("drawer-menu:open");
-    node.classList.add(classes$c.active);
+    node.classList.add(classes$d.active);
     document.body.setAttribute("mobile-menu-open", "true");
     menuButton.setAttribute("aria-expanded", true);
     menuButton.setAttribute("aria-label", menuButton.getAttribute("data-aria-label-opened"));
     setTimeout(function () {
       focusTrap.activate();
-      node.classList.add(classes$c.visible);
+      node.classList.add(classes$d.visible);
       disableBodyScroll(node, {
         hideBodyOverflow: true,
         allowTouchMove: function allowTouchMove(el) {
@@ -8944,15 +9010,15 @@ var menu = function menu(node) {
     menuButton.setAttribute("aria-label", menuButton.getAttribute("data-aria-label-closed"));
     e && e.preventDefault();
     focusTrap.deactivate();
-    node.classList.remove(classes$c.visible);
+    node.classList.remove(classes$d.visible);
     document.body.setAttribute("mobile-menu-open", "false");
     var childMenus = node.querySelectorAll(sel$2.subMenus);
     childMenus.forEach(function (childMenu) {
-      childMenu.classList.remove(classes$c.visible);
+      childMenu.classList.remove(classes$d.visible);
       childMenu.setAttribute("aria-hidden", true);
     });
     setTimeout(function () {
-      node.classList.remove(classes$c.active);
+      node.classList.remove(classes$d.active);
       enableBodyScroll(node);
       document.body.classList.remove("scroll-lock");
       document.body.style.top = "";
@@ -8967,7 +9033,7 @@ var menu = function menu(node) {
     var parentLink = e.currentTarget;
     parentLink.ariaExpanded = "true";
     var childMenu = parentLink.nextElementSibling;
-    childMenu.classList.add(classes$c.visible);
+    childMenu.classList.add(classes$d.visible);
     childMenu.setAttribute("aria-hidden", false);
     main.style.height = formatHeight(childMenu.offsetHeight);
     menuContents.scrollTo(0, 0);
@@ -8997,7 +9063,7 @@ var menu = function menu(node) {
 
     main.style.height = formatHeight(height);
     var parent = e.currentTarget.closest("ul");
-    parent.classList.remove(classes$c.visible);
+    parent.classList.remove(classes$d.visible);
     var parentLink = parent.previousElementSibling;
     parentLink.ariaExpanded = "false";
     navigate(linksDepth -= 1);
@@ -9007,14 +9073,14 @@ var menu = function menu(node) {
     e.preventDefault();
     navigatePrimary(1);
     var childMenu = e.currentTarget.nextElementSibling;
-    childMenu.classList.add(classes$c.visible);
+    childMenu.classList.add(classes$d.visible);
   }
 
   function handleSecondaryHeading(e) {
     e === null || e === void 0 ? void 0 : e.preventDefault();
     navigatePrimary(0);
     var parent = e.currentTarget.closest("ul");
-    parent.classList.remove(classes$c.visible);
+    parent.classList.remove(classes$d.visible);
   }
 
   function handleCrossBorderChoice(e, input) {
@@ -9025,7 +9091,7 @@ var menu = function menu(node) {
   }
 
   function handleKeyboard(e) {
-    if (!node.classList.contains(classes$c.visible)) return;
+    if (!node.classList.contains(classes$d.visible)) return;
 
     if (e.key == "Escape" || e.keyCode === 27) {
       close();
@@ -9064,7 +9130,51 @@ var menu = function menu(node) {
   };
 };
 
-var selectors$w = {
+var selectors$z = {
+  progressBar: ".free-shipping-bar__bar",
+  message: ".free-shipping-bar__message"
+};
+var classes$c = {
+  loaded: "free-shipping-bar--loaded",
+  success: "free-shipping-bar--success"
+};
+function freeShippingBar(node) {
+  var _node$dataset = node.dataset,
+      threshold = _node$dataset.threshold,
+      cartTotal = _node$dataset.cartTotal,
+      freeShippingSuccessMessage = _node$dataset.freeShippingSuccessMessage,
+      freeShippingPendingMessage = _node$dataset.freeShippingPendingMessage;
+  cartTotal = parseInt(cartTotal, 10); // Account for different currencies using the Shopify currency rate
+
+  threshold = Math.round(parseInt(threshold, 10) * (window.Shopify.currency.rate || 1));
+  var thresholdInCents = threshold * 100;
+
+  _setProgressMessage();
+
+  _setProgressBar();
+
+  u$1(node, classes$c.loaded);
+
+  function _setProgressMessage() {
+    var message = n$2(selectors$z.message, node);
+
+    if (cartTotal >= thresholdInCents) {
+      u$1(node, classes$c.success);
+      message.innerText = freeShippingSuccessMessage;
+    } else {
+      var remainder = Math.abs(cartTotal - thresholdInCents);
+      message.innerHTML = freeShippingPendingMessage.replace("{{ remaining_amount }}", "<span class=\"fs-body-bold\">".concat(formatMoney(remainder), "</span>"));
+    }
+  }
+
+  function _setProgressBar() {
+    var progressBar = n$2(selectors$z.progressBar, node);
+    var progress = cartTotal < thresholdInCents ? cartTotal / threshold : 100;
+    progressBar.style.setProperty("--progress-width", "".concat(progress, "%"));
+  }
+}
+
+var selectors$y = {
   header: ".header__outer-wrapper",
   containerInner: ".purchase-confirmation-popup__inner",
   freeShippingBar: ".free-shipping-bar",
@@ -9077,8 +9187,8 @@ var classes$b = {
 };
 function PurchaseConfirmationPopup(node) {
   if (!node) return;
-  var quickCartEnabled = Boolean(n$2(selectors$w.quickCart, document));
-  var containerInner = n$2(selectors$w.containerInner, node);
+  var quickCartEnabled = Boolean(n$2(selectors$y.quickCart, document));
+  var containerInner = n$2(selectors$y.containerInner, node);
   var purchaseConfirmationAnimation = null;
 
   if (shouldAnimate(node)) {
@@ -9086,7 +9196,7 @@ function PurchaseConfirmationPopup(node) {
   }
 
   var delegate = new Delegate(node);
-  delegate.on("click", selectors$w.viewCartButton, function (event) {
+  delegate.on("click", selectors$y.viewCartButton, function (event) {
     if (!quickCartEnabled) return;
     event.preventDefault();
     r$1("quick-cart:open");
@@ -9103,7 +9213,13 @@ function PurchaseConfirmationPopup(node) {
       var container = document.createElement("div");
       container.innerHTML = response;
       containerInner.innerHTML = "";
-      containerInner.appendChild(container); // Show product within cart that was newly added
+      containerInner.appendChild(container);
+      var freeShippingBar$1 = n$2(selectors$y.freeShippingBar, containerInner);
+
+      if (freeShippingBar$1) {
+        freeShippingBar(freeShippingBar$1);
+      } // Show product within cart that was newly added
+
 
       var addedProduct = n$2("[data-product-key=\"".concat(product.key, "\"]"), node);
       i$1(addedProduct, classes$b.hidden);
@@ -9143,7 +9259,7 @@ function PurchaseConfirmationPopup(node) {
   }
 }
 
-var selectors$v = {
+var selectors$x = {
   headerInner: ".header__inner",
   form: ".disclosure-form",
   list: "[data-disclosure-list]",
@@ -9163,12 +9279,12 @@ function has(list, selector) {
 }
 
 function Disclosure(node) {
-  var headerInner = n$2(selectors$v.headerInner);
-  var form = node.closest(selectors$v.form);
-  var list = n$2(selectors$v.list, node);
-  var toggle = n$2(selectors$v.toggle, node);
-  var input = n$2(selectors$v.input, node);
-  var options = t$2(selectors$v.option, node);
+  var headerInner = n$2(selectors$x.headerInner);
+  var form = node.closest(selectors$x.form);
+  var list = n$2(selectors$x.list, node);
+  var toggle = n$2(selectors$x.toggle, node);
+  var input = n$2(selectors$x.input, node);
+  var options = t$2(selectors$x.option, node);
   var events = [e$2(toggle, "click", handleToggle), e$2(options, "click", submitForm), e$2(document, "click", handleBodyClick), e$2(toggle, "focusout", handleToggleFocusOut), e$2(list, "focusout", handleListFocusOut), e$2(node, "keyup", handleKeyup)];
 
   function submitForm(evt) {
@@ -9273,7 +9389,7 @@ function setHeaderStickyHeaderHeight(value) {
   document.documentElement.style.setProperty("--header-desktop-sticky-height", value + "px");
 }
 
-var selectors$u = {
+var selectors$w = {
   disclosure: "[data-disclosure]"
 };
 register("header", {
@@ -9363,7 +9479,7 @@ register("header", {
     });
     this.ro.observe(this.container); // Wire up Cross Border disclosures
 
-    var cbSelectors = t$2(selectors$u.disclosure, this.container);
+    var cbSelectors = t$2(selectors$w.disclosure, this.container);
 
     if (cbSelectors) {
       cbSelectors.forEach(function (selector) {
@@ -9411,13 +9527,13 @@ register("header", {
   }
 });
 
-var selectors$t = {
+var selectors$v = {
   popupTrigger: "[data-popup-trigger]"
 };
 
 var passwordUnlock = function passwordUnlock(node) {
   var events = [];
-  var popupTriggers = t$2(selectors$t.popupTrigger, node);
+  var popupTriggers = t$2(selectors$v.popupTrigger, node);
 
   if (popupTriggers.length) {
     events.push(e$2(popupTriggers, "click", function (e) {
@@ -9476,7 +9592,7 @@ register("password-header", {
   }
 });
 
-var selectors$s = {
+var selectors$u = {
   disclosure: "[data-disclosure]",
   header: "[data-header]"
 };
@@ -9485,7 +9601,7 @@ register("footer", {
   onLoad: function onLoad() {
     var _this = this;
 
-    var headers = t$2(selectors$s.header, this.container);
+    var headers = t$2(selectors$u.header, this.container);
     this.headerClick = e$2(headers, "click", handleHeaderClick);
 
     function handleHeaderClick(_ref) {
@@ -9502,7 +9618,7 @@ register("footer", {
     } // Wire up Cross Border disclosures
 
 
-    var cbSelectors = t$2(selectors$s.disclosure, this.container);
+    var cbSelectors = t$2(selectors$u.disclosure, this.container);
 
     if (cbSelectors) {
       cbSelectors.forEach(function (selector) {
@@ -9521,7 +9637,7 @@ register("footer", {
   }
 });
 
-var selectors$r = {
+var selectors$t = {
   slider: "[data-slider]",
   slide: "[data-slider] [data-slide]",
   navPrev: ".slider-nav-button-prev",
@@ -9548,8 +9664,8 @@ register("announcement-bar", {
 
     this.disableTabbingToInners = function () {
       // Disable tabbing on items that aren't shown
-      var desktopOnlyInners = t$2(selectors$r.desktopOnlyInner, this.container);
-      var mobileOnlyInners = t$2(selectors$r.mobileOnlyInner, this.container);
+      var desktopOnlyInners = t$2(selectors$t.desktopOnlyInner, this.container);
+      var mobileOnlyInners = t$2(selectors$t.mobileOnlyInner, this.container);
       var desktopIsMobileSize = window.matchMedia(getMediaQuery("below-720")).matches;
       desktopOnlyInners.forEach(function (inner) {
         inner.toggleAttribute("inert", desktopIsMobileSize);
@@ -9559,10 +9675,10 @@ register("announcement-bar", {
       });
     };
 
-    this.sliderContainer = n$2(selectors$r.slider, this.container);
-    this.slides = t$2(selectors$r.slide, this.container);
-    this.navPrev = t$2(selectors$r.navPrev, this.container);
-    this.navNext = t$2(selectors$r.navNext, this.container);
+    this.sliderContainer = n$2(selectors$t.slider, this.container);
+    this.slides = t$2(selectors$t.slide, this.container);
+    this.navPrev = t$2(selectors$t.navPrev, this.container);
+    this.navNext = t$2(selectors$t.navNext, this.container);
     this.disableTabbingToInners();
     this.breakPointHandler = atBreakpointChange(720, function () {
       _this2.disableTabbingToInners();
@@ -9631,7 +9747,7 @@ register("announcement-bar", {
   }
 });
 
-var selectors$q = {
+var selectors$s = {
   item: "[data-input-item]",
   quantityInput: "[data-quantity-input]",
   quantityAdd: "[data-add-quantity]",
@@ -9640,26 +9756,26 @@ var selectors$q = {
 };
 function QuantityButtons(node) {
   var delegate = new Delegate(node);
-  delegate.on("click", selectors$q.quantitySubtract, function (_, target) {
-    var item = target.closest(selectors$q.item);
+  delegate.on("click", selectors$s.quantitySubtract, function (_, target) {
+    var item = target.closest(selectors$s.item);
     var itemId = item.dataset.id;
-    var qty = n$2(selectors$q.quantityInput, item).value;
+    var qty = n$2(selectors$s.quantityInput, item).value;
     r$1("quantity-update:subtract", null, {
       itemId: itemId
     });
     cart.updateItem(itemId, parseInt(qty) - 1);
   });
-  delegate.on("click", selectors$q.quantityAdd, function (_, target) {
-    var item = target.closest(selectors$q.item);
+  delegate.on("click", selectors$s.quantityAdd, function (_, target) {
+    var item = target.closest(selectors$s.item);
     var itemId = item.dataset.id;
-    var qty = n$2(selectors$q.quantityInput, item).value;
+    var qty = n$2(selectors$s.quantityInput, item).value;
     r$1("quantity-update:add", null, {
       itemId: itemId
     });
     cart.updateItem(itemId, parseInt(qty) + 1);
   });
-  delegate.on("click", selectors$q.removeItem, function (_, target) {
-    var item = target.closest(selectors$q.item);
+  delegate.on("click", selectors$s.removeItem, function (_, target) {
+    var item = target.closest(selectors$s.item);
     var itemId = item.dataset.id;
     r$1("quantity-update:remove", null, {
       itemId: itemId
@@ -9677,7 +9793,7 @@ function QuantityButtons(node) {
 }
 
 var strings$3 = window.theme.strings.cart;
-var selectors$p = {
+var selectors$r = {
   cartNoteTrigger: "[data-order-note-trigger]",
   cartNoteTriggerText: "[data-cart-not-trigger-text]",
   cartNoteInputWrapper: "[cart-note-input]",
@@ -9686,16 +9802,16 @@ var selectors$p = {
 };
 function CartNoteToggle(node) {
   var delegate = new Delegate(node);
-  delegate.on("click", selectors$p.cartNoteTrigger, function (_, target) {
+  delegate.on("click", selectors$r.cartNoteTrigger, function (_, target) {
     return handleCartNoteTrigger(target);
   });
 
   function handleCartNoteTrigger(target) {
-    var inputWrapper = n$2(selectors$p.cartNoteInputWrapper, target.parentNode);
+    var inputWrapper = n$2(selectors$r.cartNoteInputWrapper, target.parentNode);
     var textInput = n$2("textarea", inputWrapper); // Handle icon change when open or close
 
-    var plusIcon = n$2(selectors$p.iconPlus, target);
-    var minusIcon = n$2(selectors$p.iconMinus, target);
+    var plusIcon = n$2(selectors$r.iconPlus, target);
+    var minusIcon = n$2(selectors$r.iconMinus, target);
     l([plusIcon, minusIcon], "hidden");
 
     if (isVisible(inputWrapper)) {
@@ -9703,7 +9819,7 @@ function CartNoteToggle(node) {
       slideUp(inputWrapper);
       inputWrapper.setAttribute("aria-expanded", false);
       inputWrapper.setAttribute("aria-hidden", true);
-      var inputTriggertext = n$2(selectors$p.cartNoteTriggerText, node); // Update cart note trigger text
+      var inputTriggertext = n$2(selectors$r.cartNoteTriggerText, node); // Update cart note trigger text
 
       if (textInput.value === "") {
         inputTriggertext.innerText = strings$3.addCartNote;
@@ -9742,7 +9858,7 @@ function updateInnerHTML(selector, doc) {
   }
 }
 
-var selectors$o = {
+var selectors$q = {
   cartWrapper: ".quick-cart__wrapper",
   innerContainer: ".quick-cart__container",
   overlay: ".quick-cart__overlay",
@@ -9755,7 +9871,8 @@ var selectors$o = {
   subtotal: ".quick-cart__footer-subtotal span",
   quantityInput: ".quick-cart .quantity-input__input",
   quantityItem: "[data-input-item]",
-  discounts: ".quick-cart__item-discounts"
+  discounts: ".quick-cart__item-discounts",
+  freeShippingBar: "[data-free-shipping-bar]"
 };
 var classes$9 = {
   active: "active",
@@ -9767,7 +9884,7 @@ register("quick-cart", {
   onLoad: function onLoad() {
     var _this = this;
 
-    this.cartWrapper = n$2(selectors$o.cartWrapper, this.container);
+    this.cartWrapper = n$2(selectors$q.cartWrapper, this.container);
     this.cartTrap = createFocusTrap(this.container, {
       allowOutsideClick: true
     }); // Events are all on events trigger by other components / functions
@@ -9800,15 +9917,20 @@ register("quick-cart", {
 
 
     this.delegate = new Delegate(this.container);
-    this.delegate.on("click", selectors$o.overlay, function () {
+    this.delegate.on("click", selectors$q.overlay, function () {
       return _this.close();
     });
-    this.delegate.on("click", selectors$o.closeButton, function () {
+    this.delegate.on("click", selectors$q.closeButton, function () {
       return _this.close();
     });
-    this.delegate.on("change", selectors$o.quantityInput, function (e) {
+    this.delegate.on("change", selectors$q.quantityInput, function (e) {
       return _this.handleQuantityInputChange(e);
     });
+    var freeShippingBar$1 = n$2(selectors$q.freeShippingBar, this.container);
+
+    if (freeShippingBar$1) {
+      freeShippingBar(freeShippingBar$1);
+    }
   },
   openQuickCart: function openQuickCart() {
     var _this$animateQuickCar;
@@ -9837,40 +9959,46 @@ register("quick-cart", {
     makeRequest("GET", url).then(function (response) {
       var container = document.createElement("div");
       container.innerHTML = response;
-      var responseInnerContainer = n$2(selectors$o.innerContainer, container);
-      var cartHasItems = Boolean(n$2(selectors$o.items, _this2.container));
-      var responseHasItems = Boolean(n$2(selectors$o.items, container)); // Cart has items and needs to update them
+      var responseInnerContainer = n$2(selectors$q.innerContainer, container);
+      var cartHasItems = Boolean(n$2(selectors$q.items, _this2.container));
+      var responseHasItems = Boolean(n$2(selectors$q.items, container));
+      var freeShippingBar$1 = n$2(selectors$q.freeShippingBar, container);
+
+      if (freeShippingBar$1) {
+        freeShippingBar(freeShippingBar$1);
+      } // Cart has items and needs to update them
+
 
       if (responseHasItems && cartHasItems) {
         var _this2$animateQuickCa;
 
         // Render cart items
-        updateInnerHTML("".concat(selectors$o.cartWrapper, " ").concat(selectors$o.items), container);
+        updateInnerHTML("".concat(selectors$q.cartWrapper, " ").concat(selectors$q.items), container);
 
         _this2.adjustItemPadding(); // Render cart count
 
 
-        updateInnerHTML("".concat(selectors$o.cartWrapper, " ").concat(selectors$o.cartCount), container); // Render subtotal
+        updateInnerHTML("".concat(selectors$q.cartWrapper, " ").concat(selectors$q.cartCount), container); // Render subtotal
 
-        updateInnerHTML("".concat(selectors$o.cartWrapper, " ").concat(selectors$o.subtotal), container); // Render promotions
+        updateInnerHTML("".concat(selectors$q.cartWrapper, " ").concat(selectors$q.subtotal), container); // Render promotions
 
-        updateInnerHTML("".concat(selectors$o.cartWrapper, " ").concat(selectors$o.discounts), container); // Handle form scroll state
+        updateInnerHTML("".concat(selectors$q.cartWrapper, " ").concat(selectors$q.discounts), container); // Handle form scroll state
 
-        var form = n$2(selectors$o.form, _this2.container);
+        var form = n$2(selectors$q.form, _this2.container);
         var previousScrollPosition = form.scrollTop || 0;
         form.scrollTop = previousScrollPosition;
         (_this2$animateQuickCa = _this2.animateQuickCart) === null || _this2$animateQuickCa === void 0 ? void 0 : _this2$animateQuickCa.setup();
       } else {
         // Cart needs to render empty from having items, or needs to render
         // items from empty state
-        var innerContainer = n$2(selectors$o.innerContainer, _this2.container);
+        var innerContainer = n$2(selectors$q.innerContainer, _this2.container);
         innerContainer.innerHTML = responseInnerContainer.innerHTML;
       }
     });
   },
   handleErrorMessage: function handleErrorMessage(itemId) {
     var item = n$2("[data-id=\"".concat(itemId, "\"]"), this.container);
-    i$1(n$2(selectors$o.cartError, item), classes$9.hidden);
+    i$1(n$2(selectors$q.cartError, item), classes$9.hidden);
     i$1(item, classes$9.updatingQuantity);
   },
   handleQuantityUpdate: function handleQuantityUpdate(itemId) {
@@ -9884,16 +10012,16 @@ register("quick-cart", {
   },
   handleQuantityInputChange: function handleQuantityInputChange(_ref4) {
     var target = _ref4.target;
-    var item = target.closest(selectors$o.quantityItem);
+    var item = target.closest(selectors$q.quantityItem);
     var itemId = item.dataset.id;
     cart.updateItem(itemId, target.value);
     this.handleQuantityUpdate(itemId);
   },
   adjustItemPadding: function adjustItemPadding() {
-    var items = n$2(selectors$o.items, this.container);
+    var items = n$2(selectors$q.items, this.container);
     if (!items) return; // Ensure cart items accounts for the height of cart footer
 
-    var footer = n$2(selectors$o.footer, this.container);
+    var footer = n$2(selectors$q.footer, this.container);
     items.style.paddingBottom = "".concat(footer.clientHeight, "px");
   },
   close: function close() {
@@ -9926,7 +10054,7 @@ register("quick-cart", {
   }
 });
 
-var selectors$n = {
+var selectors$p = {
   wash: ".popup__wash",
   dismissButtons: "[data-dismiss-popup]",
   tab: ".popup__tab",
@@ -9943,16 +10071,16 @@ function Popup(container) {
     allowOutsideClick: true
   });
   var popupAnimation = animatePopup(container);
-  var wash = n$2(selectors$n.wash, container);
-  var dismissButtons = t$2(selectors$n.dismissButtons, container);
-  var formSuccessMessage = n$2(selectors$n.formSuccessMessage, container);
+  var wash = n$2(selectors$p.wash, container);
+  var dismissButtons = t$2(selectors$p.dismissButtons, container);
+  var formSuccessMessage = n$2(selectors$p.formSuccessMessage, container);
   var _container$dataset = container.dataset,
       delayType = _container$dataset.delayType,
       showOnExitIntent = _container$dataset.showOnExitIntent,
       id = _container$dataset.id,
       isSignup = _container$dataset.isSignup,
       popupType = _container$dataset.popupType;
-  var tab = n$2("".concat(selectors$n.tab, "[data-id=\"").concat(id, "\""));
+  var tab = n$2("".concat(selectors$p.tab, "[data-id=\"").concat(id, "\""));
   var _container$dataset2 = container.dataset,
       delayValue = _container$dataset2.delayValue,
       hourFrequency = _container$dataset2.hourFrequency;
@@ -9988,7 +10116,7 @@ function Popup(container) {
   }
 
   if (isSignupPopup) {
-    var form = n$2(selectors$n.newsletterForm, container);
+    var form = n$2(selectors$p.newsletterForm, container);
 
     if (form) {
       events.push(e$2(form, "submit", onNewsletterSubmit));
@@ -9996,8 +10124,8 @@ function Popup(container) {
   }
 
   if (tab) {
-    var tabButton = n$2(selectors$n.tabButton, tab);
-    var tabDismiss = n$2(selectors$n.tabDismiss, tab);
+    var tabButton = n$2(selectors$p.tabButton, tab);
+    var tabDismiss = n$2(selectors$p.tabDismiss, tab);
     events.push(e$2(tabButton, "click", showPopup));
     events.push(e$2(tabDismiss, "click", hideTab));
   } // Show popup immediately if signup form was submitted
@@ -10228,14 +10356,14 @@ register("blog-posts", {
   }
 });
 
-var selectors$m = {
+var selectors$o = {
   itemTrigger: ".collapsible-row-list-item__trigger"
 };
 register("collapsible-row-list", {
   onLoad: function onLoad() {
     var _this = this;
 
-    this.items = t$2(selectors$m.itemTrigger, this.container);
+    this.items = t$2(selectors$o.itemTrigger, this.container);
     this.clickHandlers = e$2(this.items, "click", function (e) {
       e.preventDefault();
       var _e$currentTarget = e.currentTarget,
@@ -10269,7 +10397,7 @@ register("collapsible-row-list", {
   },
   onBlockSelect: function onBlockSelect(_ref) {
     var target = _ref.target;
-    var label = n$2(selectors$m.itemTrigger, target);
+    var label = n$2(selectors$o.itemTrigger, target);
     var group = label.parentNode,
         content = label.nextElementSibling;
 
@@ -10284,11 +10412,11 @@ register("collapsible-row-list", {
 });
 
 register("collection-list-slider", {
-  events: [],
   onLoad: function onLoad() {
     var _this$container$datas = this.container.dataset,
         productsPerView = _this$container$datas.productsPerView,
         mobileProductsPerView = _this$container$datas.mobileProductsPerView;
+    this.events = [];
     this.perView = parseInt(productsPerView, 10); // 1.05 factor gives us a "peek" without CSS hacks
     // TODO: encapsulate this in carousel instead of duplication wherever
     // we call on carousel.  Can also simplify the config that we pass in
@@ -10329,7 +10457,7 @@ register("collection-list-slider", {
   }
 });
 
-var selectors$l = {
+var selectors$n = {
   "settings": "[data-timer-settings]",
   "days": "[data-days]",
   "hours": "[data-hours]",
@@ -10342,7 +10470,7 @@ var classes$7 = {
   "complete": "complete"
 };
 function CountdownTimer(container) {
-  var settings = n$2(selectors$l.settings, container);
+  var settings = n$2(selectors$n.settings, container);
 
   var _JSON$parse = JSON.parse(settings.innerHTML),
       year = _JSON$parse.year,
@@ -10352,10 +10480,10 @@ function CountdownTimer(container) {
       minute = _JSON$parse.minute,
       hideTimerOnComplete = _JSON$parse.hideTimerOnComplete;
 
-  var daysEl = n$2(selectors$l.days, container);
-  var hoursEl = n$2(selectors$l.hours, container);
-  var minutesEl = n$2(selectors$l.minutes, container);
-  var secondsEl = n$2(selectors$l.seconds, container);
+  var daysEl = n$2(selectors$n.days, container);
+  var hoursEl = n$2(selectors$n.hours, container);
+  var minutesEl = n$2(selectors$n.minutes, container);
+  var secondsEl = n$2(selectors$n.seconds, container);
   var countDownDate = new Date("".concat(month, " ").concat(day, ", ").concat(year, " ").concat(hour, ":").concat(minute)).getTime();
   var timerInterval = setInterval(timerLoop, 1000);
   timerLoop();
@@ -10402,14 +10530,14 @@ function CountdownTimer(container) {
   };
 }
 
-var selectors$k = {
+var selectors$m = {
   "timer": "[data-countdown-timer]"
 };
 register("countdown-banner", {
   onLoad: function onLoad() {
     var _this = this;
 
-    var timers = t$2(selectors$k.timer, this.container);
+    var timers = t$2(selectors$m.timer, this.container);
     this.countdownTimers = [];
     timers.forEach(function (timer) {
       _this.countdownTimers.push(CountdownTimer(timer));
@@ -10429,14 +10557,14 @@ register("countdown-banner", {
   }
 });
 
-var selectors$j = {
+var selectors$l = {
   "timer": "[data-countdown-timer]"
 };
 register("countdown-bar", {
   onLoad: function onLoad() {
     var _this = this;
 
-    var timers = t$2(selectors$j.timer, this.container);
+    var timers = t$2(selectors$l.timer, this.container);
     this.countdownTimers = [];
     timers.forEach(function (timer) {
       _this.countdownTimers.push(CountdownTimer(timer));
@@ -10457,13 +10585,13 @@ register("countdown-bar", {
 });
 
 register("featured-collection-grid", {
-  events: [],
   onLoad: function onLoad() {
     var _this = this;
 
     var _this$container$datas = this.container.dataset,
         productsPerView = _this$container$datas.productsPerView,
         mobileProductsPerView = _this$container$datas.mobileProductsPerView;
+    this.events = [];
     this.perView = parseInt(productsPerView, 10);
     this.mobilePerView = parseInt(mobileProductsPerView, 10) * 1.05; // 1.05 factor gives us a "peek" without CSS hacks
     // TODO: encapsulate this in carousel instead of duplication wherever
@@ -10510,7 +10638,7 @@ register("featured-collection-grid", {
   }
 });
 
-var selectors$i = {
+var selectors$k = {
   navItems: ".featured-collection-slider__navigation-list-item",
   sliderContainer: ".carousel",
   navButtons: ".carousel__navigation-buttons"
@@ -10523,30 +10651,18 @@ var classes$6 = {
   reveal: "reveal"
 };
 register("featured-collection-slider", {
-  events: [],
-  carousels: [],
   onLoad: function onLoad() {
-    var _this = this;
+    this.events = [];
+    this.carousels = [];
 
-    r$1("feature-collection-slider:loading");
-
-    this._initCarousels(); // TODO possible temp fix
-    // Multiple carousels can cause issues on change within the cusomizer,
-    // This ensures carousels are reinitilizaed if one reloads.
-
-
-    if (window.Shopify.designMode) {
-      this.events.push(c("feature-collection-slider:loading", function () {
-        return _this._initCarousels();
-      }));
-    }
+    this._initCarousels();
 
     if (shouldAnimate(this.container)) {
       this.animateListSlider = animateListSlider(this.container);
     }
   },
   _initCarousels: function _initCarousels() {
-    var _this2 = this;
+    var _this = this;
 
     var _this$container$datas = this.container.dataset,
         productsPerView = _this$container$datas.productsPerView,
@@ -10559,19 +10675,19 @@ register("featured-collection-slider", {
     // spaceBetween?
 
     this.productItem = ProductItem(this.container);
-    this.carouselsElements = t$2(selectors$i.sliderContainer, this.container);
-    this.navItems = t$2(selectors$i.navItems, this.container);
-    this.navigationButtons = t$2(selectors$i.navButtons, this.container);
+    this.carouselsElements = t$2(selectors$k.sliderContainer, this.container);
+    this.navItems = t$2(selectors$k.navItems, this.container);
+    this.navigationButtons = t$2(selectors$k.navButtons, this.container);
     this.navItems.forEach(function (button) {
-      return _this2.events.push(e$2(button, "click", _this2._handleNavButton.bind(_this2)));
+      return _this.events.push(e$2(button, "click", _this._handleNavButton.bind(_this)));
     });
     this.carouselsElements.forEach(function (container, index) {
-      var navigationWrapper = n$2("[data-navigation=\"".concat(index, "\"]"), _this2.container);
+      var navigationWrapper = n$2("[data-navigation=\"".concat(index, "\"]"), _this.container);
       var nextButton = n$2("[data-next]", navigationWrapper);
       var prevButton = n$2("[data-prev]", navigationWrapper);
 
-      _this2.carousels.push(Carousel(container, {
-        slidesPerView: _this2.mobilePerView,
+      _this.carousels.push(Carousel(container, {
+        slidesPerView: _this.mobilePerView,
         spaceBetween: 13,
         // matches product grid
         navigation: {
@@ -10582,12 +10698,12 @@ register("featured-collection-slider", {
           720: {
             spaceBetween: 17,
             // matches product grid
-            slidesPerView: _this2.perView === 5 ? _this2.perView - 1 : _this2.perView
+            slidesPerView: _this.perView === 5 ? _this.perView - 1 : _this.perView
           },
           1200: {
             spaceBetween: 25,
             // matches product grid
-            slidesPerView: _this2.perView
+            slidesPerView: _this.perView
           }
         }
       }));
@@ -10604,7 +10720,7 @@ register("featured-collection-slider", {
     }
   },
   _hideAll: function _hideAll() {
-    var _this3 = this;
+    var _this2 = this;
 
     i$1(this.navItems, classes$6.selected);
     i$1(this.navigationButtons, classes$6.visible);
@@ -10614,7 +10730,7 @@ register("featured-collection-slider", {
     if (shouldAnimate(this.container)) {
       u$1(this.carouselsElements, classes$6.fadeout);
       setTimeout(function () {
-        i$1(_this3.carouselsElements, classes$6.visible);
+        i$1(_this2.carouselsElements, classes$6.visible);
       }, 300);
     } else {
       i$1(this.carouselsElements, classes$6.visible);
@@ -10709,7 +10825,56 @@ register("featured-product", {
   }
 });
 
-var selectors$h = {
+register("gallery-carousel", {
+  onLoad: function onLoad() {
+    var _this$container$datas = this.container.dataset,
+        loopCarousel = _this$container$datas.loopCarousel,
+        productsPerView = _this$container$datas.productsPerView,
+        mobileProductsPerView = _this$container$datas.mobileProductsPerView; // Convert loop setting string into boolean
+
+    this.loopCarousel = loopCarousel === "true";
+    this.perView = parseInt(productsPerView, 10) * 1.05; // 1.05 factor gives us a "peek" without CSS hacks
+    // TODO: encapsulate this in carousel instead of duplication wherever
+    // we call on carousel.  Can also simplify the config that we pass in
+    // to something like perViewSmall, perViewMedium, perViewLarge and same with
+    // spaceBetween?
+
+    this.mobilePerView = parseInt(mobileProductsPerView, 10) * 1.05;
+
+    this._initCarousel();
+
+    if (shouldAnimate(this.container)) {
+      this.animateListSlider = animateListSlider(this.container);
+    }
+  },
+  _initCarousel: function _initCarousel() {
+    // Between 720 - 960 the slides per view stay consistent with section
+    // settings, with the exception of 5, which then shrinks down to 4 across.
+    this.carousel = Carousel(this.container, {
+      slidesPerView: this.mobilePerView,
+      spaceBetween: 12,
+      loop: this.loopCarousel,
+      breakpoints: {
+        720: {
+          spaceBetween: 16,
+          slidesPerView: this.perView
+        },
+        1200: {
+          spaceBetween: 24,
+          slidesPerView: this.perView
+        }
+      }
+    });
+  },
+  onUnload: function onUnload() {
+    var _this$carousel, _this$animateListSlid;
+
+    (_this$carousel = this.carousel) === null || _this$carousel === void 0 ? void 0 : _this$carousel.destroy();
+    (_this$animateListSlid = this.animateListSlider) === null || _this$animateListSlid === void 0 ? void 0 : _this$animateListSlid.destroy();
+  }
+});
+
+var selectors$j = {
   recommendations: "[data-recommendations]",
   carouselSlide: ".carousel__slide"
 };
@@ -10730,7 +10895,7 @@ register("recommended-products", {
     // to something like perViewSmall, perViewMedium, perViewLarge and same with
     // spaceBetween?
 
-    var content = n$2(selectors$h.recommendations, this.container);
+    var content = n$2(selectors$j.recommendations, this.container);
     if (!content) return;
     var requestUrl = "".concat(window.theme.routes.productRecommendations, "?section_id=").concat(sectionId, "&limit=").concat(limit, "&product_id=").concat(id);
     var request = new XMLHttpRequest();
@@ -10740,8 +10905,8 @@ register("recommended-products", {
       if (request.status >= 200 && request.status < 300) {
         var container = document.createElement("div");
         container.innerHTML = request.response;
-        content.innerHTML = n$2(selectors$h.recommendations, container).innerHTML;
-        var carousel = n$2(selectors$h.carouselSlide, content);
+        content.innerHTML = n$2(selectors$j.recommendations, container).innerHTML;
+        var carousel = n$2(selectors$j.carouselSlide, content);
         _this.productItem = ProductItem(_this.container);
 
         if (shouldAnimate(_this.container)) {
@@ -10787,7 +10952,7 @@ register("recommended-products", {
   }
 });
 
-var selectors$g = {
+var selectors$i = {
   slide: "[data-slide]",
   swiper: ".swiper",
   navigationPrev: ".slideshow-navigation__navigation-button--previous",
@@ -10799,22 +10964,22 @@ var selectors$g = {
   animatableItems: ".animation--section-blocks > *"
 };
 register("slideshow", {
-  events: [],
-  slideshow: null,
   onLoad: function onLoad() {
     var _this = this;
 
+    this.events = [];
     this.enableAutoplay = this.container.dataset.enableAutoplay;
     this.autoplayDuration = this.container.dataset.autoplay;
-    this.slideshowContainer = n$2(selectors$g.swiper, this.container);
-    this.slides = t$2(selectors$g.slide, this.container);
+    this.slideshow = null;
+    this.slideshowContainer = n$2(selectors$i.swiper, this.container);
+    this.slides = t$2(selectors$i.slide, this.container);
     this.events.push(e$2(this.container, "focusin", function () {
       return _this.handleFocus();
     }));
 
     if (shouldAnimate(this.container)) {
       this.slideAnimations = this.slides.map(function (slide) {
-        return delayOffset(slide, [selectors$g.animatableItems], 3);
+        return delayOffset(slide, [selectors$i.animatableItems], 3);
       });
       this.observer = intersectionWatcher(this.container);
     }
@@ -10837,13 +11002,13 @@ register("slideshow", {
           watchSlidesProgress: true,
           loop: true,
           navigation: {
-            nextEl: selectors$g.navigationNext,
-            prevEl: selectors$g.navigationPrev
+            nextEl: selectors$i.navigationNext,
+            prevEl: selectors$i.navigationPrev
           },
           pagination: {
-            el: selectors$g.navigationDots,
+            el: selectors$i.navigationDots,
             clickable: true,
-            bulletActiveClass: selectors$g.activeDot,
+            bulletActiveClass: selectors$i.activeDot,
             bulletClass: "slideshow-navigation__dot",
             renderBullet: function renderBullet(_, className) {
               return "\n                <button class=\"".concat(className, "\" type=\"button\">\n                  <div class=\"slideshow-navigation__dot-loader\"></div>\n                </button>");
@@ -10885,7 +11050,7 @@ register("slideshow", {
   handleBulletLabels: function handleBulletLabels() {
     var _this2 = this;
 
-    var bullets = t$2(selectors$g.navigationDot, this.container);
+    var bullets = t$2(selectors$i.navigationDot, this.container);
     bullets.forEach(function (bullet, index) {
       var associatedSlide = _this2.slides[index];
       var bulletLabel = associatedSlide.dataset.bulletLabel;
@@ -10896,7 +11061,7 @@ register("slideshow", {
     this.slideshow.slideTo(parseInt(slideIndex, 10));
     this.slideshow.autoplay.stop(); // Pause all loading animations
 
-    t$2(selectors$g.navigationLoader, this.container).forEach(function (loader) {
+    t$2(selectors$i.navigationLoader, this.container).forEach(function (loader) {
       loader.style.animationPlayState = "paused";
     });
   },
@@ -10905,7 +11070,7 @@ register("slideshow", {
 
     (_this$slideshow = this.slideshow) === null || _this$slideshow === void 0 ? void 0 : _this$slideshow.autoplay.start(); // Resume all loading animations
 
-    t$2(selectors$g.navigationLoader, this.container).forEach(function (loader) {
+    t$2(selectors$i.navigationLoader, this.container).forEach(function (loader) {
       loader.style.animationPlayState = "running";
     });
   },
@@ -10947,7 +11112,7 @@ register("slideshow", {
   }
 });
 
-var selectors$f = {
+var selectors$h = {
   playButton: "[data-play-button-block]",
   playButtonVideoContainer: "[data-play-button-block-video-container]",
   photoSwipeElement: ".pswp",
@@ -10957,8 +11122,8 @@ var icons = window.theme.icons;
 
 var playButton = function playButton(node) {
   var photoSwipeInstance;
-  var playButton = n$2(selectors$f.playButton, node);
-  var videoHtml = n$2(selectors$f.playButtonVideoContainer, node).outerHTML;
+  var playButton = n$2(selectors$h.playButton, node);
+  var videoHtml = n$2(selectors$h.playButtonVideoContainer, node).outerHTML;
   import(flu.chunks.photoswipe); // Load this ahead of needing
 
   var events = [e$2(playButton, "click", function () {
@@ -10980,7 +11145,7 @@ var playButton = function playButton(node) {
       photoSwipeInstance.init();
       photoSwipeInstance.loadAndOpen();
       photoSwipeInstance.on("bindEvents", function () {
-        var instanceVideo = n$2(selectors$f.video, photoSwipeInstance.pswp.container);
+        var instanceVideo = n$2(selectors$h.video, photoSwipeInstance.pswp.container);
         instanceVideo.play();
       });
     });
@@ -11018,7 +11183,7 @@ var autoPlay = function autoPlay(videos) {
   }
 };
 
-var selectors$e = {
+var selectors$g = {
   video: ".video-hero__video",
   playButtonVideo: "[data-play-button-block-video]",
   playButtonBlock: ".play-button-block"
@@ -11026,12 +11191,12 @@ var selectors$e = {
 register("video-hero", {
   videoHandler: null,
   onLoad: function onLoad() {
-    var playButtonVideos = t$2(selectors$e.playButtonVideo, this.container);
-    var video = t$2(selectors$e.video, this.container);
+    var playButtonVideos = t$2(selectors$g.playButtonVideo, this.container);
+    var video = t$2(selectors$g.video, this.container);
 
     if (playButtonVideos.length) {
       this.playButtons = playButtonVideos.map(function (block) {
-        return playButton(block.closest(selectors$e.playButtonBlock));
+        return playButton(block.closest(selectors$g.playButtonBlock));
       });
     }
 
@@ -11055,13 +11220,13 @@ register("video-hero", {
   }
 });
 
-var selectors$d = {
+var selectors$f = {
   dots: ".navigation-dot"
 };
 
 var navigationDots = function navigationDots(container) {
   var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-  var navigationDots = t$2(selectors$d.dots, container);
+  var navigationDots = t$2(selectors$f.dots, container);
   var events = [];
   navigationDots.forEach(function (dot) {
     events.push(e$2(dot, "click", function (e) {
@@ -11104,7 +11269,7 @@ var navigationDots = function navigationDots(container) {
   };
 };
 
-var selectors$c = {
+var selectors$e = {
   slider: "[data-slider]",
   slide: "[data-slide]",
   logoNavButton: "[logo-nav-button]"
@@ -11113,8 +11278,8 @@ register("quote", {
   onLoad: function onLoad() {
     var _this = this;
 
-    var sliderContainer = n$2(selectors$c.slider, this.container);
-    var slides = t$2(selectors$c.slide, this.container);
+    var sliderContainer = n$2(selectors$e.slider, this.container);
+    var slides = t$2(selectors$e.slide, this.container);
 
     if (shouldAnimate(this.container)) {
       slides.forEach(function (slide) {
@@ -11163,7 +11328,7 @@ register("quote", {
           }
         });
       } else if (paginationStyle === "logos") {
-        _this.logoNavButtons = t$2(selectors$c.logoNavButton, _this.container);
+        _this.logoNavButtons = t$2(selectors$e.logoNavButton, _this.container);
         u$1(_this.logoNavButtons[0], "active");
 
         _this.logoNavButtons.forEach(function (button) {
@@ -11217,7 +11382,7 @@ register("quote", {
   }
 });
 
-var selectors$b = {
+var selectors$d = {
   hotspotWrappers: ".shoppable-item",
   hotspots: ".shoppable-item__hotspot",
   productCard: ".shoppable-item__product-card",
@@ -11252,14 +11417,14 @@ register("shoppable", {
   onLoad: function onLoad() {
     var _this2 = this;
 
-    this.imageContainer = n$2(selectors$b.imageContainer, this.container);
+    this.imageContainer = n$2(selectors$d.imageContainer, this.container);
     this.showHotspotCards = this.container.dataset.showHotspotCards === "true";
     this.hasCarousel = this.container.dataset.hasCarousel === "true";
-    this.productCards = t$2(selectors$b.productCard, this.container);
-    this.hotspotContainers = t$2(selectors$b.hotspotWrappers, this.container);
-    this.hotspots = t$2(selectors$b.hotspots, this.container);
-    this.wash = n$2(selectors$b.wash, this.container);
-    var closeButtons = t$2(selectors$b.closeButtons, this.container); // Self terminating mouseenter events
+    this.productCards = t$2(selectors$d.productCard, this.container);
+    this.hotspotContainers = t$2(selectors$d.hotspotWrappers, this.container);
+    this.hotspots = t$2(selectors$d.hotspots, this.container);
+    this.wash = n$2(selectors$d.wash, this.container);
+    var closeButtons = t$2(selectors$d.closeButtons, this.container); // Self terminating mouseenter events
 
     this.hotspotEvents = this.hotspots.map(function (hotspot) {
       return {
@@ -11280,7 +11445,7 @@ register("shoppable", {
     }), e$2(this.container, "keydown", function (_ref) {
       var keyCode = _ref.keyCode;
       if (keyCode === 27) _this2._closeAll();
-    }), e$2(t$2(selectors$b.quickViewTrigger, this.container), "click", function (e) {
+    }), e$2(t$2(selectors$d.quickViewTrigger, this.container), "click", function (e) {
       var productUrl = e.target.dataset.productUrl;
       if (!productUrl) return;
       r$1("quick-view:open", null, {
@@ -11300,7 +11465,7 @@ register("shoppable", {
 
       this._createOrRecreateSlider();
 
-      this.mobileDrawer = n$2(selectors$b.mobileDrawer, this.container);
+      this.mobileDrawer = n$2(selectors$d.mobileDrawer, this.container);
       this.widthWatcher = srraf(function (_ref2) {
         var vw = _ref2.vw,
             pvw = _ref2.pvw;
@@ -11341,7 +11506,7 @@ register("shoppable", {
     this._initPulseLoop();
   },
   _initPulseLoop: function _initPulseLoop() {
-    var hotspots = t$2(selectors$b.hotspots, this.container);
+    var hotspots = t$2(selectors$d.hotspots, this.container);
     var pulseIndex = 0;
     this.pulseInterval = setInterval(function () {
       i$1(hotspots, classes$5.pulse);
@@ -11368,14 +11533,14 @@ register("shoppable", {
       this.sliderType = sliderType;
       (_this$swiper = this.swiper) === null || _this$swiper === void 0 ? void 0 : _this$swiper.destroy();
       this.sliderInitalized = false;
-      var sliderContainerSelector = sliderType === sliderTypes.Desktop ? selectors$b.desktopSliderContainer : selectors$b.mobileDrawer;
+      var sliderContainerSelector = sliderType === sliderTypes.Desktop ? selectors$d.desktopSliderContainer : selectors$d.mobileDrawer;
       this.sliderContainer = n$2(sliderContainerSelector, this.container);
-      this.slider = n$2(selectors$b.slider, this.sliderContainer);
-      this.slides = t$2(selectors$b.slide, this.sliderContainer);
-      this.sliderPagination = n$2(selectors$b.sliderPagination, this.sliderContainer);
-      this.sliderNavNext = n$2(selectors$b.sliderNavNext, this.sliderContainer);
-      this.sliderNavPrev = n$2(selectors$b.sliderNavPrev, this.sliderContainer);
-      this.sliderImages = t$2(selectors$b.sliderImages, this.sliderContainer);
+      this.slider = n$2(selectors$d.slider, this.sliderContainer);
+      this.slides = t$2(selectors$d.slide, this.sliderContainer);
+      this.sliderPagination = n$2(selectors$d.sliderPagination, this.sliderContainer);
+      this.sliderNavNext = n$2(selectors$d.sliderNavNext, this.sliderContainer);
+      this.sliderNavPrev = n$2(selectors$d.sliderNavPrev, this.sliderContainer);
+      this.sliderImages = t$2(selectors$d.sliderImages, this.sliderContainer);
 
       if (this.slides.length < 2) {
         return;
@@ -11443,8 +11608,8 @@ register("shoppable", {
   },
   _activateHotspot: function _activateHotspot(index) {
     var wrapper = n$2(".shoppable-item[data-index='".concat(index, "']"), this.container);
-    var card = n$2(selectors$b.productCard, wrapper);
-    n$2(selectors$b.hotspots, wrapper);
+    var card = n$2(selectors$d.productCard, wrapper);
+    n$2(selectors$d.hotspots, wrapper);
 
     if (!card) {
       if (this.swiper) {
@@ -11493,8 +11658,8 @@ register("shoppable", {
     var _this4 = this;
 
     // TODO: should this and open/close drawer functions be moved to their own file?
-    var drawerBackground = n$2(selectors$b.drawerBackground, this.container);
-    var drawerCloseButton = n$2(selectors$b.drawerCloseButton, this.container);
+    var drawerBackground = n$2(selectors$d.drawerBackground, this.container);
+    var drawerCloseButton = n$2(selectors$d.drawerCloseButton, this.container);
     this.events.push(e$2(drawerBackground, "click", function () {
       return _this4._closeDrawer();
     }));
@@ -11526,7 +11691,7 @@ register("shoppable", {
     this._activateHotspot(hotspotIndex);
   },
   _clickOutsideHandler: function _clickOutsideHandler(e) {
-    if (!e.target.closest(selectors$b.productCard) && !a$1(e.target, "shoppable-item__hotspot")) {
+    if (!e.target.closest(selectors$d.productCard) && !a$1(e.target, "shoppable-item__hotspot")) {
       this._closeAll();
     }
   },
@@ -11567,20 +11732,20 @@ register("shoppable", {
   }
 });
 
-var selectors$a = {
+var selectors$c = {
   video: "video",
   quickViewTrigger: "[data-quick-view-trigger]"
 };
 register("complete-the-look", {
   videoHandler: null,
   onLoad: function onLoad() {
-    var video = n$2(selectors$a.video, this.container);
+    var video = n$2(selectors$c.video, this.container);
 
     if (video) {
       this.videoHandler = backgroundVideoHandler(this.container);
     }
 
-    this.events = [e$2(t$2(selectors$a.quickViewTrigger, this.container), "click", function (e) {
+    this.events = [e$2(t$2(selectors$c.quickViewTrigger, this.container), "click", function (e) {
       var productUrl = e.target.dataset.productUrl;
       if (!productUrl) return;
       r$1("quick-view:open", null, {
@@ -11603,17 +11768,17 @@ register("complete-the-look", {
   }
 });
 
-var selectors$9 = {
+var selectors$b = {
   playButtonVideo: "[data-play-button-block-video]",
   playButtonBlock: ".play-button-block"
 };
 register("rich-text", {
   onLoad: function onLoad() {
-    var playButtonVideos = t$2(selectors$9.playButtonVideo, this.container);
+    var playButtonVideos = t$2(selectors$b.playButtonVideo, this.container);
 
     if (playButtonVideos.length) {
       this.playButtons = playButtonVideos.map(function (block) {
-        return playButton(block.closest(selectors$9.playButtonBlock));
+        return playButton(block.closest(selectors$b.playButtonBlock));
       });
     }
 
@@ -11631,7 +11796,61 @@ register("rich-text", {
   }
 });
 
-var selectors$8 = {
+var selectors$a = {
+  imageContainer: ".image-compare__image-container",
+  labelContainer: ".image-compare__label-container",
+  slider: ".image-compare__slider"
+};
+register("image-compare", {
+  onLoad: function onLoad() {
+    this.events = [];
+
+    this._initSliders();
+
+    if (shouldAnimate(this.container)) {
+      this.animateImageCompare = animateImageCompare(this.container);
+    }
+  },
+  _initSliders: function _initSliders() {
+    var _this = this;
+
+    this.imageContainer = n$2(selectors$a.imageContainer, this.container);
+    this.labelContainers = t$2(selectors$a.labelContainer, this.container);
+    this.slider = n$2(selectors$a.slider, this.container); // Check if slider exists (must be some blocks to exist)
+
+    this.slider && this.events.push(e$2(this.slider, "input", function (e) {
+      return _this.imageContainer.style.setProperty("--position", "".concat(e.target.value, "%"));
+    }), e$2(this.slider, "mousedown", function () {
+      return _this.hideLabelContainers();
+    }), e$2(this.slider, "touchstart", function () {
+      return _this.hideLabelContainers();
+    }), e$2(this.slider, "mouseup", function () {
+      return _this.showLabelContainers();
+    }), e$2(this.slider, "touchend", function () {
+      return _this.showLabelContainers();
+    }));
+  },
+  hideLabelContainers: function hideLabelContainers() {
+    this.labelContainers.forEach(function (e) {
+      e.style.setProperty("opacity", "0");
+    });
+  },
+  showLabelContainers: function showLabelContainers() {
+    this.labelContainers.forEach(function (e) {
+      e.style.setProperty("opacity", "1");
+    });
+  },
+  onUnload: function onUnload() {
+    var _this$animateImageCom;
+
+    this.events.forEach(function (unsubscribe) {
+      return unsubscribe();
+    });
+    (_this$animateImageCom = this.animateImageCompare) === null || _this$animateImageCom === void 0 ? void 0 : _this$animateImageCom.destroy();
+  }
+});
+
+var selectors$9 = {
   playButtonVideo: "[data-play-button-block-video]",
   playButtonBlock: ".play-button-block"
 };
@@ -11641,11 +11860,11 @@ register("image-with-text", {
       this.animateImageWithText = animateImageWithText(this.container);
     }
 
-    var playButtonVideos = t$2(selectors$8.playButtonVideo, this.container);
+    var playButtonVideos = t$2(selectors$9.playButtonVideo, this.container);
 
     if (playButtonVideos.length) {
       this.playButtons = playButtonVideos.map(function (block) {
-        return playButton(block.closest(selectors$8.playButtonBlock));
+        return playButton(block.closest(selectors$9.playButtonBlock));
       });
     }
   },
@@ -11659,17 +11878,17 @@ register("image-with-text", {
   }
 });
 
-var selectors$7 = {
+var selectors$8 = {
   playButtonVideo: "[data-play-button-block-video]",
   playButtonBlock: ".play-button-block"
 };
 register("image-with-text-split", {
   onLoad: function onLoad() {
-    var playButtonVideos = t$2(selectors$7.playButtonVideo, this.container);
+    var playButtonVideos = t$2(selectors$8.playButtonVideo, this.container);
 
     if (playButtonVideos.length) {
       this.playButtons = playButtonVideos.map(function (block) {
-        return playButton(block.closest(selectors$7.playButtonBlock));
+        return playButton(block.closest(selectors$8.playButtonBlock));
       });
     }
 
@@ -11687,17 +11906,17 @@ register("image-with-text-split", {
   }
 });
 
-var selectors$6 = {
+var selectors$7 = {
   playButtonVideo: "[data-play-button-block-video]",
   playButtonBlock: ".play-button-block"
 };
 register("image-hero", {
   onLoad: function onLoad() {
-    var playButtonVideos = t$2(selectors$6.playButtonVideo, this.container);
+    var playButtonVideos = t$2(selectors$7.playButtonVideo, this.container);
 
     if (playButtonVideos.length) {
       this.playButtons = playButtonVideos.map(function (block) {
-        return playButton(block.closest(selectors$6.playButtonBlock));
+        return playButton(block.closest(selectors$7.playButtonBlock));
       });
     }
 
@@ -11736,7 +11955,7 @@ register("image-hero-split", {
   }
 });
 
-var selectors$5 = {
+var selectors$6 = {
   item: ".testimonials__item",
   swiper: ".swiper",
   navigationNext: ".testimonials__navigation-button--next",
@@ -11744,12 +11963,12 @@ var selectors$5 = {
   productImage: ".testimonials__item-product-image"
 };
 register("testimonials", {
-  events: [],
   onLoad: function onLoad() {
     var _this = this;
 
-    this.items = t$2(selectors$5.item, this.container);
-    this.itemsContainer = n$2(selectors$5.swiper, this.container);
+    this.events = [];
+    this.items = t$2(selectors$6.item, this.container);
+    this.itemsContainer = n$2(selectors$6.swiper, this.container);
 
     if (shouldAnimate(this.container)) {
       this.itemAnimations = this.items.map(function (item) {
@@ -11774,8 +11993,8 @@ register("testimonials", {
           },
           grabCursor: true,
           navigation: {
-            nextEl: selectors$5.navigationNext,
-            prevEl: selectors$5.navigationPrev
+            nextEl: selectors$6.navigationNext,
+            prevEl: selectors$6.navigationPrev
           },
           breakpoints: {
             720: {
@@ -11812,7 +12031,7 @@ register("testimonials", {
   },
   setMobileButtonOffset: function setMobileButtonOffset() {
     // Mobile paddles should vertically center on the image instead of the item
-    var firstImage = n$2(selectors$5.productImage, this.container);
+    var firstImage = n$2(selectors$6.productImage, this.container);
     var mobileButtonHeight = 34;
     var halfMobileButtonHeight = mobileButtonHeight / 2;
     var halfImageHeight = firstImage.offsetHeight / 2;
@@ -11951,7 +12170,7 @@ register("newsletter-compact", {
   }
 });
 
-var selectors$4 = {
+var selectors$5 = {
   listContainer: "[data-events-eventbrite-container]",
   skeletonList: ".event-item--skeleton"
 };
@@ -12014,8 +12233,8 @@ register("events", {
   _renderEvents: function _renderEvents(events) {
     var _this3 = this;
 
-    var listContainer = n$2(selectors$4.listContainer, this.container);
-    var skeletonList = n$2(selectors$4.skeletonList, this.container); // Build a list of events
+    var listContainer = n$2(selectors$5.listContainer, this.container);
+    var skeletonList = n$2(selectors$5.skeletonList, this.container); // Build a list of events
 
     var list = document.createElement("ul");
     list.className = "events__list";
@@ -12131,12 +12350,119 @@ register("events", {
   }
 });
 
+register("promo-banner", {
+  onLoad: function onLoad() {
+    if (shouldAnimate(this.container)) {
+      this.animatePromoBanner = animatePromoBanner(this.container);
+    }
+  },
+  onUnload: function onUnload() {
+    var _this$animatePromoBan;
+
+    (_this$animatePromoBan = this.animatePromoBanner) === null || _this$animatePromoBan === void 0 ? void 0 : _this$animatePromoBan.destroy();
+  }
+});
+
+var selectors$4 = {
+  tabLabels: "[data-tab-label]",
+  tabItems: "[data-tab-item]",
+  tabList: "[data-tab-list]",
+  activeTabItem: "[data-tab-item][aria-hidden='false']"
+};
+register("product-tabs", {
+  onLoad: function onLoad() {
+    var _this = this;
+
+    this.accordions = [];
+    this.tabItems = t$2(selectors$4.tabItems, this.container);
+    this.tabLabels = t$2(selectors$4.tabLabels, this.container);
+    this.tabList = n$2(selectors$4.tabList, this.container);
+    this.activeTabItem = n$2(selectors$4.activeTabItem, this.container);
+
+    if (this.activeTabItem) {
+      this._setTabHeight(this.activeTabItem);
+    }
+
+    this.clickHandlers = e$2(this.tabLabels, "click", function (e) {
+      e.preventDefault();
+      var contentID = e.currentTarget.getAttribute("aria-controls");
+      var content = n$2("#".concat(contentID), _this.container);
+
+      _this._closeAll();
+
+      _this._open(e.currentTarget, content);
+    });
+    var accordionElements = t$2(".accordion", this.container);
+    accordionElements.forEach(function (accordion) {
+      var accordionOpen = accordion.classList.contains("accordion--open");
+
+      _this.accordions.push(Accordions(accordion, {
+        firstOpen: accordionOpen
+      }));
+
+      accordion.classList.add("rte--product", "accordion--product");
+    });
+
+    if (shouldAnimate(this.container)) {
+      this.animateProductTabs = animateProductTabs(this.container);
+    }
+  },
+  _closeAll: function _closeAll() {
+    var _this2 = this;
+
+    this.tabLabels.forEach(function (label) {
+      var contentID = label.getAttribute("aria-controls");
+      var content = n$2("#".concat(contentID), _this2.container);
+
+      if (_this2._isVisible(content)) {
+        _this2._close(label, content);
+      }
+    });
+  },
+  _open: function _open(label, content) {
+    label.setAttribute("aria-expanded", true);
+    content.setAttribute("aria-hidden", false);
+
+    this._setTabHeight(content);
+  },
+  _close: function _close(label, content) {
+    label.setAttribute("aria-expanded", false);
+    content.setAttribute("aria-hidden", true);
+  },
+  _isVisible: function _isVisible(content) {
+    return content.getAttribute("aria-hidden") === "false";
+  },
+  _setTabHeight: function _setTabHeight(content) {
+    var height = content.offsetHeight;
+    this.tabList.style.height = "".concat(height, "px");
+  },
+  onBlockSelect: function onBlockSelect(_ref) {
+    var target = _ref.target;
+    var contentID = target.getAttribute("aria-controls");
+    var content = n$2("#".concat(contentID), this.container);
+
+    this._closeAll();
+
+    this._open(target, content);
+  },
+  onUnload: function onUnload() {
+    var _this$animateProductT;
+
+    this.clickHandlers();
+    this.accordions.forEach(function (accordion) {
+      return accordion.unload();
+    });
+    (_this$animateProductT = this.animateProductTabs) === null || _this$animateProductT === void 0 ? void 0 : _this$animateProductT.destroy();
+  }
+});
+
 var selectors$3 = {
   cartError: ".cart__form-item-error",
   cartNoteTrigger: "[data-order-note-trigger]",
   cartUpdateButton: ".cart__update",
   quantityInput: ".cart .quantity-input__input",
-  quantityItem: "[data-input-item]"
+  quantityItem: "[data-input-item]",
+  freeShippingBar: "[data-free-shipping-bar]"
 };
 var classes$4 = {
   updatingQuantity: "has-quantity-update",
@@ -12147,6 +12473,12 @@ register("cart", {
     var _this = this;
 
     var cartNoteTrigger = n$2(selectors$3.cartNoteTrigger, this.container);
+    var freeShippingBar$1 = n$2(selectors$3.freeShippingBar, this.container);
+
+    if (freeShippingBar$1) {
+      freeShippingBar(freeShippingBar$1);
+    }
+
     if (cartNoteTrigger) this.cartNoteToggle = CartNoteToggle(this.container);
     this.quantityButtons = QuantityButtons(this.container); // Events are all on events trigger by other components / functions
 
@@ -12186,6 +12518,12 @@ register("cart", {
 
       if ((_window$Shopify = window.Shopify) !== null && _window$Shopify !== void 0 && _window$Shopify.StorefrontExpressButtons) {
         window.Shopify.StorefrontExpressButtons.initialize();
+      }
+
+      var freeShippingBar$1 = n$2(selectors$3.freeShippingBar, _this2.container);
+
+      if (freeShippingBar$1) {
+        freeShippingBar(freeShippingBar$1);
       }
     });
   },
@@ -13980,4 +14318,4 @@ headerOverlay(headerOverlayContainer); // Init back to top button
 backToTop(); // Make it easy to see exactly what theme version
 // this is by commit SHA
 
-window.SHA = "3f26d06d2a";
+window.SHA = "240e404511";

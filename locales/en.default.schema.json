@@ -134,6 +134,9 @@
           "option_body": "Body",
           "option_heading": "Heading"
         },
+        "subheading": {
+          "label": "Subheading"
+        },
         "title": {
           "label": "Heading"
         }
@@ -534,11 +537,17 @@
         "event_count": {
           "label": "Number of events"
         },
+        "header__content": {
+          "content": "Content"
+        },
         "header__eventbrite": {
           "content": "Eventbrite"
         },
         "heading": {
           "label": "Heading"
+        },
+        "invert_badge": {
+          "label": "Invert date badge"
         },
         "link": {
           "label": "Link"
@@ -709,6 +718,73 @@
         }
       }
     },
+    "gallery_carousel": {
+      "blocks": {
+        "image": {
+          "name": "Image",
+          "settings": {
+            "text": {
+              "label": "Caption"
+            },
+            "title": {
+              "label": "Title"
+            }
+          }
+        }
+      },
+      "name": "Gallery carousel",
+      "presets": {
+        "name": "Gallery carousel"
+      },
+      "settings": {
+        "columns": {
+          "label": "Number of columns on desktop",
+          "option_1": "1",
+          "option_2": "2",
+          "option_3": "3",
+          "option_4": "4"
+        },
+        "header__image": {
+          "content": "Image"
+        },
+        "header__layout": {
+          "content": "Layout"
+        },
+        "image_caption_size": {
+          "label": "Image caption size"
+        },
+        "image_caption_style": {
+          "label": "Image caption style",
+          "option_beneath": "Beneath",
+          "option_overlay": "Overlay"
+        },
+        "loop_carousel": {
+          "label": "Loop carousel"
+        },
+        "mobile_columns": {
+          "label": "Number of columns on mobile",
+          "option_1": "1",
+          "option_2": "2"
+        },
+        "overlay_text_background": {
+          "label": "Overlay text background"
+        },
+        "overlay_text_background_style": {
+          "label": "Overlay text background style",
+          "option_gradient": "Gradient",
+          "option_solid": "Solid"
+        },
+        "overlay_text_color": {
+          "label": "Overlay text"
+        },
+        "subheading": {
+          "label": "Subheading"
+        },
+        "title": {
+          "label": "Heading"
+        }
+      }
+    },
     "grid": {
       "blocks": {
         "item": {
@@ -851,6 +927,100 @@
         "social_media__header": {
           "content": "Social Media",
           "info": "You can edit your Social Media links in the \"Social Media\" area of the theme settings"
+        }
+      }
+    },
+    "image_compare": {
+      "blocks": {
+        "image": {
+          "name": "Image",
+          "settings": {
+            "filter_amount": {
+              "label": "Filter amount"
+            },
+            "filter_effect": {
+              "label": "Filter effect",
+              "option_blur": "Blur",
+              "option_brightness": "Brightness",
+              "option_contrast": "Contrast",
+              "option_grayscale": "Grayscale",
+              "option_invert": "Invert",
+              "option_none": "None",
+              "option_saturate": "Saturate",
+              "option_sepia": "Sepia"
+            },
+            "graphics__header": {
+              "content": "Graphical effects"
+            },
+            "image": {
+              "label": "Image"
+            },
+            "show_label": {
+              "label": "Show label"
+            },
+            "text": {
+              "label": "Label"
+            },
+            "text__header": {
+              "content": "Label"
+            },
+            "text_color": {
+              "label": "Label text"
+            },
+            "text_container_color": {
+              "label": "Label background"
+            },
+            "text_position": {
+              "label": "Label position"
+            }
+          }
+        }
+      },
+      "name": "Image compare",
+      "presets": {
+        "name": "Image compare"
+      },
+      "settings": {
+        "cta_header": {
+          "content": "Button"
+        },
+        "heading": {
+          "label": "Heading"
+        },
+        "image_max_width": {
+          "label": "Max width for image"
+        },
+        "image_position": {
+          "label": "Image position",
+          "option_below": "Below",
+          "option_left": "Left",
+          "option_right": "Right"
+        },
+        "link": {
+          "label": "Button link"
+        },
+        "link_text": {
+          "label": "Button label"
+        },
+        "reveal_direction": {
+          "label": "Image reveal direction",
+          "option_horizontal": "Horizontal",
+          "option_vertical": "Vertical"
+        },
+        "slider_arrows_color": {
+          "label": "Reveal slider arrows"
+        },
+        "slider_color": {
+          "label": "Reveal slider"
+        },
+        "subheading": {
+          "label": "Subheading"
+        },
+        "text__header": {
+          "content": "Text"
+        },
+        "text_alignment": {
+          "label": "Text alignment"
         }
       }
     },
@@ -2374,6 +2544,133 @@
         }
       }
     },
+    "product_tabs": {
+      "blocks": {
+        "one_column": {
+          "name": "One column tab"
+        },
+        "product_description": {
+          "name": "Product description"
+        },
+        "shared": {
+          "settings": {
+            "column_spacing": {
+              "label": "Column spacing"
+            },
+            "content_vertical_alignment": {
+              "label": "Content vertical alignment",
+              "option_bottom": "Bottom",
+              "option_center": "Center",
+              "option_top": "Top"
+            },
+            "custom_liquid": {
+              "label": "Custom Liquid"
+            },
+            "header__content": {
+              "content": "Content"
+            },
+            "header__first_column": {
+              "content": "First column"
+            },
+            "header__layout": {
+              "content": "Layout"
+            },
+            "header__second_column": {
+              "content": "Second column"
+            },
+            "header__third_column": {
+              "content": "Third column"
+            },
+            "image": {
+              "label": "Image"
+            },
+            "image_position": {
+              "label": "Image position",
+              "option_above_text": "Above text",
+              "option_below_text": "Below text"
+            },
+            "image_width": {
+              "label": "Image width"
+            },
+            "page_for_content": {
+              "info": "This will override the above text input",
+              "label": "Page for content"
+            },
+            "tab_heading": {
+              "info": "Include a heading that explains the content.",
+              "label": "Tab heading"
+            },
+            "text": {
+              "label": "Text"
+            },
+            "text_max_width": {
+              "label": "Max width of text"
+            },
+            "title": {
+              "label": "Heading"
+            }
+          }
+        },
+        "three_column_tab": {
+          "name": "Three column tab"
+        },
+        "two_column_tab": {
+          "name": "Two column tab"
+        }
+      },
+      "name": "Product tabs",
+      "presets": {
+        "name": "Product tabs"
+      },
+      "settings": {
+        "font_choice": {
+          "label": "Font",
+          "option_body": "Body",
+          "option_heading": "Heading"
+        },
+        "header__tab_layout": {
+          "content": "Tab layout"
+        },
+        "tab_alignment": {
+          "label": "Tab alignment"
+        },
+        "tab_spacing": {
+          "label": "Tab spacing"
+        }
+      }
+    },
+    "promo_banner": {
+      "name": "Promotion banner",
+      "presets": {
+        "name": "Promotion banner"
+      },
+      "settings": {
+        "giant_heading": {
+          "label": "Big text"
+        },
+        "giant_heading_font_size": {
+          "label": "Font size"
+        },
+        "giant_heading_font_size_mobile": {
+          "label": "Mobile font size"
+        },
+        "heading__left_column": {
+          "content": "Left column"
+        },
+        "heading__right_column": {
+          "content": "Right column"
+        },
+        "left_column_width": {
+          "label": "Column width"
+        },
+        "mobile_text_alignment": {
+          "label": "Mobile text alignment"
+        },
+        "text_alignment": {
+          "label": "Text alignment"
+        }
+      }
+    },
     "promotion_bar": {
       "name": "Promotion bar",
       "presets": {
@@ -2562,41 +2859,18 @@
         "name": "Sales banner"
       },
       "settings": {
-        "background_color": {
-          "info": "Used when no background image is selected.",
-          "label": "Background color"
-        },
         "currency_symbol_position": {
           "label": "Currency symbol position",
           "option__after": "After (100$)",
           "option__before": "Before ($100)"
         },
-        "header_background_image": {
-          "content": "Background image"
-        },
-        "header_content": {
-          "content": "Content"
-        },
         "header_sale": {
           "content": "Sale"
         },
-        "heading": {
-          "label": "Heading"
-        },
-        "image": {
-          "label": "Image"
-        },
-        "min_height": {
-          "label": "Height"
-        },
-        "min_height_mobile": {
-          "label": "Mobile height"
-        },
-        "mobile_focal_point": {
-          "label": "Mobile image focal point"
-        },
-        "mobile_image": {
-          "label": "Mobile image"
+        "layout": {
+          "label": "Layout",
+          "option__one_column": "One column",
+          "option__two_columns": "Two columns"
         },
         "sale_amount": {
           "label": "Sale amount"
@@ -2619,14 +2893,8 @@
           "option_percent": "_%",
           "option_percent_off": "_% off"
         },
-        "show_frame": {
-          "label": "Show frame"
-        },
         "terms_and_conditions": {
           "label": "Terms and conditions"
-        },
-        "text": {
-          "label": "Text"
         }
       }
     },
@@ -3051,9 +3319,6 @@
         },
         "paragraph__free_shipping_bar": {
           "content": "The free shipping bar is configured separately from your actual shipping rates, which need to be [configured separately](https://help.shopify.com/en/manual/shipping/setting-up-and-managing-your-shipping/free-shipping-rates#free-shipping-over-a-certain-value)."
-        },
-        "paragraph__free_shipping_bar_disclaimer": {
-          "content": "Note that the free shipping bar currently only works with the default currency of your store. If your store sells in multiple currencies, consider disabling this feature or visiting our help docs for possible workarounds."
         },
         "show_order_notes": {
           "label": "Show order notes"
@@ -3516,6 +3781,7 @@
         "label": "Image aspect ratio",
         "option_landscape": "Landscape (3:2)",
         "option_landscape_alt": "Landscape (5:4)",
+        "option_landscape_wide_alt": "Landscape wide (16:9)",
         "option_natural": "Natural",
         "option_portrait": "Portrait (2:3)",
         "option_portrait_alt": "Portrait (4:5)",
@@ -3537,6 +3803,42 @@
         },
         "show_sold_out_badge": {
           "label": "Show sold out badge"
+        }
+      },
+      "banners": {
+        "background_color": {
+          "info": "Used when no background image is selected.",
+          "label": "Background color"
+        },
+        "header_background_image": {
+          "content": "Background image"
+        },
+        "header_content": {
+          "content": "Content"
+        },
+        "heading": {
+          "label": "Heading"
+        },
+        "image": {
+          "label": "Image"
+        },
+        "min_height": {
+          "label": "Height"
+        },
+        "min_height_mobile": {
+          "label": "Mobile height"
+        },
+        "mobile_focal_point": {
+          "label": "Mobile image focal point"
+        },
+        "mobile_image": {
+          "label": "Mobile image"
+        },
+        "show_frame": {
+          "label": "Show frame"
+        },
+        "text": {
+          "label": "Text"
         }
       },
       "button_background_color": {

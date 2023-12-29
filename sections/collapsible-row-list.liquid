@@ -25,6 +25,12 @@
       </h2>
     {%- endif -%}
 
+    {%- if section.settings.subheading != blank -%}
+      <h2 class="collapsible-row-list__subheading ff-subheading {{ section.settings.subheading_font_class }} section-blocks__subheading">
+        {{ section.settings.subheading }}
+      </h2>
+    {%- endif -%}
+
     {%- for block in section.blocks -%}
       {%-
         render 'collapsible-row-list-item' with
@@ -64,6 +70,31 @@
         {
           "value": "fs-heading-2-base",
           "label": "t:shared.settings.heading_font_class.option_large"
+        }
+      ]
+    },
+    {
+      "id": "subheading",
+      "type": "text",
+      "label": "t:sections.collapsible_row_list.settings.subheading.label"
+    },
+    {
+      "type": "select",
+      "id": "subheading_font_class",
+      "label": "t:shared.settings.subheading_font_class.label",
+      "default": "fs-heading-5-base",
+      "options": [
+        {
+          "value": "fs-heading-6-base",
+          "label": "t:shared.settings.subheading_font_class.option_small"
+        },
+        {
+          "value": "fs-heading-5-base",
+          "label": "t:shared.settings.subheading_font_class.option_medium"
+        },
+        {
+          "value": "fs-heading-4-base",
+          "label": "t:shared.settings.subheading_font_class.option_large"
         }
       ]
     },

@@ -1,8 +1,8 @@
 {%- liquid
   assign overlay_opacity = block.settings.overlay_opacity | divided_by: 100.0
-  assign text_position = block.settings.text_position | split: "_"
-  assign focal_alignment = block.settings.focal_point | replace: "_", " "
-  assign mobile_focal_alignment = block.settings.mobile_focal_point | replace: "_", " "
+  assign text_position = block.settings.text_position | split: '_'
+  assign focal_alignment = block.settings.focal_point | replace: '_', ' '
+  assign mobile_focal_alignment = block.settings.mobile_focal_point | replace: '_', ' '
   assign horizontal_position = text_position | first
   assign vertical_position = text_position | last
   assign has_background_color = false
@@ -107,7 +107,6 @@
                 ff-heading
                 {{ block.settings.heading_font_class }}
                 section-blocks__heading
-                {% if block.settings.width == '100' or  block.settings.width == '66' %} fs-heading-2-base-above-960{% endif %}
               ">
               {{ block.settings.title }}
             </h2>

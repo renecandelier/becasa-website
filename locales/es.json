@@ -283,14 +283,14 @@
       "August": "ago",
       "December": "dic",
       "February": "feb",
-      "January": "ene",
-      "July": "julio",
-      "June": "junio",
-      "March": "MAR",
+      "January": "enero",
+      "July": "jul",
+      "June": "jun",
+      "March": "marzo",
       "May": "mayo",
       "November": "nov",
       "October": "oct",
-      "September": "sep"
+      "September": "sept"
     },
     "navigation": {
       "home": "Inicio",
@@ -485,7 +485,7 @@
       "search_view_all": "Ver todo"
     },
     "events": {
-      "learn_more": "aprende más"
+      "learn_more": "Más información"
     },
     "featured_product": {
       "placeholder": {

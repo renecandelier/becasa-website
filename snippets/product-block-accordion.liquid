@@ -1,8 +1,15 @@
 {%- liquid
   assign open = false
-  if block_settings.expand_by_default
+  if block_settings.expand_by_default or expand_by_default
     assign open = true
   endif
+
+  unless label_font
+    assign label_font = 'ff-heading'
+  endunless
+  unless label_font_size
+    assign label_font_size = 'fs-heading-5-base'
+  endunless
 
   if block_settings.page_for_content
     assign content_page = pages[block_settings.page_for_content]
@@ -29,7 +36,7 @@
       aria-expanded="{% if open %}true{% else %}false{% endif %}"
       aria-controls="{{ block.id }}"
     >
-      <h3 class="ff-heading fs-heading-5-base">{{ heading }}</h3>
+      <h3 class="{{ label_font }} {{ label_font_size }}">{{ heading }}</h3>
       <div class="accordion__label-icons">
         {% render 'icon', icon: 'plus' %}
         {% render 'icon', icon: 'minus' %}

@@ -1,11 +1,36 @@
+{%- liquid
+  assign has_background_color = false
+  assign badge_color = section.settings.text_color
+  assign badge_background_color = 'var(--color-background)'
+
+  if section.settings.background_color != blank and section.settings.background_color != 'rgba(0,0,0,0)'
+    assign has_background_color = true
+    assign badge_background_color = section.settings.background_color
+  endif
+
+  if section.settings.invert_badge
+    assign badge_color = 'var(--color-text)'
+    assign badge_background_color = section.settings.text_color
+
+    if section.settings.background_color != blank and section.settings.background_color != 'rgba(0,0,0,0)'
+      assign badge_color = section.settings.background_color
+    endif
+  endif
+-%}
+
+{%- capture section_classes -%}
+  section section--divider-{{ section.settings.divider_style }}
+  {{ section.settings.section_padding }}
+{%- endcapture -%}
+
 <div
   class="
     events
     events--columns-{{ section.settings.columns }}
     events--columns-mobile-{{ section.settings.mobile_columns }}
-    section
-    section--divider-{{ section.settings.divider_style }}
-    {{ section.settings.section_padding }}
+    {% unless has_background_color %}
+      {{ section_classes }}
+    {% endunless %}
     {% if settings.enable_section_animations and section.settings.enable_animation %}
       animation
       animation--events
@@ -15,6 +40,14 @@
     --text-align: {{ section.settings.content_alignment }};
     --columns: {{ section.settings.columns }};
     --columns-mobile: {{ section.settings.mobile_columns }};
+    --section-background-color: {{ section.settings.background_color }};
+    --color-text: {{ section.settings.text_color }};
+    --color-text-alpha-30: {{ section.settings.text_color | color_modify: 'alpha', 0.3 }};
+    --color-text-alpha-60: {{ section.settings.text_color | color_modify: 'alpha', 0.6 }};
+    --color-text-link: {{ section.settings.text_color }};
+    --color-badge-text: {{ badge_color }};
+    --color-badge-text-alpha-30: {{ badge_color | color_modify: 'alpha', 0.3 }};
+    --color-badge-background: {{ badge_background_color }};
   "
   data-section-id="{{ section.id }}"
   data-section-type="events"
@@ -23,66 +56,73 @@
   data-image-aspect-ratio="aspect-ratio--{{ section.settings.aspect_ratio }}"
   data-learn-more-text="{{ 'sections.events.learn_more' | t }}"
 >
-  {%- if section.settings.heading != blank or section.settings.subheading != blank -%}
-    <div class="events__header">
-      <div class="events__text-block section-introduction animation--section-introduction">
-        {%- unless section.settings.heading == blank -%}
-          <h2 class="events__heading ff-heading fs-heading-3-base section-introduction__heading">
-            {{ section.settings.heading }}
-          </h2>
-        {%- endunless -%}
+  <div class="
+      events__inner
+      {% if has_background_color %}
+        {{ section_classes }}
+      {% endif %}
+    ">
+    {%- if section.settings.heading != blank or section.settings.subheading != blank -%}
+      <div class="events__header">
+        <div class="events__text-block section-introduction animation--section-introduction">
+          {%- unless section.settings.heading == blank -%}
+            <h2 class="events__heading ff-heading fs-heading-3-base section-introduction__heading">
+              {{ section.settings.heading }}
+            </h2>
+          {%- endunless -%}
 
-        {%- unless section.settings.subheading == blank -%}
-          <div class="events__subheading lh-subheading fs-body-100 rte section-introduction__subheading">
-            {{ section.settings.subheading }}
-          </div>
-        {%- endunless -%}
-        {%- if section.settings.link and section.settings.link_text -%}
-          {%-
-            render 'button-block' with
-            wrapper_class: "events__header-button section-introduction__button",
-            link: section.settings.link,
-            label: section.settings.link_text,
-            button_style: "btn--callout"
-          -%}
+          {%- unless section.settings.subheading == blank -%}
+            <div class="events__subheading lh-subheading fs-body-100 rte section-introduction__subheading">
+              {{ section.settings.subheading }}
+            </div>
+          {%- endunless -%}
+          {%- if section.settings.link and section.settings.link_text -%}
+            {%-
+              render 'button-block' with
+              wrapper_class: "events__header-button section-introduction__button",
+              link: section.settings.link,
+              label: section.settings.link_text,
+              button_style: "btn--callout"
+            -%}
+          {%- endif -%}
+        </div>
+      </div>
+    {%- endif -%}
+    <div class="events__inner">
+      <div class="events__list-container" data-events-eventbrite-container>
+        {%- if section.settings.access_token == blank -%}
+          <ul class="events__list">
+            {%- for block in section.blocks -%}
+              {%-
+                render 'event-item',
+                block: block,
+                columns: section.settings.columns,
+                mobile_columns: section.settings.mobile_columns,
+              -%}
+            {%- endfor -%}
+          </ul>
+        {%- else -%}
+          <ul class="events__list">
+            {%- for i in (1..section.settings.event_count) -%}
+              <li class="event-item event-item--skeleton">
+                <div class="event-item__link">
+                  <div class="event-item__image-wrapper">
+                    <div
+                      class="event-item__image skeleton skeleton--image skeleton--image-{{ section.settings.aspect_ratio }}"
+                    ></div>
+                  </div>
+                  <div class="event-item__details">
+                    <div class="event-item__name skeleton skeleton--large"></div>
+                    <div class="event-item__date skeleton skeleton--small"></div>
+                    <div class="event-item__venue skeleton skeleton--small"></div>
+                    <div class="event-item__callout skeleton skeleton--small"></div>
+                  </div>
+                </div>
+              </li>
+            {%- endfor -%}
+          </ul>
         {%- endif -%}
       </div>
-    </div>
-  {%- endif -%}
-  <div class="events__inner">
-    <div class="events__list-container" data-events-eventbrite-container>
-      {%- if section.settings.access_token == blank -%}
-        <ul class="events__list">
-          {%- for block in section.blocks -%}
-            {%-
-              render 'event-item',
-              block: block,
-              columns: section.settings.columns,
-              mobile_columns: section.settings.mobile_columns,
-            -%}
-          {%- endfor -%}
-        </ul>
-      {%- else -%}
-        <ul class="events__list">
-          {%- for i in (1..section.settings.event_count) -%}
-            <li class="event-item event-item--skeleton">
-              <div class="event-item__link">
-                <div class="event-item__image-wrapper">
-                  <div
-                    class="event-item__image skeleton skeleton--image skeleton--image-{{ section.settings.aspect_ratio }}"
-                  ></div>
-                </div>
-                <div class="event-item__details">
-                  <div class="event-item__name skeleton skeleton--large"></div>
-                  <div class="event-item__date skeleton skeleton--small"></div>
-                  <div class="event-item__venue skeleton skeleton--small"></div>
-                  <div class="event-item__callout skeleton skeleton--small"></div>
-                </div>
-              </div>
-            </li>
-          {%- endfor -%}
-        </ul>
-      {%- endif -%}
     </div>
   </div>
 </div>
@@ -92,6 +132,70 @@
   "name": "t:sections.events.name",
   "tag": "section",
   "settings": [
+    {
+      "type": "select",
+      "id": "columns",
+      "label": "t:sections.events.settings.columns.label",
+      "default": "3",
+      "options": [
+        {
+          "value": "2",
+          "label": "t:sections.events.settings.columns.option_2"
+        },
+        {
+          "value": "3",
+          "label": "t:sections.events.settings.columns.option_3"
+        },
+        {
+          "value": "4",
+          "label": "t:sections.events.settings.columns.option_4"
+        }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "mobile_columns",
+      "label": "t:sections.events.settings.mobile_columns.label",
+      "default": "1",
+      "options": [
+        {
+          "value": "1",
+          "label": "t:sections.events.settings.mobile_columns.option_1"
+        },
+        {
+          "value": "2",
+          "label": "t:sections.events.settings.mobile_columns.option_2"
+        }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "aspect_ratio",
+      "label": "t:shared.settings.aspect_ratio.label",
+      "default": "landscape",
+      "options": [
+        {
+          "value": "natural",
+          "label": "t:shared.settings.aspect_ratio.option_natural"
+        },
+        {
+          "value": "square",
+          "label": "t:shared.settings.aspect_ratio.option_square"
+        },
+        {
+          "value": "portrait",
+          "label": "t:shared.settings.aspect_ratio.option_portrait"
+        },
+        {
+          "value": "landscape",
+          "label": "t:shared.settings.aspect_ratio.option_landscape"
+        }
+      ]
+    },
+    {
+      "type": "header",
+      "content": "t:sections.events.settings.header__content.content"
+    },
     {
       "type": "text",
       "id": "heading",
@@ -155,67 +259,28 @@
     },
     {
       "type": "header",
+      "content": "t:shared.settings.header_color.content"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "t:shared.settings.background_color.label"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "t:shared.settings.text_color.label",
+      "default": "#000000"
+    },
+    {
+      "type": "checkbox",
+      "id": "invert_badge",
+      "label": "t:sections.events.settings.invert_badge.label",
+      "default": false
+    },
+    {
+      "type": "header",
       "content": "t:shared.settings.section_style.header_style.content"
-    },
-    {
-      "type": "select",
-      "id": "columns",
-      "label": "t:sections.events.settings.columns.label",
-      "default": "3",
-      "options": [
-        {
-          "value": "2",
-          "label": "t:sections.events.settings.columns.option_2"
-        },
-        {
-          "value": "3",
-          "label": "t:sections.events.settings.columns.option_3"
-        },
-        {
-          "value": "4",
-          "label": "t:sections.events.settings.columns.option_4"
-        }
-      ]
-    },
-    {
-      "type": "select",
-      "id": "mobile_columns",
-      "label": "t:sections.events.settings.mobile_columns.label",
-      "default": "1",
-      "options": [
-        {
-          "value": "1",
-          "label": "t:sections.events.settings.mobile_columns.option_1"
-        },
-        {
-          "value": "2",
-          "label": "t:sections.events.settings.mobile_columns.option_2"
-        }
-      ]
-    },
-    {
-      "type": "select",
-      "id": "aspect_ratio",
-      "label": "t:shared.settings.aspect_ratio.label",
-      "default": "landscape",
-      "options": [
-        {
-          "value": "natural",
-          "label": "t:shared.settings.aspect_ratio.option_natural"
-        },
-        {
-          "value": "square",
-          "label": "t:shared.settings.aspect_ratio.option_square"
-        },
-        {
-          "value": "portrait",
-          "label": "t:shared.settings.aspect_ratio.option_portrait"
-        },
-        {
-          "value": "landscape",
-          "label": "t:shared.settings.aspect_ratio.option_landscape"
-        }
-      ]
     },
     {
       "id": "enable_animation",

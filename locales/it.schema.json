@@ -134,6 +134,9 @@
           "option_body": "Corpo",
           "option_heading": "Titolo"
         },
+        "subheading": {
+          "label": "sottotitolo"
+        },
         "title": {
           "label": "Titolo"
         }
@@ -481,13 +484,13 @@
               "option__july": "Luglio",
               "option__june": "Giugno",
               "option__march": "Marzo",
-              "option__may": "potrebbe",
+              "option__may": "Maggio",
               "option__november": "Novembre",
               "option__october": "Ottobre",
               "option__september": "Settembre"
             },
             "enable_date_badge": {
-              "label": "Abilita badge data"
+              "label": "Abilita distintivo della data"
             },
             "header__date_badge": {
               "content": "Distintivo della data"
@@ -496,7 +499,7 @@
               "label": "Immagine"
             },
             "link": {
-              "label": "collegamento"
+              "label": "Link"
             },
             "link_text": {
               "label": "Link al testo"
@@ -505,7 +508,7 @@
               "label": "Nome"
             },
             "summary": {
-              "label": "sommario"
+              "label": "Sintesi"
             },
             "venue": {
               "label": "Sede"
@@ -513,9 +516,9 @@
           }
         }
       },
-      "name": "eventi",
+      "name": "Eventi",
       "presets": {
-        "name": "eventi"
+        "name": "Eventi"
       },
       "settings": {
         "access_token": {
@@ -523,7 +526,7 @@
           "label": "Token di accesso"
         },
         "columns": {
-          "label": "Numero di colonne sul desktop",
+          "label": "Numero di colonne su desktop",
           "option_2": "2",
           "option_3": "3",
           "option_4": "4"
@@ -534,14 +537,20 @@
         "event_count": {
           "label": "Numero di eventi"
         },
+        "header__content": {
+          "content": "Soddisfare"
+        },
         "header__eventbrite": {
           "content": "Eventbrite"
         },
         "heading": {
           "label": "Intestazione"
         },
+        "invert_badge": {
+          "label": "Inverti il badge della data"
+        },
         "link": {
-          "label": "collegamento"
+          "label": "Link"
         },
         "link_text": {
           "label": "Link al testo"
@@ -552,7 +561,7 @@
           "option_2": "2"
         },
         "subheading": {
-          "label": "sottotitolo"
+          "label": "Sottotitolo"
         }
       }
     },
@@ -632,7 +641,7 @@
           }
         },
         "newsletter": {
-          "name": "Newsletter",
+          "name": "Notiziario",
           "settings": {
             "text": {
               "label": "Testo"
@@ -706,6 +715,73 @@
         "social_media__header": {
           "content": "Social media",
           "info": "È possibile modificare i collegamenti ai social media nell'area \"Social Media\" delle impostazioni del tema"
+        }
+      }
+    },
+    "gallery_carousel": {
+      "blocks": {
+        "image": {
+          "name": "Immagine",
+          "settings": {
+            "text": {
+              "label": "Didascalia"
+            },
+            "title": {
+              "label": "Titolo"
+            }
+          }
+        }
+      },
+      "name": "Galleria carosello",
+      "presets": {
+        "name": "Galleria carosello"
+      },
+      "settings": {
+        "columns": {
+          "label": "Numero di colonne sul desktop",
+          "option_1": "1",
+          "option_2": "2",
+          "option_3": "3",
+          "option_4": "4"
+        },
+        "header__image": {
+          "content": "Immagine"
+        },
+        "header__layout": {
+          "content": "Layout"
+        },
+        "image_caption_size": {
+          "label": "Dimensione della didascalia dell'immagine"
+        },
+        "image_caption_style": {
+          "label": "Stile della didascalia dell'immagine",
+          "option_beneath": "sotto",
+          "option_overlay": "sovrapposizione"
+        },
+        "loop_carousel": {
+          "label": "Carosello di loop"
+        },
+        "mobile_columns": {
+          "label": "Numero di colonne su mobile",
+          "option_1": "1",
+          "option_2": "2"
+        },
+        "overlay_text_background": {
+          "label": "Sfondo del testo in sovrimpressione"
+        },
+        "overlay_text_background_style": {
+          "label": "Stile di sfondo del testo in sovrimpressione",
+          "option_gradient": "Gradiente",
+          "option_solid": "Solido"
+        },
+        "overlay_text_color": {
+          "label": "Testo in sovrimpressione"
+        },
+        "subheading": {
+          "label": "SOTTOVOCE"
+        },
+        "title": {
+          "label": "Titolo"
         }
       }
     },
@@ -851,6 +927,100 @@
         "social_media__header": {
           "content": "Social media",
           "info": "È possibile modificare i collegamenti ai social media nell'area \"Social Media\" delle impostazioni del tema"
+        }
+      }
+    },
+    "image_compare": {
+      "blocks": {
+        "image": {
+          "name": "",
+          "settings": {
+            "filter_amount": {
+              "label": ""
+            },
+            "filter_effect": {
+              "label": "",
+              "option_blur": "",
+              "option_brightness": "",
+              "option_contrast": "",
+              "option_grayscale": "",
+              "option_invert": "",
+              "option_none": "",
+              "option_saturate": "",
+              "option_sepia": ""
+            },
+            "graphics__header": {
+              "content": ""
+            },
+            "image": {
+              "label": ""
+            },
+            "show_label": {
+              "label": ""
+            },
+            "text": {
+              "label": ""
+            },
+            "text__header": {
+              "content": ""
+            },
+            "text_color": {
+              "label": ""
+            },
+            "text_container_color": {
+              "label": ""
+            },
+            "text_position": {
+              "label": ""
+            }
+          }
+        }
+      },
+      "name": "",
+      "presets": {
+        "name": ""
+      },
+      "settings": {
+        "cta_header": {
+          "content": ""
+        },
+        "heading": {
+          "label": ""
+        },
+        "image_max_width": {
+          "label": ""
+        },
+        "image_position": {
+          "label": "",
+          "option_below": "",
+          "option_left": "",
+          "option_right": ""
+        },
+        "link": {
+          "label": ""
+        },
+        "link_text": {
+          "label": ""
+        },
+        "reveal_direction": {
+          "label": "",
+          "option_horizontal": "",
+          "option_vertical": ""
+        },
+        "slider_arrows_color": {
+          "label": ""
+        },
+        "slider_color": {
+          "label": ""
+        },
+        "subheading": {
+          "label": ""
+        },
+        "text__header": {
+          "content": ""
+        },
+        "text_alignment": {
+          "label": ""
         }
       }
     },
@@ -1507,7 +1677,7 @@
               "content": "Casella di controllo"
             },
             "checked_value": {
-              "label": "Valore controllato"
+              "label": "Valore selezionato"
             },
             "field_type": {
               "label": "Tipo di campo",
@@ -1524,7 +1694,7 @@
               "label": "Etichetta del campo"
             },
             "line_properties__paragraph": {
-              "content": "Se si utilizzano più opzioni personalizzate in un modulo prodotto, occorre assicurarsi che le etichette dei campi siano uniche. Per saperne di più su [proprietà degli articoli di linea](https://shopify.dev/themes/architecture/templates/product#line-item-properties)."
+              "content": "Se si utilizzano più opzioni personalizzate, ogni etichetta di campo deve essere unica. Per saperne di più su [proprietà degli elementi di riga](https://shopify.dev/themes/architecture/templates/product#line-item-properties)."
             },
             "list__header": {
               "content": "Elenco"
@@ -2017,9 +2187,9 @@
       }
     },
     "newsletter": {
-      "name": "notiziario",
+      "name": "Notiziario",
       "presets": {
-        "name": "notiziario"
+        "name": "Notiziario"
       },
       "settings": {
         "alignment": {
@@ -2037,9 +2207,9 @@
       }
     },
     "newsletter_compact": {
-      "name": "Newsletter compatta",
+      "name": "Notiziario compatto",
       "presets": {
-        "name": "Newsletter compatta"
+        "name": "Notiziario compatto"
       },
       "settings": {
         "alignment": {
@@ -2055,7 +2225,7 @@
           "label": "Immagine di sfondo mobile"
         },
         "spacing_mode": {
-          "label": "Modalità di spaziatura",
+          "label": "Stile di spaziatura",
           "option_between": "Spazio tra",
           "option_compact": "Compatto",
           "option_evenly": "Spazio in modo uniforme"
@@ -2374,6 +2544,133 @@
         }
       }
     },
+    "product_tabs": {
+      "blocks": {
+        "custom_content": {
+          "name": "Contenuti personalizzati"
+        },
+        "product_description": {
+          "name": "Descrizione del prodotto"
+        },
+        "shared": {
+          "settings": {
+            "column_spacing": {
+              "label": "Spaziatura delle colonne"
+            },
+            "content_vertical_alignment": {
+              "label": "Allineamento verticale del contenuto",
+              "option_bottom": "Parte inferiore",
+              "option_center": "Centro",
+              "option_top": "Superiore"
+            },
+            "custom_liquid": {
+              "label": "Liquido personalizzato"
+            },
+            "header__content": {
+              "content": "Soddisfare"
+            },
+            "header__first_column": {
+              "content": "Prima colonna"
+            },
+            "header__layout": {
+              "content": "disposizione"
+            },
+            "header__second_column": {
+              "content": "Seconda colonna"
+            },
+            "header__third_column": {
+              "content": "Terza colonna"
+            },
+            "image": {
+              "label": "Immagine"
+            },
+            "image_position": {
+              "label": "Posizione dell'immagine",
+              "option_above_text": "Sopra il testo",
+              "option_below_text": "Sotto il testo"
+            },
+            "image_width": {
+              "label": "Larghezza dell'immagine"
+            },
+            "page_for_content": {
+              "info": "Questo sovrascriverà l'input di testo sopra",
+              "label": "Pagina per il contenuto"
+            },
+            "tab_heading": {
+              "info": "Includere un'intestazione che spieghi il contenuto.",
+              "label": "Intestazione della scheda"
+            },
+            "text": {
+              "label": "Testo"
+            },
+            "text_max_width": {
+              "label": "Larghezza massima del testo"
+            },
+            "title": {
+              "label": "Intestazione"
+            }
+          }
+        },
+        "three_column_tab": {
+          "name": "Scheda a tre colonne"
+        },
+        "two_column_tab": {
+          "name": "Scheda a due colonne"
+        }
+      },
+      "name": "Schede prodotto",
+      "presets": {
+        "name": "Schede prodotto"
+      },
+      "settings": {
+        "font_choice": {
+          "label": "font",
+          "option_body": "Corpo",
+          "option_heading": "Intestazione"
+        },
+        "header__tab_layout": {
+          "content": "Disposizione delle schede"
+        },
+        "tab_alignment": {
+          "label": "Allineamento delle schede"
+        },
+        "tab_spacing": {
+          "label": "Spaziatura delle schede"
+        }
+      }
+    },
+    "promo_banner": {
+      "name": "Banner promozionale",
+      "presets": {
+        "name": "Banner promozionale"
+      },
+      "settings": {
+        "giant_heading": {
+          "label": "Testo grande"
+        },
+        "giant_heading_font_size": {
+          "label": "Dimensione del font"
+        },
+        "giant_heading_font_size_mobile": {
+          "label": "Dimensione carattere mobile"
+        },
+        "heading__left_column": {
+          "content": "Colonna sinistra"
+        },
+        "heading__right_column": {
+          "content": "Colonna di destra"
+        },
+        "left_column_width": {
+          "label": "Larghezza della colonna"
+        },
+        "mobile_text_alignment": {
+          "label": "Allineamento del testo mobile"
+        },
+        "text_alignment": {
+          "label": "Allineamento del testo"
+        }
+      }
+    },
     "promotion_bar": {
       "name": "Barra di promozione",
       "presets": {
@@ -2562,41 +2859,18 @@
         "name": "Banner di vendita"
       },
       "settings": {
-        "background_color": {
-          "info": "Utilizzato quando non è selezionata alcuna immagine di sfondo.",
-          "label": "Colore dello sfondo"
-        },
         "currency_symbol_position": {
           "label": "Posizione del simbolo della valuta",
           "option__after": "Dopo (100$)",
           "option__before": "Prima ($100)"
         },
-        "header_background_image": {
-          "content": "Immagine di sfondo"
-        },
-        "header_content": {
-          "content": "Contenuto"
-        },
         "header_sale": {
           "content": "Vendita"
         },
-        "heading": {
-          "label": "Titolo"
-        },
-        "image": {
-          "label": "Immagine"
-        },
-        "min_height": {
-          "label": "Altezza"
-        },
-        "min_height_mobile": {
-          "label": "Altezza mobile"
-        },
-        "mobile_focal_point": {
-          "label": "Punto focale dell'immagine mobile"
-        },
-        "mobile_image": {
-          "label": "Altezza mobile"
+        "layout": {
+          "label": "disposizione",
+          "option__one_column": "Una colonna",
+          "option__two_columns": "Due colonne"
         },
         "sale_amount": {
           "label": "Importo della vendita"
@@ -2619,14 +2893,8 @@
           "option_percent": "_%",
           "option_percent_off": "sconto dle _%"
         },
-        "show_frame": {
-          "label": "Mostra cornice"
-        },
         "terms_and_conditions": {
           "label": "Termini e condizioni"
-        },
-        "text": {
-          "label": "Testo"
         }
       }
     },
@@ -3052,9 +3320,6 @@
         "paragraph__free_shipping_bar": {
           "content": "La barra della spedizione gratuita è configurata separatamente dalle tariffe di spedizione effettive, che devono essere [configurate separatamente] (https://help.shopify.com/en/manual/shipping/setting-up-and-managing-your-shipping/free-shipping-rates#free-shipping-over-a-certain-value)."
         },
-        "paragraph__free_shipping_bar_disclaimer": {
-          "content": "Notare che la barra delle spedizioni gratuite funziona attualmente solo con la valuta predefinita del negozio. Se il vostro store vende in più valute, prendete in considerazione la possibilità di disabilitare questa funzione o di consultare i nostri documenti di aiuto per trovare possibili soluzioni."
-        },
         "show_order_notes": {
           "label": "Mostra le note dell'ordine"
         }
@@ -3187,12 +3452,12 @@
           "label": "Opzione per i campioni (chips)"
         },
         "enable_dynamic_product_options": {
-          "info": "Aggiorna dinamicamente l'aspetto delle opzioni di swatch/chip in base alla loro disponibilità. In questo modo si evita ai clienti di cercare di aggiungere varianti non più disponibili.",
+          "info": "Mostra i pulsanti barrati per le varianti di prodotto attualmente non disponibili. I clienti possono vedere quali varianti sono disponibili senza selezionare accidentalmente un prodotto esaurito.",
           "label": "Abilita"
         },
         "header__chip_selectors": "Selettori di chip",
         "header__dynamic_availability": {
-          "content": "Disponibilità di opzioni dinamiche"
+          "content": "Disponibilità dinamica delle varianti di prodotto"
         },
         "header__swatches": "Campionario",
         "swatch_options": {
@@ -3399,13 +3664,13 @@
         }
       },
       "newsletter_signup": {
-        "name": "",
+        "name": "Iscrizione alla newsletter",
         "settings": {
           "footer_text": {
-            "label": ""
+            "label": "Testo a piè di pagina"
           },
           "signup_link_text": {
-            "label": ""
+            "label": "Etichetta pulsante"
           }
         }
       },
@@ -3516,6 +3781,7 @@
         "label": "Proporzioni delle immagini",
         "option_landscape": "Orizzontale (3:2)",
         "option_landscape_alt": "Orizzontale (3:2)",
+        "option_landscape_wide_alt": "Larghezza paesaggio (16:9)",
         "option_natural": "Originale",
         "option_portrait": "Ritratto (2:3)",
         "option_portrait_alt": "Ritratto (2:3)",
@@ -3537,6 +3803,42 @@
         },
         "show_sold_out_badge": {
           "label": "Mostra badge per il tutto esaurito"
+        }
+      },
+      "banners": {
+        "background_color": {
+          "info": "Utilizzato quando non è selezionata alcuna immagine di sfondo.",
+          "label": "Colore di sfondo"
+        },
+        "header_background_image": {
+          "content": "Immagine di sfondo"
+        },
+        "header_content": {
+          "content": "Soddisfare"
+        },
+        "heading": {
+          "label": "Intestazione"
+        },
+        "image": {
+          "label": "Immagine"
+        },
+        "min_height": {
+          "label": "altezza"
+        },
+        "min_height_mobile": {
+          "label": "Altezza mobile"
+        },
+        "mobile_focal_point": {
+          "label": "Punto focale dell'immagine mobile"
+        },
+        "mobile_image": {
+          "label": "Immagine mobile"
+        },
+        "show_frame": {
+          "label": "Mostra cornice"
+        },
+        "text": {
+          "label": "Testo"
         }
       },
       "button_background_color": {

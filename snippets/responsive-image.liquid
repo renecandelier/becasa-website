@@ -11,13 +11,12 @@
   * fallback_width: width shown to browsers that don't support srcSet
   * tag_name: render something other than an `img` element, for instance `picture` or `source`
   * media: custom media definition for `source`
-  * image_fill_aspect_ratio: necessary if the image is displayed at a non natural aspect ratio see explanation below
+  * aspect_ratio: necessary if the image is displayed at a non natural aspect ratio
   * fallback_alt: fall back alt text if non set on image in admin
   * src_set_type: optional parameter used to reduce the srcset generation to speed up page perf
       - 'grid'
       - 'full-width'
       - if unset a comprehensive src set range will be used
-      
 {%- endcomment -%}
 {%- liquid
   if tag_name == blank
@@ -50,46 +49,51 @@
   assign src_set_string = ""
 -%}
 
-{%- comment -%}
-  This is all pretty confusing but it is required in order to ensure that images
-  are properly srcSet'd / sizes'd when the image's display aspect-ratio is mismatched from
-  it's actual aspect-ratio.  Imagine a 4:2 landscape image displayed in a 200px x 300px
-  portrait box: if the image's aspect ratio was also 2:3, we would want to load a 200w version
-  to fit in (ignoring display density), but if it is landscape and we load the 200px wide
-  version it's height will only be 100px high, so it will be half the resolution required.  To
-  solve for this the image component passes in the "image_fill_aspect_ratio" and if required and
-  the width_adjustment_factor is changed to ensure the proper file is loaded.
-{%- endcomment -%}
 {%- liquid
-  assign image_aspect_ratio = image.aspect_ratio
-
-  assign needs_width_adjustment_factor = false
-
-  if image_fill_aspect_ratio
-    if image_aspect_ratio > image_fill_aspect_ratio
-      assign needs_width_adjustment_factor = true  
-      assign width_adjustment_factor = image_aspect_ratio | divided_by : image_fill_aspect_ratio
+  if object_fit != "contain" and aspect_ratio != blank and aspect_ratio != 'natural'
+    if aspect_ratio == "portrait"
+      assign crop_height_ratio = 1.5
+    elsif aspect_ratio == "landscape"
+      assign crop_height_ratio = 0.666666
+    elsif aspect_ratio == "square"
+      assign crop_height_ratio = 1
+    elsif aspect_ratio == "portrait_alt"
+      assign crop_height_ratio = 1.25
+    elsif aspect_ratio == "landscape_alt"
+      assign crop_height_ratio = 0.8
+    elsif aspect_ratio == "landscape_wide_alt"
+      assign crop_height_ratio = 0.5625
     endif
+  endif
+
+  assign image_crop = "center"
+  if focal_alignment != blank and focal_alignment != "center"
+    assign image_crop = focal_alignment
   endif
 -%}
 
 {%- for width_string in src_set_widths -%}
   {%- assign width = width_string | plus: 0 -%}
-  {% if needs_width_adjustment_factor %}
-    {%- assign required_image_width = width | times: width_adjustment_factor -%}
-  {% else %}
-    {%- assign required_image_width = width -%}
-  {% endif %}
 
-  {% if image.width < required_image_width %}
+  {% if image.width < width %}
     {% break %}
   {% endif %}
 
+  {%- if crop_height_ratio -%}
+    {%- assign crop_height = width | times : crop_height_ratio -%}
+    {%- if image.height < crop_height -%}
+      {% break %}
+    {%- endif -%}
+  {%- endif -%}
+
   {%- capture src_set_string -%}
     {%- if src_set_string.size > 0 -%}{{ src_set_string }},{{ ' ' }}{%- endif -%}
-    {{ image | image_url: width: required_image_width }} {{width}}w
+    {%- if crop_height_ratio -%}
+      {{ image | image_url: width: width, height: crop_height, crop: image_crop }} {{width}}w
+    {%- else -%}
+      {{ image | image_url: width: width }} {{width}}w
+    {%- endif -%}
   {%- endcapture -%}
-  
 {%- endfor -%}
 
 {% capture alt %}{% if image.alt.size > 0 %}{{ image.alt }}{% else %}{{ fallback_alt }}{% endif %}{% endcapture %}

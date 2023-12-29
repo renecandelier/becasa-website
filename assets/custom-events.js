@@ -51,4 +51,10 @@ document.addEventListener("product:variant-change", function (evt) {
 document.addEventListener("product:quantity-update", function (evt) {
   console.log("Product quantity updated");
   console.log(evt.detail.quantity, evt.detail.variant);
+}); // This event fires whenever quickview modal is opened.
+// This event is exposed when the 'Enable quick view' feature is enabled
+// And a quick view modal is opened.
+
+document.addEventListener("quickview:loaded", function () {
+  console.log("Quickview loaded");
 });

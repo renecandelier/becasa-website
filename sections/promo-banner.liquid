@@ -2,6 +2,7 @@
   assign overlay_opacity = section.settings.overlay_opacity | divided_by: 100.0
   assign min_height = section.settings.min_height
   assign min_height_mobile = section.settings.min_height_mobile
+  assign right_column_width = 100 | minus: section.settings.left_column_width
   assign has_frame = section.settings.show_frame
   assign image_sizes = '(min-width: 1400px) 1400px, calc(100vw - calc(2 * 3.3vw))'
   if section.settings.full_width
@@ -10,16 +11,15 @@
 -%}
 <div
   class="
-    sales-banner
-    sales-banner--layout-{{ section.settings.layout }}
-    {% if has_frame %}sales-banner--frame{% endif %}
-    {% if section.settings.image != blank or section.settings.mobile_image != blank %}sales-banner--has-image{% endif %}
+    promo-banner
+    {% if has_frame %}promo-banner--frame{% endif %}
+    {% if section.settings.image != blank or section.settings.mobile_image != blank %}promo-banner--has-image{% endif %}
     section
     {% if section.settings.full_width %}section--full-width{% endif %}
     {{ section.settings.section_padding }}
     {% if settings.enable_section_animations and section.settings.enable_animation %}
       animation
-      animation--sales-banner
+      animation--promo-banner
     {% endif %}
   "
   style="
@@ -34,16 +34,18 @@
     --overlay-opacity: {{ overlay_opacity }};
     --min-height: {{ min_height }}px;
     --min-height-mobile: {{ min_height_mobile }}px;
+    --left-column-width: {{ section.settings.left_column_width }}%;
+    --right-column-width: {{ right_column_width }}%;
     {% render 'overlay-button-vars' with color_button_text: section.settings.button_text_color, color_button_background: section.settings.button_background_color %}
   "
   data-section-id="{{ section.id }}"
-  data-section-type="sales-banner"
+  data-section-type="promo-banner"
 >
-  <div class="sales-banner__inner">
+  <div class="promo-banner__inner">
     {%- if section.settings.mobile_image != blank -%}
       {%-
         render 'image' with
-        wrapper_class: "sales-banner__image sales-banner__image--mobile",
+        wrapper_class: "promo-banner__image promo-banner__image--mobile",
         image: section.settings.mobile_image,
         focal_point: section.settings.mobile_focal_point,
         sizes: image_sizes
@@ -53,91 +55,35 @@
     {%- if section.settings.image != blank -%}
       {%-
         render 'image' with
-        wrapper_class: "sales-banner__image",
+        wrapper_class: "promo-banner__image",
         image: section.settings.image,
         focal_point: section.settings.focal_point,
         sizes: image_sizes
       -%}
     {%- endif -%}
-    <div class="sales-banner__overlay"></div>
+    <div class="promo-banner__overlay"></div>
 
-    <div class="sales-banner__content">
-      <div class="sales-banner__columns">
-        <div class="sales-banner__columns-inner">
-          <div class="sales-banner__column">
-            <div class="sales-banner__column-inner">
-              <div
-                class="sale-promotion sale-promotion--{{ section.settings.sale_unit }}"
-                style="
-                  --promotion-amount-text-size: {{ section.settings.sale_font_size }}px;
-                  --promotion-amount-text-size-mobile: {{ section.settings.sale_font_size_mobile }}px;
-                "
-              >
-                <p class="sale-promotion__sale ff-heading">
-                  {%- if section.settings.sale_type != blank -%}
-                    <span class="sale-promotion__type fs-heading-5-base">
-                      {{- section.settings.sale_type -}}
-                    </span>
-                  {%- endif -%}
-
-                  <span class="sale-promotion__sale-grid ff-heading">
-                    {%- capture currency_symbol -%}
-                      {%- if section.settings.sale_unit == 'per_month'
-                        or section.settings.sale_unit == 'per_year'
-                        or section.settings.sale_unit == 'dollars'
-                      -%}
-                        <span class="sale-promotion__unit-currency">
-                          {%- render 'currency-symbol' -%}
-                        </span>
-                      {%- endif -%}
-                    {%- endcapture -%}
-
-                    {%- if section.settings.currency_symbol_position == 'before' -%}
-                      {{ currency_symbol }}
-                    {%- endif -%}
-                    <span class="sale-promotion__amount animation--sale-amount">
-                      {{- section.settings.sale_amount -}}
-                    </span>
-                    {%- if section.settings.currency_symbol_position == 'after' -%}
-                      {{ currency_symbol }}
-                    {%- endif -%}
-
-                    <span class="sale-promotion__unit sale-promotion__unit--{{ section.settings.sale_unit }}">
-                      {%- case section.settings.sale_unit -%}
-                        {%- when 'percent_off' -%}
-                          <span class="sale-promotion__unit-percent">
-                            {{- 'sections.sales_banner.sale_units.percent' | t -}}
-                          </span>
-                          <span class="sale-promotion__unit-off">
-                            {{- 'sections.sales_banner.sale_units.off' | t -}}
-                          </span>
-                        {%- when 'percent' -%}
-                          <span class="sale-promotion__unit-percent">
-                            {{- 'sections.sales_banner.sale_units.percent' | t -}}
-                          </span>
-                        {%- when 'per_month' -%}
-                          <span class="sale-promotion__per-month">
-                            {{ 'sections.sales_banner.sale_units.per_month' | t }}
-                          </span>
-                        {%- when 'per_year' -%}
-                          <span class="sale-promotion__per-year">
-                            {{ 'sections.sales_banner.sale_units.per_year' | t }}
-                          </span>
-                      {%- endcase -%}
-                    </span>
-                  </span>
-                </p>
-                {%- if section.settings.terms_and_conditions != blank -%}
-                  <p class="sale-promotion__terms fs-body-75">
-                    {{ section.settings.terms_and_conditions }}
-                  </p>
-                {%- endif -%}
+    <div class="promo-banner__content">
+      <div class="promo-banner__columns">
+        <div class="promo-banner__columns-inner">
+          {%- unless section.settings.giant_heading == blank -%}
+            <div class=" promo-banner__column promo-banner__column--alignment-{{ section.settings.left_column_alignment }} promo-banner__column--alignment-mobile-{{ section.settings.left_column_alignment_mobile }}">
+              <div class="promo-banner__column-inner">
+                <div
+                  class="promo-banner__giant-heading animation--giant-heading ff-heading"
+                  style="
+                    --giant-heading-font-size: {{ section.settings.giant_heading_font_size }}px;
+                    --giant-heading-font-size-mobile: {{ section.settings.giant_heading_font_size_mobile }}px;
+                  "
+                >
+                  {{ section.settings.giant_heading }}
+                </div>
               </div>
             </div>
-          </div>
+          {%- endunless -%}
 
-          <div class="sales-banner__column animation--banner-divider">
-            <div class="sales-banner__column-inner section-blocks animation--section-blocks">
+          <div class="promo-banner__column promo-banner__column--alignment-{{ section.settings.right_column_alignment }} promo-banner__column--alignment-mobile-{{ section.settings.right_column_alignment_mobile }}">
+            <div class="promo-banner__column-inner section-blocks animation--section-blocks">
               {%- if section.settings.heading != blank -%}
                 <h4 class="ff-heading {{ section.settings.heading_font_class }} section-blocks__heading">
                   {{ section.settings.heading }}
@@ -149,11 +95,11 @@
               {%- endif -%}
 
               {%- if section.settings.link_text != blank or section.settings.link_text_2 != blank -%}
-                <div class="sales-banner__button-group section-blocks__button">
+                <div class="promo-banner__button-group section-blocks__button">
                   {%- if section.settings.link_text -%}
                     {%-
                       render 'button-block' with
-                      wrapper_class: "sales-banner__button animation",
+                      wrapper_class: "promo-banner__button animation",
                       link: section.settings.link,
                       label: section.settings.link_text,
                       is_overlay: true,
@@ -164,7 +110,7 @@
                   {%- if section.settings.link_text_2 -%}
                     {%-
                       render 'button-block' with
-                      wrapper_class: "sales-banner__button animation",
+                      wrapper_class: "promo-banner__button animation",
                       link: section.settings.link_2,
                       label: section.settings.link_text_2,
                       is_overlay: true,
@@ -184,9 +130,9 @@
 
 {% schema %}
 {
-  "name": "t:sections.sales_banner.name",
+  "name": "t:sections.promo_banner.name",
   "tag": "section",
-  "class": "shopify-section--sales-banner shopify-section--full-width",
+  "class": "shopify-section--promo-banner shopify-section--full-width",
   "settings": [
     {
       "type": "range",
@@ -210,91 +156,87 @@
     },
     {
       "type": "header",
-      "content": "t:sections.sales_banner.settings.header_sale.content"
-    },
-    {
-      "type": "text",
-      "id": "sale_type",
-      "label": "t:sections.sales_banner.settings.sale_type.label",
-      "default": "up to"
-    },
-    {
-      "type": "text",
-      "id": "sale_amount",
-      "label": "t:sections.sales_banner.settings.sale_amount.label",
-      "default": "60"
-    },
-    {
-      "type": "select",
-      "id": "sale_unit",
-      "label": "t:sections.sales_banner.settings.sale_unit.label",
-      "options": [
-        {
-          "value": "percent_off",
-          "label": "t:sections.sales_banner.settings.sale_unit.option_percent_off"
-        },
-        {
-          "value": "per_month",
-          "label": "t:sections.sales_banner.settings.sale_unit.option_per_month"
-        },
-        {
-          "value": "per_year",
-          "label": "t:sections.sales_banner.settings.sale_unit.option_per_year"
-        },
-        {
-          "value": "dollars",
-          "label": "t:sections.sales_banner.settings.sale_unit.option_dollars"
-        },
-        {
-          "value": "percent",
-          "label": "t:sections.sales_banner.settings.sale_unit.option_percent"
-        },
-        {
-          "value": "none",
-          "label": "t:sections.sales_banner.settings.sale_unit.option_none"
-        }
-      ],
-      "default": "percent_off"
-    },
-    {
-      "type": "text",
-      "id": "terms_and_conditions",
-      "label": "t:sections.sales_banner.settings.terms_and_conditions.label",
-      "default": "* Optional legal note"
+      "content": "t:sections.promo_banner.settings.heading__left_column.content"
     },
     {
       "type": "range",
-      "id": "sale_font_size",
-      "label": "t:sections.sales_banner.settings.sale_font_size.label",
-      "unit": "px",
-      "min": 80,
-      "max": 200,
-      "step": 2,
-      "default": 150
+      "id": "left_column_width",
+      "min": 20,
+      "max": 80,
+      "step": 1,
+      "unit": "%",
+      "label": "t:sections.promo_banner.settings.left_column_width.label",
+      "default": 60
+    },
+    {
+      "type": "richtext",
+      "id": "giant_heading",
+      "label": "t:sections.promo_banner.settings.giant_heading.label",
+      "default": "<p>Promotion <br>banner</p>"
     },
     {
       "type": "range",
-      "id": "sale_font_size_mobile",
-      "label": "t:sections.sales_banner.settings.sale_font_size_mobile.label",
+      "id": "giant_heading_font_size",
+      "label": "t:sections.promo_banner.settings.giant_heading_font_size.label",
       "unit": "px",
       "min": 40,
       "max": 150,
       "step": 2,
-      "default": 150
+      "default": 100
     },
     {
-      "type": "radio",
-      "id": "currency_symbol_position",
-      "label": "t:sections.sales_banner.settings.currency_symbol_position.label",
+      "type": "range",
+      "id": "giant_heading_font_size_mobile",
+      "label": "t:sections.promo_banner.settings.giant_heading_font_size_mobile.label",
+      "unit": "px",
+      "min": 40,
+      "max": 120,
+      "step": 2,
+      "default": 50
+    },
+    {
+      "type": "select",
+      "id": "left_column_alignment",
+      "label": "t:sections.promo_banner.settings.text_alignment.label",
+      "default": "left",
       "options": [
-        { "value": "before", "label": "t:sections.sales_banner.settings.currency_symbol_position.option__before" },
-        { "value": "after", "label": "t:sections.sales_banner.settings.currency_symbol_position.option__after" }
-      ],
-      "default": "before"
+        {
+          "value": "left",
+          "label": "t:shared.section_blocks.text_content.settings.alignment.option_left"
+        },
+        {
+          "value": "center",
+          "label": "t:shared.section_blocks.text_content.settings.alignment.option_center"
+        },
+        {
+          "value": "right",
+          "label": "t:shared.section_blocks.text_content.settings.alignment.option_right"
+        }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "left_column_alignment_mobile",
+      "label": "t:sections.promo_banner.settings.mobile_text_alignment.label",
+      "default": "left",
+      "options": [
+        {
+          "value": "left",
+          "label": "t:shared.section_blocks.text_content.settings.alignment.option_left"
+        },
+        {
+          "value": "center",
+          "label": "t:shared.section_blocks.text_content.settings.alignment.option_center"
+        },
+        {
+          "value": "right",
+          "label": "t:shared.section_blocks.text_content.settings.alignment.option_right"
+        }
+      ]
     },
     {
       "type": "header",
-      "content": "t:shared.settings.banners.header_content.content"
+      "content": "t:sections.promo_banner.settings.heading__right_column.content"
     },
     {
       "type": "text",
@@ -327,6 +269,46 @@
       "id": "text",
       "label": "t:shared.settings.banners.text.label",
       "default": "<p>Highlight sale campaigns, discounts, and promotions.</p>"
+    },
+    {
+      "type": "select",
+      "id": "right_column_alignment",
+      "label": "t:sections.promo_banner.settings.text_alignment.label",
+      "default": "left",
+      "options": [
+        {
+          "value": "left",
+          "label": "t:shared.section_blocks.text_content.settings.alignment.option_left"
+        },
+        {
+          "value": "center",
+          "label": "t:shared.section_blocks.text_content.settings.alignment.option_center"
+        },
+        {
+          "value": "right",
+          "label": "t:shared.section_blocks.text_content.settings.alignment.option_right"
+        }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "right_column_alignment_mobile",
+      "label": "t:sections.promo_banner.settings.mobile_text_alignment.label",
+      "default": "left",
+      "options": [
+        {
+          "value": "left",
+          "label": "t:shared.section_blocks.text_content.settings.alignment.option_left"
+        },
+        {
+          "value": "center",
+          "label": "t:shared.section_blocks.text_content.settings.alignment.option_center"
+        },
+        {
+          "value": "right",
+          "label": "t:shared.section_blocks.text_content.settings.alignment.option_right"
+        }
+      ]
     },
     {
       "type": "header",
@@ -483,16 +465,6 @@
       "content": "t:shared.settings.section_style.header_style.content"
     },
     {
-      "type": "radio",
-      "id": "layout",
-      "label": "t:sections.sales_banner.settings.layout.label",
-      "options": [
-        { "value": "two-columns", "label": "t:sections.sales_banner.settings.layout.option__two_columns" },
-        { "value": "one-column", "label": "t:sections.sales_banner.settings.layout.option__one_column" }
-      ],
-      "default": "two-columns"
-    },
-    {
       "id": "enable_animation",
       "type": "checkbox",
       "label": "t:shared.settings.section_style.enable_animation.label",
@@ -534,7 +506,7 @@
   ],
   "presets": [
     {
-      "name": "t:sections.sales_banner.presets.name"
+      "name": "t:sections.promo_banner.presets.name"
     }
   ]
 }
