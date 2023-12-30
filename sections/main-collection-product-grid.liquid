@@ -128,9 +128,13 @@
              {%- if isSplit == true -%}		
                {%- assign currentVariantColor = "" -%}
 
-               {%- for variant in product.variants -%}		
-                 {%- assign variantColor = variant.title | split: " " | first | downcase -%}		
-                 {%- if variantColor != currentVariantColor -%}		
+               {%- for variant in product.variants -%}	
+                 	
+                 {%- assign variantColor = variant.title | split: " " | first | downcase -%}	
+
+{% if variantColor contains "*" %}
+{% else %}
+{%- if variantColor != currentVariantColor -%}		
                    {%- assign currentVariantColor = variantColor -%}		
                    {%- assign foundFirstImage = false -%}		
                    {% for media in product.media %}		
@@ -144,17 +148,7 @@
 {%- if collection.description == "sale" -%}
                     {%- if variant.compare_at_price > 0 -%}
                    <script>console.log({{ variant.compare_at_price | json }});</script>
-                    {%    
-                        render 'product-item' with    
-                        prod: product,    
-                        aspect_ratio: settings.product_listing_aspect_ratio,    
-                        has_grid_reveal: true,    
-                        indexForVariant: altIndex,    
-                        selectedVariant: variant    
-                      %}
-                           {% endif %}
-                                              {% else %}
-                   {%		
+                    {%		
                         render 'product-item' with		
                         prod: product,		
                         aspect_ratio: settings.product_listing_aspect_ratio,		
@@ -162,8 +156,23 @@
                         indexForVariant: altIndex,		
                         selectedVariant: variant		
                       %}
-                       {% endif %}
-	
+                           {% endif %}
+                                              {% else %}
+
+                   {%		
+                        render 'product-item' with		
+                        prod: product,		
+                        aspect_ratio: settings.product_listing_aspect_ratio,		
+                        has_grid_reveal: true,		
+                        indexForVariant: altIndex,		
+                        selectedVariant: variant		
+                      %}		
+                     {% endif %}
+{% endif %}		
+
+                 
+                 
+
                    {%- endif -%}		
                  {%- endfor -%}		
                {% else %}		

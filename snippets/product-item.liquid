@@ -117,7 +117,21 @@ pass in :
           {%- if placeholder -%}
             {{ 'homepage.onboarding.product_title' | t }}
           {%- else -%}
-            <a href="{{ variantURL | within: collection }}">{{ prod.title }}</a>
+          {% comment %} 
+          ***&&&****
+          This is meant to add the variant to the title line 124-134
+          {% endcomment %}
+              {% assign productTitle = prod.title %}		
+          <script>console.log({{ selectedVariant.option1 | json }});</script>
+                    <script>console.log({{ current_variant | json }});</script>
+
+
+          {% if selectedVariant.option1 != null %}
+          {% assign productTitle = productTitle | append: ' - ' | append: selectedVariant.option1 %}
+
+            {% endif %}
+
+            <a href="{{ variantURL | within: collection }}"> {{ productTitle }} </a>
 
           {%- endif -%}
         </h4>
@@ -138,8 +152,14 @@ pass in :
             <s class="t-subdued">{{ prod.compare_at_price | money }}</s>
 
             {% if prod.price_varies %}
-              {%- assign sale_price = prod.price | money -%}
+            
+            {% comment %}
+            ***&&&*** This is meant to set a sale marker is the price varies
+             {%- assign sale_price = prod.price | money -%}
               {{ 'products.product.on_sale_from_html' | t: price: sale_price }}
+            {% endcomment %}
+              <span class="sale" data-price>{{ prod.price | money }}<span>
+
             {% else %}
               <span class="sale" data-price>{{ prod.price | money }}<span>
             {% endif %}
@@ -183,7 +203,7 @@ pass in :
       {%- endif -%}
 
     </div>
-                {% comment %}
+                c
     <div class="product-item__hover-container"></div>
     {% endcomment %}
   </div>
