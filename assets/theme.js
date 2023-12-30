@@ -6133,7 +6133,7 @@ function createOptionGroup(el) {
       }else {
         console.log("optionHandleValueLower",optionHandleValueLower, thumb.alt.toLowerCase())
         thumbParent.classList.add("visible__img");
-        thumbParent.classList.remove("hide__img");
+        thumbParent.classList.remove("hide__img", "hidden");
 
       }
     })
@@ -6155,7 +6155,7 @@ function createOptionGroup(el) {
       
       }else {
         thumbParent.classList.add("visible__img");
-        thumbParent.classList.remove("hide__img");
+        thumbParent.classList.remove("hide__img", "hidden");
         
         lightThumbParent.classList.remove("lighthouse__hide_img");
         lightThumbParent.classList.add("lighthouse__visible_img");
