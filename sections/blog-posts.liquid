@@ -1,3 +1,5 @@
+{{ 'template-blog.css' | asset_url | stylesheet_tag }}
+
 {%- liquid
   assign blog = blogs[section.settings.blog]
 
@@ -83,7 +85,7 @@
       {%- endfor -%}
     {%- elsif section.settings.display_type != 'selected' -%}
       {%- for i in (1..section.settings.max_articles) -%}
-        {% render 'article-item' with aspect_ratio: section.settings.aspect_ratio %}
+        {% render 'article-item', aspect_ratio: section.settings.aspect_ratio %}
       {%- endfor -%}
     {%- endif -%}
   </div>
@@ -93,26 +95,10 @@
 {
   "name": "t:sections.blog_posts.name",
   "tag": "section",
-  "templates": [
-    "404",
-    "article",
-    "blog",
-    "cart",
-    "collection",
-    "list-collections",
-    "customers/account",
-    "customers/activate_account",
-    "customers/addresses",
-    "customers/login",
-    "customers/order",
-    "customers/register",
-    "customers/reset_password",
-    "gift_card",
-    "index",
-    "page",
-    "product",
-    "search"
-  ],
+  "disabled_on": {
+    "groups": ["header", "custom.overlay"],
+    "templates": ["password"]
+  },
   "settings": [
     {
       "id": "heading",
@@ -163,7 +149,7 @@
       "id": "max_articles",
       "label": "t:sections.blog_posts.settings.max_articles.label",
       "min": 2,
-      "max": 12,
+      "max": 16,
       "step": 1,
       "default": 2
     },
@@ -281,7 +267,7 @@
     {
       "type": "article",
       "name": "t:sections.blog_posts.blocks.article.name",
-      "limit": 12,
+      "limit": 16,
       "settings": [
         {
           "type": "article",

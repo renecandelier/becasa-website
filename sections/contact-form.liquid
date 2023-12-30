@@ -1,5 +1,5 @@
 {%- liquid
-  assign alignment_values = section.settings.alignment | split: "_"
+  assign alignment_values = section.settings.alignment | split: '_'
   assign heading_alignment = alignment_values | first
   assign text_alignment = alignment_values | last
 -%}
@@ -43,7 +43,12 @@
     {% assign form_id = 'ContactForm-' | append: section.id %}
     {% form 'contact', class: 'contact-form__form', id: form_id %}
       {%- assign success_msg = 'contact.form.post_success' | t -%}
-      {% render 'form-status', form: form, form_id: form_id, success_message: success_msg %}
+      {% render 'form-status',
+        form: form,
+        form_id: form_id,
+        success_message: success_msg,
+        success_alignment: text_alignment
+      %}
 
       {%- unless form.posted_successfully? -%}
         <div class="contact-form__wrapper animation--item">
@@ -360,11 +365,13 @@
 
             {%- if forloop.last -%}
               {%- unless has_email_block -%}
-                <div class="
+                <div
+                  class="
                     contact-form__input-wrapper
                     animation--item
                     contact-form__item--full-width
-                  ">
+                  "
+                >
                   {%- assign input_id = form_id | append: '-email' -%}
                   <label for="input_id">
                     {{ 'contact.form.email' | t }}
@@ -412,6 +419,9 @@
 {
   "name": "t:sections.contact_form.name",
   "tag": "section",
+  "disabled_on": {
+    "groups": ["header", "custom.overlay"]
+  },
   "settings": [
     {
       "type": "select",

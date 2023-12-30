@@ -4,7 +4,7 @@
     assign paginated = true
   endif
 
-  assign per_page = section.settings.rows | times: section.settings.columns
+  assign per_page = section.settings.rows | times: section.settings.columns_desktop
   assign filter_bar_enabled = false
   if section.settings.show_item_count or section.settings.show_sort or section.settings.show_filters
     assign filter_bar_enabled = true
@@ -18,13 +18,15 @@
   data-pagination-type="{{ section.settings.pagination }}"
   data-search-item-count="{{ search.results_count }}"
 >
-  <header class="
+  <header
+    class="
       search-header
       {% if settings.enable_section_animations and section.settings.enable_animation %}
         animation
         animation--search-banner
       {% endif %}
-    ">
+    "
+  >
     <div class="search-header__inner section-blocks animation--section-blocks">
       <h1 class="search-header__title ff-heading fs-heading-2-base fs-heading-1-base-ns section-blocks__heading">
         {%- if search.performed -%}
@@ -53,11 +55,6 @@
             autocomplete="off"
           >
           <input type="hidden" name="options[prefix]" value="last">
-          <input
-            type="hidden"
-            name="type"
-            value="product{% if settings.search_show_articles %},article{% endif %}{% if settings.search_show_pages %},page{% endif %}"
-          >
           <button type="submit" class="search-form__submit" aria-label="{{ 'search.search' | t }}">
             {% render 'icon' with icon: 'search' %}
           </button>
@@ -66,18 +63,26 @@
     </div>
   </header>
 
-  <div class="
+  <div
+    class="
       section
       section--full-width
       search
-      search--columns-{{ section.settings.columns }}
       search--pagination-{{ section.settings.pagination }}
       {% if filter_bar_enabled %}search--has-filter-bar{% endif %}
       {% if settings.enable_section_animations and section.settings.enable_animation %}
         animation
         animation--search
       {% endif %}
-    ">
+    "
+
+    data-enable-sticky-filter-sidebar="{{ section.settings.enable_sticky_filter_sidebar }}"
+
+    style="
+      --search-columns-desktop: {{ section.settings.columns_desktop }};
+      --search-columns-mobile: {{ section.settings.columns_mobile }};
+    "
+  >
     {% if search.results_count > 0 %}
       <div class="search__divider"></div>
     {%- endif -%}
@@ -92,6 +97,7 @@
                 show_item_count: section.settings.show_item_count,
                 show_sort: section.settings.show_sort,
                 show_filters: section.settings.show_filters,
+                filter_location: section.settings.desktop_filter_location,
                 show_swatch_filters: section.settings.show_swatch_filters,
                 show_chip_filters: section.settings.show_chip_filters,
                 enable_sticky_filter_bar: section.settings.enable_sticky_filter_bar,
@@ -109,6 +115,15 @@
             {%- endif -%}
 
             <div class="search__main-area">
+              {%- if section.settings.desktop_filter_location == 'sidebar' -%}
+                {% render 'filter-sidebar',
+                  results: search,
+                  show_filters: section.settings.show_filters,
+                  collapse_filter_bar: section.settings.collapse_filter_bar,
+                  collapse_filter_groups: section.settings.collapse_filter_groups_desktop
+                %}
+              {%- endif -%}
+
               <div class="search__window">
                 <div class="search__loading" data-loading>
                   {% render 'loader' %}
@@ -120,13 +135,15 @@
                   data-partial
                   data-search-results-count="{{ search.results_count }}"
                 >
-                  <div class="
+                  <div
+                    class="
                       search__results
                       search__infinite-container
                       {% if search.results_count == 0 %}
                         search__results--no-products
                       {% endif %}
-                    ">
+                    "
+                  >
                     {%- if search.performed -%}
                       {%- for item in search.results -%}
                         {%- case item.object_type -%}
@@ -134,6 +151,8 @@
                             {%
                               render 'product-item' with
                               prod: item,
+                              product_columns_desktop: section.settings.columns_desktop,
+                              product_columns_mobile: section.settings.columns_mobile,
                               aspect_ratio: settings.product_listing_aspect_ratio,
                               has_grid_reveal: true
                             %}
@@ -141,7 +160,8 @@
                             {%
                               render 'search-item' with
                               item: item,
-                              columns: section.settings.columns,
+                              columns_desktop: section.settings.columns_desktop,
+                              columns_mobile: section.settings.columns_mobile,
                               forloop: forloop,
                               has_grid_reveal: true
                             %}
@@ -209,7 +229,7 @@
         show_filters: section.settings.show_filters,
         show_swatch_filters: section.settings.show_swatch_filters,
         show_chip_filters: section.settings.show_chip_filters,
-        collapse_filter_groups_mobile: section.settings.collapse_filter_groups_mobile,
+        collapse_filter_groups: section.settings.collapse_filter_groups_mobile,
         chip_layout: section.settings.chip_layout
       %}
     </div>
@@ -227,22 +247,80 @@
       "content": "t:sections.main_search.settings.search__header.content"
     },
     {
-      "type": "range",
-      "id": "columns",
-      "label": "t:sections.main_search.settings.columns.label",
-      "min": 3,
-      "max": 5,
-      "step": 1,
-      "default": 4
+      "type": "select",
+      "id": "columns_desktop",
+      "label": "t:shared.settings.column_count.desktop.label",
+      "default": "4",
+      "options": [
+        {
+          "value": "3",
+          "label": "t:shared.settings.column_count.columns.option_3"
+        },
+        {
+          "value": "4",
+          "label": "t:shared.settings.column_count.columns.option_4"
+        },
+        {
+          "value": "5",
+          "label": "t:shared.settings.column_count.columns.option_5"
+        }
+      ]
     },
     {
+      "type": "select",
+      "id": "columns_mobile",
+      "label": "t:shared.settings.column_count.mobile.label",
+      "default": "2",
+      "options": [
+        {
+          "value": "1",
+          "label": "t:shared.settings.column_count.columns.option_1"
+        },
+        {
+          "value": "2",
+          "label": "t:shared.settings.column_count.columns.option_2"
+        }
+      ]
+    },
+    {
+      "type": "select",
       "id": "rows",
-      "type": "range",
-      "label": "t:shared.settings.rows.label",
-      "default": 4,
-      "min": 3,
-      "max": 10,
-      "step": 1
+      "label": "t:sections.collection_sections_shared.settings.rows.label",
+      "default": "4",
+      "options": [
+        {
+          "value": "3",
+          "label": "t:sections.collection_sections_shared.settings.rows.option_3"
+        },
+        {
+          "value": "4",
+          "label": "t:sections.collection_sections_shared.settings.rows.option_4"
+        },
+        {
+          "value": "5",
+          "label": "t:sections.collection_sections_shared.settings.rows.option_5"
+        },
+        {
+          "value": "6",
+          "label": "t:sections.collection_sections_shared.settings.rows.option_6"
+        },
+        {
+          "value": "7",
+          "label": "t:sections.collection_sections_shared.settings.rows.option_7"
+        },
+        {
+          "value": "8",
+          "label": "t:sections.collection_sections_shared.settings.rows.option_8"
+        },
+        {
+          "value": "9",
+          "label": "t:sections.collection_sections_shared.settings.rows.option_9"
+        },
+        {
+          "value": "10",
+          "label": "t:sections.collection_sections_shared.settings.rows.option_10"
+        }
+      ]
     },
     {
       "type": "checkbox",
@@ -271,13 +349,42 @@
       "type": "checkbox",
       "id": "enable_sticky_filter_bar",
       "label": "t:shared.settings.enable_sticky_filter_bar.label",
+      "info": "t:shared.settings.enable_sticky_filter_bar.info",
       "default": true
+    },
+    {
+      "type": "select",
+      "id": "desktop_filter_location",
+      "label": "t:shared.settings.desktop_filter_location.label",
+      "options": [
+        {
+          "value": "filter_bar",
+          "label": "t:shared.settings.desktop_filter_location.options.filter_bar"
+        },
+        {
+          "value": "sidebar",
+          "label": "t:shared.settings.desktop_filter_location.options.sidebar"
+        }
+      ]
     },
     {
       "type": "checkbox",
       "id": "collapse_filter_bar",
       "label": "t:shared.settings.collapse_filter_bar.label",
       "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_sticky_filter_sidebar",
+      "label": "t:shared.settings.enable_sticky_filter_sidebar.label",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "collapse_filter_groups_desktop",
+      "label": "t:shared.settings.collapse_filter_groups_desktop.label",
+      "default": true,
+      "info": "t:shared.settings.collapse_filter_groups_desktop.info"
     },
     {
       "type": "checkbox",

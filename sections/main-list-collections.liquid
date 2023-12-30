@@ -60,7 +60,7 @@
               image_sizes: image_sizes
             %}
           {%- else -%}
-            {%- for i in (1..max_collections) -%}
+            {%- for i in (1..per_page) -%}
               {%
                 render 'collection-item' with
                 collection: collection,
@@ -132,36 +132,36 @@
     {
       "type": "select",
       "id": "columns",
-      "label": "t:sections.collection_sections_shared.settings.collection_columns.label",
+      "label": "t:shared.settings.column_count.desktop.label",
       "default": "3",
       "options": [
         {
           "value": "3",
-          "label": "t:sections.collection_sections_shared.settings.columns.option_3"
+          "label": "t:shared.settings.column_count.columns.option_3"
         },
         {
           "value": "4",
-          "label": "t:sections.collection_sections_shared.settings.columns.option_4"
+          "label": "t:shared.settings.column_count.columns.option_4"
         },
         {
           "value": "5",
-          "label": "t:sections.collection_sections_shared.settings.columns.option_5"
+          "label": "t:shared.settings.column_count.columns.option_5"
         }
       ]
     },
     {
       "type": "select",
       "id": "mobile_columns",
-      "label": "t:sections.collection_sections_shared.settings.mobile_collection_columns.label",
+      "label": "t:shared.settings.column_count.mobile.label",
       "default": "2",
       "options": [
         {
           "value": "1",
-          "label": "t:sections.collection_sections_shared.settings.mobile_columns.option_1"
+          "label": "t:shared.settings.column_count.columns.option_1"
         },
         {
           "value": "2",
-          "label": "t:sections.collection_sections_shared.settings.mobile_columns.option_2"
+          "label": "t:shared.settings.column_count.columns.option_2"
         }
       ]
     },

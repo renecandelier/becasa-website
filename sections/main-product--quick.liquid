@@ -1,3 +1,7 @@
+{%- comment -%}
+  TO-DO: Whitespace cleanup
+{%- endcomment -%}
+
 {%- liquid
   assign current_variant = product.selected_or_first_available_variant
   assign featured_media = product.selected_or_first_available_variant.featured_media | default: product.featured_media
@@ -62,6 +66,10 @@
             current_variant: current_variant,
             featured_media: featured_media
           -%}
+
+          {% if section.settings.enable_gift_card_recipient and product.gift_card? -%}
+            {% render 'gift-card-recipient-form', source: 'product-display', product: product %}
+          {%- endif %}
         </div>
       </div>
       <div class="quick-product--right-viewport-fade--wrap">
@@ -70,7 +78,7 @@
       <div class="quick-product--right-viewport--footer">
         {%-
           render 'product-block-buy-buttons' with
-          product: product,
+          prod: product,
           block: block,
           blocks: section.blocks,
           current_variant: current_variant,
@@ -213,6 +221,17 @@
       "id": "show_custom_badges",
       "label": "t:shared.settings.badges.show_custom_badges.label",
       "default": true
+    },
+    {
+      "type": "header",
+      "content": "t:sections.main_product_overview.settings.gift_card_header.content"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_gift_card_recipient",
+      "default": true,
+      "label": "t:sections.main_product_overview.settings.enable_gift_card_recipient.label",
+      "info": "t:sections.main_product_overview.settings.enable_gift_card_recipient.info"
     }
   ],
   "blocks": [
@@ -301,6 +320,12 @@
           "id": "show_status_bar",
           "label": "t:sections.main_product_overview.blocks.inventory_counter.settings.show_status_bar.label",
           "default": true
+        },
+        {
+          "type": "checkbox",
+          "id": "show_untracked_quantity",
+          "label": "t:sections.main_product_overview.blocks.inventory_counter.settings.show_untracked_quantity.label",
+          "default": false
         }
       ]
     },

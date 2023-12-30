@@ -1,10 +1,6 @@
-{%- liquid
-  assign max_products = section.settings.maximum_products
--%}
-
 <div
   class="
-    recommended-products
+    recently-viewed-products
     carousel--mobile-per-view-{{ section.settings.mobile_columns }}
     carousel--per-view-{{ section.settings.mobile_columns }}
     section
@@ -17,69 +13,53 @@
     {% endif %}
   "
   data-section-id="{{ section.id }}"
-  data-section-type="recommended-products"
-  data-product-id="{{ product.id }}"
-  data-limit="{{ max_products }}"
+  data-section-type="recently-viewed-products"
+  data-product-handle="{{ product.handle }}"
+  data-limit="{{ section.settings.maximum_products }}"
   data-products-per-view="{{ section.settings.columns }}"
   data-mobile-products-per-view="{{ section.settings.mobile_columns }}"
 >
-  <div class="section__inner" data-recommendations>
+  <div class="section__inner" data-recently-viewed>
     <div class="carousel__navigation-wrapper">
       <div class="section-introduction animation--section-introduction">
         {%- unless section.settings.title == blank -%}
-          <h2 class="recommended-products__heading ff-heading fs-heading-3-base section-introduction__heading">
+          <h2 class="recently-viewed-products__heading ff-heading fs-heading-3-base section-introduction__heading">
             {{ section.settings.title }}
           </h2>
         {%- endunless -%}
 
         {%- unless section.settings.subheading == blank -%}
-          <div class="recommended-products__subheading ff-body fs-body-100 rte section-introduction__subheading">
+          <div class="recently-viewed-products__subheading ff-body fs-body-100 rte section-introduction__subheading">
             {{ section.settings.subheading }}
           </div>
         {%- endunless -%}
       </div>
 
-      {%- render 'carousel-navigation' with wrapper_class: 'animation--controls' %}
+      {%- render 'carousel-navigation', wrapper_class: 'animation--controls' %}
     </div>
 
-    <div class="recommended-products__content carousel swiper">
-      <div class="recommended-products__slider-wrapper carousel__wrapper swiper-wrapper">
-        {%- if recommendations.products_count > 0 -%}
-          {%- for product in recommendations.products limit: max_products -%}
-            <div class="recommended-products__slide carousel__slide swiper-slide" data-slide>
-              {% render 'product-item',
-                prod: product,
-                product_columns: section.settings.columns,
-                aspect_ratio: settings.product_listing_aspect_ratio
-              %}
-            </div>
-          {%- endfor -%}
-        {%- endif -%}
-      </div>
+    <div class="recently-viewed-products__content carousel swiper">
+      <div class="recently-viewed-products__slider-wrapper carousel__wrapper swiper-wrapper"></div>
     </div>
   </div>
 </div>
 
 {% schema %}
 {
-  "name": "t:sections.product_recommendations.name",
+  "name": "t:sections.recently_viewed_products.name",
   "tag": "section",
   "limit": 1,
   "templates": ["product"],
   "settings": [
     {
       "type": "paragraph",
-      "content": "t:sections.product_recommendations.settings.paragraph__customization.content"
-    },
-    {
-      "type": "paragraph",
-      "content": "t:sections.product_recommendations.settings.paragraph__intro.content"
+      "content": "t:sections.recently_viewed_products.settings.paragraph__intro.content"
     },
     {
       "type": "text",
       "id": "title",
       "label": "t:sections.collection_sections_shared.settings.title.label",
-      "default": "Recommended products"
+      "default": "Recently viewed"
     },
     {
       "type": "richtext",
@@ -189,7 +169,7 @@
   ],
   "presets": [
     {
-      "name": "t:sections.product_recommendations.presets.name"
+      "name": "t:sections.recently_viewed_products.presets.name"
     }
   ]
 }
