@@ -4,20 +4,25 @@
   - form: {Object} Form Liquid object (required)
   - form_id: {String} Form's id attribute for accessibility purpose (required)
   - success_message: {String} Success message locale key. Default to 'contact.form.post_success' (optional)
+  - success_alignment: {String} text alignment setting to connect success message alignment
 
   Usage:
-  {% render 'form-status', form: form, form_id: formId, success_message: post_message %}
+  {% render 'form-status', form: form, form_id: formId, success_message: post_message, success_alignment: success_alignment %}
 {% endcomment %}
 {% if form.posted_successfully? or form.errors %}
-  <div id="form-status--{{ form_id }}" class="form-status">
+  <div id="form-status--{{ form_id }}" class="form-status" style="--success-alignment: {{ success_alignment }}">
     {%- if form.posted_successfully? and success_message -%}
-      <span class="form-status__message form-status__message--success" tabindex="0" data-form-status>
+      <span
+        class="form-status__message form-status__message--success"
+        tabindex="0"
+        data-form-status
+      >
         {{ success_message }}
       </span>
     {%- endif -%}
 
     {% comment %} We need to add this so the errors are output in the right order {% endcomment %}
-    {% assign error_order = "author, email, body, password, form" | split: ", " %}
+    {% assign error_order = 'author, email, body, password, form' | split: ', ' %}
 
     {%- if form.errors -%}
       <div class="form-status__message form-status__message--error fs-body-75">

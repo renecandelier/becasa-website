@@ -7,13 +7,15 @@
   * show_sold_out_badge - if true, other badges will not be shown
 {% endcomment %}
 
-{%- assign badges = "" -%}
+{%- assign badges = '' -%}
 {%- assign product_tags = prod.tags -%}
 {%- assign badge_tags_1 = settings.custom_product_badge_group_1_tag_names | split: ', ' -%}
 {%- assign badge_tags_2 = settings.custom_product_badge_group_2_tag_names | split: ', ' -%}
 {%- assign badge_tags_3 = settings.custom_product_badge_group_3_tag_names | split: ', ' -%}
 {%- assign badge_tags_4 = settings.custom_product_badge_group_4_tag_names | split: ', ' -%}
 {%- assign badge_tags = badge_tags_1 | concat: badge_tags_2 | concat: badge_tags_3 | concat: badge_tags_4 -%}
+
+{%- assign custom_badges_translations = shop.metaobjects.custom_badges.custom_badges_translations -%}
 
 {%- unless show_sold_out_badge and prod.available != true %}
   {%- if show_sale_badge and prod.compare_at_price > prod.price -%}
@@ -35,8 +37,10 @@
         {%- if product_tag_lower == badge_tag_lower -%}
           {%- capture badges -%}
             {{ badges }}
-            <div class="product-badge product-badge" data-handle="{{ badge_tag_lower | handleize }}">
-              {{ badge_tag }}
+            <div class="product-badge" data-handle="{{ badge_tag_lower | handleize }}">
+              {%- assign metakey = badge_tag_lower | replace: ' ', '_' -%}
+              {%- assign badge_text = custom_badges_translations[metakey] | default: badge_tag -%}
+              {{ badge_text }}
             </div>
           {%- endcapture -%}
         {%- endif -%}
@@ -56,6 +60,12 @@
   {%- endunless -%}
 {%- endif -%}
 
-<div class="product-badges">
+<div
+  class="
+    product-badges
+    product-badges--position-{{ settings.product_listing_badge_position | split: '_' | first }}
+    product-badges--position-{{ settings.product_listing_badge_position | split: '_' | last }}
+  "
+>
   {{ badges }}
 </div>

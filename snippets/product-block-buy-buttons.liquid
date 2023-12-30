@@ -5,12 +5,18 @@
 >
   {{ 'products.product.quantity_error' | t }}
 </div>
-{%
-  render 'product-form' with
+
+{% if section.settings.enable_gift_card_recipient and prod.gift_card? and template.suffix != 'quick-view' -%}
+  {% render 'gift-card-recipient-form', source: 'product-display', product: prod %}
+{%- endif %}
+
+{% render 'product-form',
   block: block,
   blocks: blocks,
-  product: product,
+  prod: prod,
   current_variant: current_variant,
+  featured_media: featured_media,
+  aspect_ratio: aspect_ratio,
   show_dynamic_checkout: block.settings.show_dynamic_checkout,
   is_quick: is_quick
 %}

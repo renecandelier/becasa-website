@@ -17,6 +17,7 @@
   data-low-inventory-threshold="{{ low_inventory_threshold }}"
   data-stock-countdown-max="{{ inventory_max }}"
   data-show-status-bar="{{ block_settings.show_status_bar }}"
+  data-show-untracked-quantity="{{ block_settings.show_untracked_quantity }}"
   data-unavailable-text="{{ 'products.inventory.unavailable' | t }}"
   {{ block.shopify_attributes }}
 >
@@ -34,21 +35,27 @@
       "inventory": {
         {%- for variant in product.variants -%}
           {%- if variant.available -%}
-            {%- if variant.inventory_management and variant.inventory_policy == 'deny' and low_inventory_threshold_to_num > 0 -%}
-              {%- if variant.inventory_quantity <= low_inventory_threshold_to_num -%}
-                {%- capture inventory_message -%}{{ 'products.inventory.low_stock' | t : count: variant.inventory_quantity }}{%- endcapture -%}
-              {%- else -%}
-                {%- capture inventory_message -%}{{ 'products.inventory.in_stock' | t : count: variant.inventory_quantity }}{%- endcapture -%}
-              {%- endif -%}
+            {%- if variant.inventory_management == nil and block_settings.show_untracked_quantity -%}
+              {%- capture inventory_message -%}{{ 'products.inventory.in_stock' | t }}{%- endcapture -%}
             {%- else -%}
-              {%- if variant.inventory_policy == 'continue' and variant.inventory_quantity <= 0 and variant.requires_shipping -%}
-                {%- capture inventory_message -%}{{ 'products.inventory.sold_out' | t : count: variant.inventory_quantity }}{%- endcapture -%}
-              {%- else %}
-                {%- capture inventory_message -%}{%- endcapture -%}
+              {%- if variant.inventory_management and variant.inventory_quantity > 0 and low_inventory_threshold_to_num > 0 -%}
+                {%- if variant.inventory_quantity <= low_inventory_threshold_to_num -%}
+                  {%- capture inventory_message -%}{{ 'products.inventory.low_stock' | t : count: variant.inventory_quantity }}{%- endcapture -%}
+                {%- else -%}
+                  {%- capture inventory_message -%}{{ 'products.inventory.in_stock' | t }}{%- endcapture -%}
+                {%- endif -%}
+              {%- else -%}
+                {%- if variant.inventory_policy == 'deny' and variant.inventory_quantity <= 0 and variant.requires_shipping -%}
+                  {%- capture inventory_message -%}{{ 'products.inventory.sold_out' | t }}{%- endcapture -%}
+                {%- elsif variant.inventory_policy == 'continue' and variant.inventory_quantity <= 0 and variant.requires_shipping -%}
+                  {%- capture inventory_message -%}{{ 'products.inventory.backordered' | t }}{%- endcapture -%}
+                {%- else %}
+                  {%- capture inventory_message -%}{%- endcapture -%}
+                {%- endif -%}
               {%- endif -%}
             {%- endif -%}
           {%- else -%}
-            {%- capture inventory_message -%}{{ 'products.inventory.sold_out' | t : count: variant.inventory_quantity }}{%- endcapture -%}
+            {%- capture inventory_message -%}{{ 'products.inventory.sold_out' | t }}{%- endcapture -%}
           {%- endif -%}
           "{{ variant.id }}": {
             "inventory_management": {{ variant.inventory_management | json }},

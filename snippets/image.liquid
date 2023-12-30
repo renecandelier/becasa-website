@@ -1,5 +1,5 @@
 {%- liquid
-  if image.preview_image
+  if image != image.preview_image and image.preview_image
     comment
       hack - nicer way?
     endcomment
@@ -10,8 +10,16 @@
     assign sizes = sizes_px | append: 'px'
   endif
 
+  if focal_point == 'image_presentation' and image.presentation.focal_point == '50.0% 50.0%'
+    assign focal_point = 'center'
+  endif
+
   if focal_point
-    assign focal_alignment = focal_point | replace: '_', ' '
+    if focal_point == 'image_presentation'
+      assign focal_alignment = image.presentation.focal_point
+    else
+      assign focal_alignment = focal_point | replace: '_', ' '
+    endif
   endif
 -%}
 
@@ -29,19 +37,18 @@
       {%- if object_fit != blank and aspect_ratio != 'natural' -%}--object-fit: {{ object_fit }};{%- endif -%}
     "
   >
-    <div class="image__inner">
-      {%
-        render 'responsive-image' with
-        image: image,
-        sizes: sizes,
-        prioritize_loading: prioritize_loading,
-        aspect_ratio: aspect_ratio,
-        focal_alignment: focal_alignment,
-        object_fit: object_fit,
-        fallback_alt: fallback_alt,
-        src_set_type: src_set_type
-      %}
-    </div>
+    {%
+      render 'responsive-image' with
+      image: image,
+      sizes: sizes,
+      prioritize_loading: prioritize_loading,
+      aspect_ratio: aspect_ratio,
+      focal_point: focal_point,
+      focal_alignment: focal_alignment,
+      object_fit: object_fit,
+      fallback_alt: fallback_alt,
+      src_set_type: src_set_type
+    %}
   </div>
 {%- elsif include_placeholder -%}
   {%- assign natural_fallback = placeholder_natural_fallback_ratio | default: 'square' -%}

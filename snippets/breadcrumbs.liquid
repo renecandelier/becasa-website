@@ -3,7 +3,7 @@
   {%- if show_breadcrumbs -%}
     <ol class="breadcrumbs__list">
       <li class="breadcrumbs__item">
-        <a class="breadcrumbs__link" href="/">{{ 'general.navigation.home' | t }}</a>
+        <a class="breadcrumbs__link" href="{{ routes.root_url }}">{{ 'general.navigation.home' | t }}</a>
         <div class="breadcrumbs__icon">{% render 'icon' with icon: 'chevron-small' %}</div>
       </li>
       {%- case current_template -%}

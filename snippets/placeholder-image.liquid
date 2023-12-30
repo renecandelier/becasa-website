@@ -23,14 +23,14 @@
   endif
 -%}
 
-<div class="
+<div
+  class="
     placeholder-image
     {{ wrapper_class }}
     placeholder-image--{{ placeholder_aspect_ratio }}
     image
     aspect-ratio--{{ placeholder_aspect_ratio }}
-  ">
-  <div class="placeholder-image__inner">
-    {{ placeholder_tag | placeholder_svg_tag: 'placeholder-svg' }}
-  </div>
+  "
+>
+  {{ placeholder_tag | placeholder_svg_tag: 'placeholder-svg' }}
 </div>
