@@ -9,6 +9,7 @@ function _classCallCheck$1(instance, Constructor) { if (!(instance instanceof Co
 
 
 (function () {
+  console.log("Helllôo")
   // Return early if we're not running inside of the browser.
   if (typeof window === 'undefined') {
     return;
@@ -6119,7 +6120,7 @@ function createOptionGroup(el) {
     const productThumb = document.querySelectorAll(".product-thumbnails__items img");
     const mainProductThumb = document.querySelectorAll(".product__media-container img");
     const carouselWrapper = document.querySelector(".product__media.carousel__wrapper.swiper-wrapper")
-    
+    const carouselMobile = document.querySelector(".below-mobile.swiper");
     if(colorOptionHandle ==="Color" || colorOptionHandle ==="color"){
        productThumb.forEach(thumb => {
       const thumbParent = thumb.parentElement.parentElement.parentElement.parentElement
@@ -6127,11 +6128,13 @@ function createOptionGroup(el) {
       if(optionHandleValueLower !== thumb.alt.toLowerCase()){
         //console.log("optionHandleValueLower",optionHandleValueLower, thumb.alt.toLowerCase())
         thumbParent.classList.add("hide__img");
-        thumbParent.classList.remove("visible__img");    
+        thumbParent.classList.remove("visible__img");   
+         
       }else {
         console.log("optionHandleValueLower",optionHandleValueLower, thumb.alt.toLowerCase())
         thumbParent.classList.add("visible__img");
         thumbParent.classList.remove("hide__img");
+
       }
     })
     }
@@ -6147,6 +6150,8 @@ function createOptionGroup(el) {
 
         lightThumbParent.classList.add("lighthouse__hide_img");
         lightThumbParent.classList.remove("lighthouse__visible_img");
+
+
       
       }else {
         thumbParent.classList.add("visible__img");
@@ -6166,11 +6171,39 @@ function createOptionGroup(el) {
       l(btn, "selected", btn.dataset.optionHandle === optionHandle);
     });
     var opt = n$2("[data-value-handle=\"".concat(optionHandle, "\"]"), select);
-    console.log("OPT", opt, colorOptionHandle)
+    console.log("OPT", opt, colorOptionHandle);
     opt.selected = true;
-    if(colorOptionHandle ==="Color" || colorOptionHandle ==="color"){
-      select.dispatchEvent(new Event("change"));
-    }
+
+    select.dispatchEvent(new Event("change"));
+    // if(colorOptionHandle ==="Color" || colorOptionHandle ==="color"){
+    //   select.dispatchEvent(new Event("change"));
+    // }
+
+
+    import(flu.chunks.swiper).then(function (_ref) {
+      var Swiper = _ref.Swiper,
+          Pagination = _ref.Pagination;
+        var mobileSwiper = new Swiper(carouselMobile, {
+        pagination: {
+          el: ".swiper-pagination",
+          type: "bullets",
+          dynamicBullets: true,
+          dynamicMainBullets: 3,
+          clickable: true
+        },
+        watchSlidesProgress: true,
+        autoHeight: true
+      });
+
+    });
+
+    // var swiper = new Swiper(carouselMobile, {
+    //   navigation: {
+    //     nextEl: '.swiper-button-next',
+    //     prevEl: '.swiper-button-prev',
+    //   }
+    // });
+    
     
   });
   return function () {
@@ -7461,13 +7494,13 @@ var icons$1 = window.theme.icons;
 function productLightbox() {
   // ***&&&*** variant Project 7463 & 7472
   var lightboxImages = t$2(".lightbox-image.lighthouse__visible_img", document);
-  console.log("lightboxImages", lightboxImages)
+  // console.log("lightboxImages", lightboxImages)
   if (!lightboxImages.length) return;
   var productLightbox;
   import(flu.chunks.photoswipe).then(function (_ref) {
     var PhotoSwipeLightbox = _ref.PhotoSwipeLightbox,
         PhotoSwipe = _ref.PhotoSwipe;
-    productLightbox = new PhotoSwipeLightbox({
+      productLightbox = new PhotoSwipeLightbox({
       gallery: ".lightbox-media-container",
       children: ".lightbox-image.lighthouse__visible_img",
       pswpModule: PhotoSwipe,
