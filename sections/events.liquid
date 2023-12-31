@@ -56,14 +56,12 @@
   data-image-aspect-ratio="aspect-ratio--{{ section.settings.aspect_ratio }}"
   data-learn-more-text="{{ 'sections.events.learn_more' | t }}"
 >
-  <div
-    class="
+  <div class="
       events__inner
       {% if has_background_color %}
         {{ section_classes }}
       {% endif %}
-    "
-  >
+    ">
     {%- if section.settings.heading != blank or section.settings.subheading != blank -%}
       <div class="events__header">
         <div class="events__text-block section-introduction animation--section-introduction">
@@ -133,43 +131,40 @@
 {
   "name": "t:sections.events.name",
   "tag": "section",
-  "disabled_on": {
-    "groups": ["header", "custom.overlay"]
-  },
   "settings": [
     {
       "type": "select",
       "id": "columns",
-      "label": "t:shared.settings.column_count.desktop.label",
+      "label": "t:sections.events.settings.columns.label",
       "default": "3",
       "options": [
         {
           "value": "2",
-          "label": "t:shared.settings.column_count.columns.option_2"
+          "label": "t:sections.events.settings.columns.option_2"
         },
         {
           "value": "3",
-          "label": "t:shared.settings.column_count.columns.option_3"
+          "label": "t:sections.events.settings.columns.option_3"
         },
         {
           "value": "4",
-          "label": "t:shared.settings.column_count.columns.option_4"
+          "label": "t:sections.events.settings.columns.option_4"
         }
       ]
     },
     {
       "type": "select",
       "id": "mobile_columns",
-      "label": "t:shared.settings.column_count.mobile.label",
+      "label": "t:sections.events.settings.mobile_columns.label",
       "default": "1",
       "options": [
         {
           "value": "1",
-          "label": "t:shared.settings.column_count.columns.option_1"
+          "label": "t:sections.events.settings.mobile_columns.option_1"
         },
         {
           "value": "2",
-          "label": "t:shared.settings.column_count.columns.option_2"
+          "label": "t:sections.events.settings.mobile_columns.option_2"
         }
       ]
     },
@@ -350,7 +345,7 @@
           "type": "text",
           "id": "date",
           "label": "t:sections.events.blocks.event.settings.date.label",
-          "default": "Jan 1, 2023"
+          "default": "Jan 1, 2022"
         },
         {
           "type": "text",
@@ -583,7 +578,7 @@
           "type": "event",
           "settings": {
             "name": "Event name",
-            "date": "Jan 1st, 2023",
+            "date": "Jan 1st, 2022",
             "venue": "Venue name"
           }
         },
@@ -591,7 +586,7 @@
           "type": "event",
           "settings": {
             "name": "Event name",
-            "date": "Jan 1st, 2023",
+            "date": "Jan 1st, 2022",
             "venue": "Venue name"
           }
         },
@@ -599,7 +594,7 @@
           "type": "event",
           "settings": {
             "name": "Event name",
-            "date": "Jan 1st, 2023",
+            "date": "Jan 1st, 2022",
             "venue": "Venue name"
           }
         }

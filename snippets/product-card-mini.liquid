@@ -1,44 +1,38 @@
-{% comment %}
-  minimal product experience
 
-  Pass in:
+{% comment %}minimal product experience
 
-  * block
-  * product
-  * custom_product_image
-  * aspect_ratio
-  * render_shopify_attributes (optional) - render block.shopify_attibures
-  * image_sizes
+Pass in:
+
+* block
+* product
+* custom_product_image
+* aspect_ratio
+* render_shopify_attributes (optional) - render block.shopify_attibures
+* image_sizes
+
 {% endcomment %}
 
 {% unless image_sizes %}
-  {% assign image_sizes = '80px' %}
+  {% assign image_sizes = "80px" %}
 {% endunless %}
 
 {%- if aspect_ratio == blank -%}
   {%- assign aspect_ratio = settings.product_listing_aspect_ratio -%}
 {%- endif -%}
-<div
-  class="product-card-mini {{class}}"
-  {% if render_shopify_attributes %}
-    {{- block.shopify_attributes -}}
-  {% endif %}
->
+<div class="product-card-mini {{class}}" {% if render_shopify_attributes %}{{ block.shopify_attributes }}{% endif %}>
   <div class="product-card-mini__inner">
     {%- if custom_product_image or product.featured_media -%}
       {% assign image = product.featured_media %}
       {% if custom_product_image %}
         {% assign image = custom_product_image %}
       {% endif %}
-      <a
-        class="product-card-mini__image-link"
+      <a class="product-card-mini__image-link"
         {% if product %}
           href="{{ product.url }}"
           aria-label="{{ product.title }}"
         {% endif %}
       >
-        {%
-          render 'image',
+        {% render 'image' with
           image: image,
           aspect_ratio: aspect_ratio,
           wrapper_class: 'product-card-mini__image',
@@ -46,12 +40,11 @@
         %}
       </a>
     {% else %}
-      <div class="product-card-mini__image-link">
-        {%-
-          render 'placeholder-image',
+      <div class="product-card-mini__image-link" >
+        {%- render 'placeholder-image' with
           wrapper_class: "product-card-mini__image",
           aspect_ratio: aspect_ratio,
-          placeholder_name: "product-1",
+          placeholder_name: "product-1"
         -%}
       </div>
     {%- endif -%}
@@ -75,12 +68,9 @@
 
             {% if product.price_varies %}
               {%- assign sale_price = product.price | money -%}
-
-              <span class="sale">
-                {{- 'products.product.on_sale_from_html' | t: price: sale_price -}}
-              </span>
+              {{ 'products.product.on_sale_from_html' | t: price: sale_price }}
             {% else %}
-              <span class="sale">{{ product.price | money }}</span>
+              <span class="sale">{{ product.price | money }}<span>
             {% endif %}
           </p>
         {% else %}
@@ -92,22 +82,22 @@
           {% else %}
             <span class="product-card-mini__price">{{ product.price | money }}</span>
           {% endif %}
+
         {% endif %}
 
         <div>
-          {% render 'unit-price', item: current_variant %}
+          {% render 'unit-price' item: current_variant %}
         </div>
       </div>
-      {%- if settings.enable_quick_view -%}
-        <button
-          type="button"
-          class="btn btn--tertiary btn--x-small product-card-mini__quick-view-button"
-          data-quick-view-trigger
-          data-product-url="{{ product.url }}"
-        >
-          {{ 'products.product.quick_view' | t }}
-        </button>
-      {%- endif -%}
+      <button
+        type="button"
+        class="btn btn--tertiary btn--x-small product-card-mini__quick-view-button"
+        data-quick-view-trigger
+        data-product-url="{{ product.url }}"
+      >
+        {{ 'products.product.quick_view' | t }}
+      </button>
+
     </div>
   </div>
 </div>

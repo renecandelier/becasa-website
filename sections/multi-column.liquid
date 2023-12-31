@@ -35,14 +35,12 @@
     {% render 'overlay-button-vars' with color_button_text: section.settings.button_text_color, color_button_background: section.settings.button_background_color %}
   "
 >
-  <div
-    class="
+  <div class="
       multi-column__inner
       section
       {{ section.settings.section_padding }}
       section--divider-{{ section.settings.divider_style }}
-    "
-  >
+    ">
     <div class="multi-column__introduction section-introduction animation--section-introduction">
       {% unless section.settings.title == blank %}
         <h2 class="multi-column__heading section-introduction__heading ff-heading {{ section.settings.heading_font_class }}">
@@ -72,9 +70,6 @@
 {
   "name": "t:sections.multi_column.name",
   "tag": "section",
-  "disabled_on": {
-    "groups": ["header", "custom.overlay"]
-  },
   "settings": [
     {
       "type": "text",
@@ -547,8 +542,8 @@
           "id": "focal_point",
           "type": "select",
           "label": "t:shared.settings.focal_point.label",
-          "options": [{"label":"t:shared.settings.focal_point.option_image","value":"image_presentation"},{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
-          "default": "image_presentation"
+          "options": [{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
+          "default": "center"
         },
         {
           "type": "select",

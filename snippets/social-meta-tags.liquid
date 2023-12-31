@@ -3,36 +3,30 @@
 {% assign social_description = page_description | strip_html | escape %}
 {% assign social_image = page_image | img_url %}
 
-{% if template.name contains 'product' %}
+{% if template contains 'product' %}
   {% assign social_type = 'product' %}
   {% assign social_title = product.title | strip_html | escape %}
-  {% assign social_price = product.selected_or_first_available_variant.price
-    | money_without_currency
-    | strip_html
-    | escape
-  %}
+  {% assign social_price = product.price | money_without_currency | strip_html | escape %}
   {% assign social_currency = cart.currency.iso_code %}
   {% if product.featured_media %}
-    {% assign social_product_img = current_variant.featured_media.preview_image
-      | default: product.featured_media.preview_image
-    %}
+    {% assign social_product_img = current_variant.featured_media.preview_image | default: product.featured_media.preview_image %}
     {% assign social_image = social_product_img | image_url: width: 1024 %}
   {% endif %}
-{% elsif template.name contains 'collection' %}
+{% elsif template contains 'collection' %}
   {% if collection.description != blank %}
     {% assign social_description = collection.description | strip_html | escape %}
   {% endif %}
   {% if collection.image %}
     {% assign social_image = collection.image | image_url %}
   {% endif %}
-{% elsif template.name contains 'blog' %}
+{% elsif template contains 'blog' %}
   {% for article in blog.articles %}
     {% if article.image %}
       {% assign social_image = article.image | image_url %}
       {% break %}
     {% endif %}
   {% endfor %}
-{% elsif template.name contains 'article' %}
+{% elsif template contains 'article' %}
   {% assign social_type = 'article' %}
   {% assign img_tag = '<' | append: 'img' %}
   {% if article.image %}
@@ -51,6 +45,7 @@
   using `template contains` and similar operators.
 {% endcomment %}
 
+<meta name="description" content="{{ social_description | default: shop.name }}">
 <meta property="og:url" content="{{ canonical_url }}">
 <meta property="og:site_name" content="{{ shop.name }}">
 <meta property="og:type" content="{{ social_type | default: 'website' }}">

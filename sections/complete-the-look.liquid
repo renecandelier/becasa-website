@@ -2,11 +2,11 @@
   {% assign video_poster = section.settings.image | image_url: width: 400 %}
 {% endif %}
 
-{%- if section.settings.product_image_size == 'small' -%}
+{%- if section.settings.product_image_size == "small" -%}
   {%- assign image_sizes_fraction = 0.5 -%}
-{%- elsif section.settings.product_image_size == 'medium' -%}
+{%- elsif section.settings.product_image_size == "medium" -%}
   {%- assign image_sizes_fraction = 0.67 -%}
-{%- elsif section.settings.product_image_size == 'large' -%}
+{%- elsif section.settings.product_image_size == "large" -%}
   {%- assign image_sizes_fraction = 0.84 -%}
 {%- endif -%}
 
@@ -33,10 +33,7 @@
   "
 >
   <div class="section__inner complete-the-look__inner">
-    {%- unless section.settings.heading == blank
-      and section.settings.subheading == blank
-      and section.settings.link_text == blank
-    -%}
+    {%- unless section.settings.heading == blank and section.settings.subheading == blank and section.settings.link_text == blank -%}
       <div class="complete-the-look__text-content section-introduction animation--section-introduction">
         {%- unless section.settings.heading == blank -%}
           <h2 class="complete-the-look__heading ff-heading fs-heading-3-base section-introduction__heading">
@@ -51,8 +48,9 @@
         {%- endunless -%}
 
         {%- unless section.settings.link_text == blank -%}
-          {%- render 'button-block',
-            wrapper_class: 'complete-the-look__cta-button section-introduction__button',
+          {%-
+            render 'button-block' with
+            wrapper_class: "complete-the-look__cta-button section-introduction__button",
             link: section.settings.link,
             label: section.settings.link_text,
             button_style: section.settings.button_style
@@ -65,25 +63,26 @@
         <div class="complete-the-look__image-container-inner">
           <div class="complete-the-look__image-wrapper">
             {%- if section.settings.video_url -%}
-              {% render 'video',
+              {%
+                render 'video' with
                 video: section.settings.video_url,
                 aspect_ratio: section.settings.aspect_ratio,
                 poster: video_poster,
                 controls: section.settings.video_controls,
-                loop: section.settings.video_loop,
-                animate: true
+                loop: section.settings.video_loop
               %}
             {%- elsif section.settings.image -%}
-              {% render 'image',
+              {%
+                render 'image' with
                 image: section.settings.image,
                 wrapper_class: 'complete-the-look__image',
-                focal_point: 'image_presentation',
                 aspect_ratio: section.settings.aspect_ratio,
-                sizes: '(min-width: 960px) calc(calc(100vw - calc(2 * 120)) * 0.55), (min-width: 720px) calc(100vw - calc(2 * 80px)), calc(100vw - calc(2 * 20px))',
+                sizes: "(min-width: 960px) calc(calc(100vw - calc(2 * 120)) * 0.55), (min-width: 720px) calc(100vw - calc(2 * 80px)), calc(100vw - calc(2 * 20px))",
                 animate: true
               %}
             {%- else -%}
-              {%- render 'placeholder-image',
+              {%-
+                render 'placeholder-image' with
                 placeholder_name: 'collection-4',
                 wrapper_class: 'complete-the-look__image',
                 aspect_ratio: section.settings.aspect_ratio,
@@ -103,7 +102,7 @@
               data-image-size="{{ section.settings.product_image_size }}"
             >
               {%
-                render 'product-card-mini',
+                render 'product-card-mini' with
                 block: block,
                 product: block.settings.product_item,
                 index: forloop.index,
@@ -125,10 +124,26 @@
 {
   "name": "t:sections.complete_the_look.name",
   "tag": "section",
-  "disabled_on": {
-    "groups": ["header", "custom.overlay"],
-    "templates": ["password"]
-  },
+  "templates": [
+    "404",
+    "article",
+    "blog",
+    "cart",
+    "collection",
+    "list-collections",
+    "customers/account",
+    "customers/activate_account",
+    "customers/addresses",
+    "customers/login",
+    "customers/order",
+    "customers/register",
+    "customers/reset_password",
+    "gift_card",
+    "index",
+    "page",
+    "product",
+    "search"
+  ],
   "settings": [
     {
       "type": "header",

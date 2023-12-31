@@ -1,4 +1,6 @@
 {%- liquid
+  assign swatch_options = settings.swatch_options | downcase | split: ', '
+  assign chip_options = settings.chip_options | downcase | split: ', '
   assign filters_valid = false
   if results.filters != empty and show_filters
     assign filters_valid = true
@@ -40,20 +42,13 @@
   data-filter-form
   data-filter-bar
 >
-  {%- comment -%} Keep search term within form {%- endcomment -%}
-  {%- if results.terms -%}
-    <input type="hidden" name="q" value="{{ results.terms | escape }}">
-    <input name="options[prefix]" type="hidden" value="last">
-  {%- endif -%}
-
-  {%- comment -%} Keep product type within form {%- endcomment -%}
-  {%- if results.current_type -%}
-    <input type="hidden" name="q" value="{{ results.current_type | escape }}">
-  {%- endif -%}
-
-  {%- comment -%} Keep product vendor within form {%- endcomment -%}
-  {%- if results.current_vendor -%}
-    <input type="hidden" name="q" value="{{ results.current_vendor | escape }}">
+  {%- if search.terms -%}
+    <input
+      type="hidden"
+      name="q"
+      id="SearchFilters--FilterBar"
+      value="{{ search.terms | escape }}"
+    >
   {%- endif -%}
 
   {%- if filter_bar_enabled -%}
@@ -63,53 +58,18 @@
           type="button"
           class="filter-bar__button filter-bar__button--filters"
           data-dropdown-toggle="filter-bar-filters"
-          data-filter-location="{{ filter_location }}"
-          {% if filter_location == 'sidebar' -%}
-            aria-expanded="{{ collapse_filter_bar }}"
-            aria-controls="filter-sidebar"
-            data-collapsed-title="{{ 'filters.title' | t | escape }}"
-            data-expanded-title="{{ 'filters.hide_title' | t | escape }}"
-          {%- else -%}
-            aria-expanded="{% if collapse_filter_bar == false or active_filter_count > 0 %}true{% else %}false{% endif %}"
-            aria-controls="filter-bar-filters"
-          {%- endif %}
+          aria-expanded="{% if collapse_filter_bar == false or active_filter_count > 0 %}true{% else %}false{% endif %}"
+          aria-controls="filter-bar-filters"
         >
           {% render 'icon' with icon: 'filter' %}
-
-          <span class="filter-bar__button-text">
-            {%- if collapse_filter_bar %}
-              {{ 'filters.title' | t }}
-            {%- else -%}
-              {{ 'filters.hide_title' | t }}
-            {%- endif -%}
-          </span>
+          {{ 'filters.title' | t }}
 
           {%- if active_filter_count > 0 -%}
             <span class="filter-bar__button-count" data-active-filter-count>{{ active_filter_count }}</span>
           {%- endif -%}
 
-          {%- unless filter_location == 'sidebar' -%}
-            {% render 'icon' with icon: 'chevron-small' %}
-          {%- endunless -%}
+          {% render 'icon' with icon: 'chevron-small' %}
         </button>
-
-        {%- if filter_location == 'sidebar' -%}
-          <button
-            type="button"
-            class="filter-bar__button filter-bar__button--filters"
-            data-dropdown-toggle="filter-bar-filters"
-            data-filter-drawer-target="__tags"
-            aria-expanded="{% if collapse_filter_bar == false or active_filter_count > 0 %}true{% else %}false{% endif %}"
-            aria-controls="filter-bar-filters"
-          >
-            {% render 'icon' with icon: 'filter' %}
-            {{ 'filters.title' | t }}
-
-            {%- if active_filter_count > 0 -%}
-              <span class="filter-bar__button-count" data-active-filter-count>{{ active_filter_count }}</span>
-            {%- endif -%}
-          </button>
-        {%- endif -%}
       {%- endif -%}
 
       {%- if show_item_count -%}
@@ -190,21 +150,13 @@
     </div>
 
     {%- if filters_valid -%}
-      {% liquid
-        assign filter_bar_display = 'none'
-
-        if filter_location == 'filter_bar' and collapse_filter_bar == false or active_filter_count > 0
-          assign filter_bar_display = 'block'
-        endif
-      -%}
-
       <div
         id="filter-bar-filters"
         class="filter-bar__filters"
         data-filter-bar-filters
         data-dropdown="filter-bar-filters"
         aria-hidden="{% if collapse_filter_bar == false or active_filter_count > 0 %}false{% else %}true{% endif %}"
-        style="display: {{ filter_bar_display }}"
+        style="display: {% if collapse_filter_bar == false or active_filter_count > 0 %}block{% else %}none{% endif %}"
       >
         <div class="filter-bar__filters-inner" data-filter-bar-filters-inner>
           {%- for filter in results.filters -%}
@@ -226,7 +178,7 @@
 
               assign price_range_changed = false
               if filter.type == 'price_range'
-                if filter.max_value.value or filter.min_value.value
+                if filter.max_value.value or  filter.min_value.value
                   assign price_range_changed = true
                 endif
               endif
@@ -268,14 +220,14 @@
                 <div class="filter-group__values-header" data-group-values-header="{{ filter.label | url_escape }}">
                   <span class="filter-group__values-active-values fs-body-50">
                     {%- case filter.type -%}
-                      {%- when 'boolean', 'list' -%}
+                      {%- when 'boolean' or 'list' -%}
                         {%- if group_active_count > 0 -%}
                           {{ group_active_filters }}
                         {%- else -%}
                           {{ 'filters.zero_selected' | t }}
                         {%- endif -%}
                       {%- when 'price_range' -%}
-                        {{ 'filters.max_price' | t: price: max_price_amount }}
+                        {{ "filters.max_price" | t: price: max_price_amount }}
                     {%- endcase -%}
                   </span>
 
@@ -288,7 +240,7 @@
                   </button>
                 </div>
                 {%- case filter.type -%}
-                  {%- when 'boolean', 'list' -%}
+                  {%- when 'boolean' or 'list' -%}
                     {%- liquid
                       assign group_name = filter.label | handleize
                       assign list_modifiers = ''

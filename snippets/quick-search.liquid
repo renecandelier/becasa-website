@@ -40,6 +40,11 @@
             data-input
           >
           <input type="hidden" name="options[prefix]" value="last">
+          <input
+            type="hidden"
+            name="type"
+            value="product{% if settings.search_show_articles %},article{% endif %}{% if settings.search_show_pages %},page{% endif %}"
+          >
           <div class="quick-search__actions">
             <button class="quick-search__clear fs-body-50" type="button" data-clear>
               {{ 'search.clear_search' | t }}

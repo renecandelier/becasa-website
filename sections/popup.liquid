@@ -195,7 +195,7 @@
                     {%- assign form_submitted = true -%}
                   {%- else -%}
                     <div class="newsletter-form__inner">
-                      <input type="hidden" name="contact[tags]" value="{{ block.settings.tags }}">
+                      <input type="hidden" name="contact[tags]" value="{{ tags }}">
                       <label for="{{ block.id }}-email" class="visually-hidden">
                         {{- 'general.newsletter_form.email_placeholder' | t -}}
                       </label>
@@ -476,8 +476,8 @@
           "id": "focal_point",
           "type": "select",
           "label": "t:sections.popup.blocks.shared.settings.focal_point.label",
-          "options": [{"label":"t:shared.settings.focal_point.option_image","value":"image_presentation"},{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
-          "default": "image_presentation"
+          "options": [{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
+          "default": "center"
         },
         {
           "type": "checkbox",
@@ -647,8 +647,8 @@
           "id": "focal_point",
           "type": "select",
           "label": "t:sections.popup.blocks.shared.settings.focal_point.label",
-          "options": [{"label":"t:shared.settings.focal_point.option_image","value":"image_presentation"},{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
-          "default": "image_presentation"
+          "options": [{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
+          "default": "center"
         },
         {
           "type": "color",
@@ -763,13 +763,6 @@
           "default": "<p>By completing this form, you are signing up to receive our emails and can unsubscribe at any time</p>"
         },
         {
-          "type": "text",
-          "id": "tags",
-          "label": "t:sections.popup.blocks.shared.settings.tags.label",
-          "info": "t:sections.popup.blocks.shared.settings.tags.info",
-          "default": "newsletter"
-        },
-        {
           "type": "checkbox",
           "id": "show_social_icons",
           "label": "t:sections.popup.blocks.shared.settings.show_social_icons.label",
@@ -852,8 +845,8 @@
           "id": "focal_point",
           "type": "select",
           "label": "t:sections.popup.blocks.shared.settings.focal_point.label",
-          "options": [{"label":"t:shared.settings.focal_point.option_image","value":"image_presentation"},{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
-          "default": "image_presentation"
+          "options": [{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
+          "default": "center"
         },
         {
           "type": "checkbox",
@@ -982,13 +975,6 @@
           "default": "<p>By completing this form, you are signing up to receive our emails and can unsubscribe at any time</p>"
         },
         {
-          "type": "text",
-          "id": "tags",
-          "label": "t:sections.popup.blocks.shared.settings.tags.label",
-          "info": "t:sections.popup.blocks.shared.settings.tags.info",
-          "default": "newsletter"
-        },
-        {
           "type": "header",
           "content": "t:sections.popup.blocks.shared.settings.header__design.content"
         },
@@ -1037,8 +1023,8 @@
           "id": "focal_point",
           "type": "select",
           "label": "t:sections.popup.blocks.shared.settings.focal_point.label",
-          "options": [{"label":"t:shared.settings.focal_point.option_image","value":"image_presentation"},{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
-          "default": "image_presentation"
+          "options": [{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
+          "default": "center"
         },
         {
           "type": "color",
@@ -1247,8 +1233,8 @@
           "id": "focal_point",
           "type": "select",
           "label": "t:sections.popup.blocks.shared.settings.focal_point.label",
-          "options": [{"label":"t:shared.settings.focal_point.option_image","value":"image_presentation"},{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
-          "default": "image_presentation"
+          "options": [{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
+          "default": "center"
         },
         {
           "type": "checkbox",
@@ -1312,7 +1298,7 @@
           "type": "number",
           "id": "year",
           "label": "t:shared.settings.countdown.year.label",
-          "default": 2023
+          "default": 2022
         },
         {
           "type": "select",
@@ -1452,13 +1438,6 @@
           "default": "<p>By completing this form, you are signing up to receive our emails and can unsubscribe at any time</p>"
         },
         {
-          "type": "text",
-          "id": "tags",
-          "label": "t:sections.popup.blocks.shared.settings.tags.label",
-          "info": "t:sections.popup.blocks.shared.settings.tags.info",
-          "default": "newsletter"
-        },
-        {
           "type": "checkbox",
           "id": "show_social_icons",
           "label": "t:sections.popup.blocks.shared.settings.show_social_icons.label",
@@ -1541,8 +1520,8 @@
           "id": "focal_point",
           "type": "select",
           "label": "t:sections.popup.blocks.shared.settings.focal_point.label",
-          "options": [{"label":"t:shared.settings.focal_point.option_image","value":"image_presentation"},{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
-          "default": "image_presentation"
+          "options": [{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
+          "default": "center"
         },
         {
           "type": "checkbox",
@@ -1619,7 +1598,7 @@
           "type": "number",
           "id": "year",
           "label": "t:shared.settings.countdown.year.label",
-          "default": 2023
+          "default": 2022
         },
         {
           "type": "select",
@@ -1754,13 +1733,6 @@
           "default": "<p>By completing this form, you are signing up to receive our emails and can unsubscribe at any time</p>"
         },
         {
-          "type": "text",
-          "id": "tags",
-          "label": "t:sections.popup.blocks.shared.settings.tags.label",
-          "info": "t:sections.popup.blocks.shared.settings.tags.info",
-          "default": "newsletter"
-        },
-        {
           "type": "checkbox",
           "id": "show_social_icons",
           "label": "t:sections.popup.blocks.shared.settings.show_social_icons.label",
@@ -1815,8 +1787,8 @@
           "id": "focal_point",
           "type": "select",
           "label": "t:sections.popup.blocks.shared.settings.focal_point.label",
-          "options": [{"label":"t:shared.settings.focal_point.option_image","value":"image_presentation"},{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
-          "default": "image_presentation"
+          "options": [{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
+          "default": "center"
         },
         {
           "type": "color",

@@ -66,11 +66,23 @@
     {% endif %}
     --overlay-opacity: {{ overlay_opacity }};
     --video-focal-alignment: {{ video_focal_alignment }};
-    {% render 'overlay-button-vars', color_button_text: section.settings.button_text_color, color_button_background: section.settings.button_background_color %}
+    {% render 'overlay-button-vars' with color_button_text: section.settings.button_text_color, color_button_background: section.settings.button_background_color %}
   "
 >
   <div class="video-hero__inner">
-    <div class="video-hero__media-container" data-video-loading="false">
+    <div class="video-hero__media-container">
+      {%-
+        render 'image' with
+        wrapper_class: "video-hero__image",
+        image: section.settings.image,
+        sizes: "100vw",
+        focal_point: section.settings.focal_point,
+        include_placeholder: true,
+        placeholder_natural_fallback_ratio: placeholder_aspect_ratio,
+        placeholder_name: "lifestyle-2",
+        animate: true
+      -%}
+
       {%- if section.settings.video_url != blank -%}
         <div class="video-hero__video-wrapper">
           <video
@@ -81,23 +93,11 @@
             muted
             src="{{ section.settings.video_url }}"
           ></video>
-          {% render 'video-pause' %}
+          {% comment %} ***&&&***
+            {% render 'video-pause' %}
+          {% endcomment %}
         </div>
       {%- endif -%}
-
-      {% # ensure placeholder only shows when no video %}
-      {%- unless section.settings.video_url != blank and section.settings.image == blank -%}
-        {%- render 'image',
-          wrapper_class: 'video-hero__image',
-          image: section.settings.image,
-          sizes: '100vw',
-          focal_point: section.settings.focal_point,
-          include_placeholder: true,
-          placeholder_natural_fallback_ratio: placeholder_aspect_ratio,
-          placeholder_name: 'lifestyle-2',
-          animate: true
-        -%}
-      {%- endunless -%}
     </div>
     <div class="video-hero__overlay"></div>
     <div class="video-hero__text-container-wrapper">
@@ -137,8 +137,9 @@
                 </div>
               {%- endunless -%}
             {%- when 'button' -%}
-              {%- render 'button-block',
-                wrapper_class: 'video-hero__text-container-text-button section-blocks__button',
+              {%-
+                render 'button-block' with
+                wrapper_class: "video-hero__text-container-text-button section-blocks__button",
                 link: block.settings.link,
                 label: block.settings.link_text,
                 button_style: block.settings.button_style,
@@ -150,7 +151,7 @@
               -%}
             {%- when 'image' -%}
               {%-
-                render 'image-block',
+                render 'image-block' with
                 shopify_attributes: block.shopify_attributes,
                 wrapper_class: 'video-hero__text-container-image  section-blocks__image',
                 image: block.settings.image,
@@ -161,7 +162,8 @@
                 align_mobile: text_position_modifier_mobile,
               -%}
             {%- when 'play-button' -%}
-              {%- render 'play-button-block',
+              {%-
+                render 'play-button-block' with
                 wrapper_class: 'video-hero__text-container-text-play-button section-blocks__video-button',
                 shopify_attributes: block.shopify_attributes,
                 poster_image: block.settings.poster_image,
@@ -172,10 +174,11 @@
                 button_alignment_mobile: text_position_modifier_mobile,
                 icon_style: block.settings.icon_style
               -%}
+
             {%- when 'border' -%}
               {%- render 'border-block' -%}
             {%- when 'spacer' -%}
-              {%- render 'spacer-block', space: block.settings.space -%}
+              {%- render 'spacer-block' with space: block.settings.space -%}
           {%- endcase -%}
         {%- endfor -%}
       </div>
@@ -188,9 +191,6 @@
   "name": "t:sections.video_hero.name",
   "tag": "section",
   "class": "shopify-section--full-width",
-  "disabled_on": {
-    "groups": ["header", "custom.overlay"]
-  },
   "settings": [
     {
       "type": "radio",
@@ -247,8 +247,8 @@
       "id": "focal_point",
       "type": "select",
       "label": "t:sections.video_hero.settings.focal_point.label",
-      "options": [{"label":"t:shared.settings.focal_point.option_image","value":"image_presentation"},{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
-      "default": "image_presentation"
+      "options": [{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
+      "default": "center"
     },
     {
       "id": "text_position",

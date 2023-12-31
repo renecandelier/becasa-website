@@ -4,14 +4,11 @@
     assign paginated = true
   endif
 
-  assign per_page = section.settings.rows | times: section.settings.columns_desktop
+  assign per_page = section.settings.rows | times: section.settings.columns
   assign filter_bar_enabled = false
   if section.settings.show_item_count or section.settings.show_sort or section.settings.show_filters
     assign filter_bar_enabled = true
   endif
-
-  assign swatch_options = settings.swatch_options | downcase | split: ', '
-  assign chip_options = settings.chip_options | downcase | split: ', '
 -%}
 
 <section
@@ -20,26 +17,19 @@
   data-pagination-type="{{ section.settings.pagination }}"
   data-collection-item-count="{{ collection.all_products_count }}"
   data-collection-items-per-page="{{ per_page }}"
-  data-collection-columns-desktop="{{ section.settings.columns_desktop }}"
-  data-collection-columns-mobile="{{ section.settings.columns_mobile }}"
-  data-enable-sticky-filter-sidebar="{{ section.settings.enable_sticky_filter_sidebar }}"
-
+  data-collection-columns="{{ section.settings.columns }}"
   class="
     section
     section--includes-product-items
     section--full-width
     collection
+    collection--columns-{{ section.settings.columns }}
     collection--pagination-{{ section.settings.pagination }}
     {% if filter_bar_enabled %}collection--has-filter-bar{% endif %}
     {% if settings.enable_section_animations and section.settings.enable_animation %}
       animation
       animation--collection
     {% endif %}
-  "
-
-  style="
-    --collection-columns-desktop: {{ section.settings.columns_desktop }};
-    --collection-columns-mobile: {{ section.settings.columns_mobile }};
   "
 >
   {%- if section.settings.divider_style == 'solid' -%}
@@ -63,22 +53,21 @@
       {% paginate collection.products by per_page %}
         <div class="collection__container">
           <div class="collection__content">
-            {% render 'filter-bar',
+            {%
+              render 'filter-bar' with
               results: collection,
               show_item_count: section.settings.show_item_count,
               show_sort: section.settings.show_sort,
               show_filters: section.settings.show_filters,
-              filter_location: section.settings.desktop_filter_location,
               show_swatch_filters: section.settings.show_swatch_filters,
-              swatch_options: swatch_options,
               show_chip_filters: section.settings.show_chip_filters,
-              chip_options: chip_options,
               enable_sticky_filter_bar: section.settings.enable_sticky_filter_bar,
               collapse_filter_bar: section.settings.collapse_filter_bar,
               chip_layout: section.settings.chip_layout
             %}
 
-            {% render 'mobile-filters',
+            {%
+              render 'mobile-filters' with
               results: collection,
               show_sort: section.settings.show_sort,
               show_filters: section.settings.show_filters,
@@ -86,20 +75,6 @@
             %}
 
             <div class="collection__main-area">
-              {%- if section.settings.desktop_filter_location == 'sidebar' -%}
-                {% render 'filter-sidebar',
-                  results: collection,
-                  show_filters: section.settings.show_filters,
-                  collapse_filter_bar: section.settings.collapse_filter_bar,
-                  collapse_filter_groups: section.settings.collapse_filter_groups_desktop,
-                  show_swatch_filters: section.settings.show_swatch_filters,
-                  swatch_options: swatch_options,
-                  show_chip_filters: section.settings.show_chip_filters,
-                  chip_options: chip_options,
-                  chip_layout: section.settings.chip_layout
-                %}
-              {%- endif -%}
-
               <div class="collection__window">
                 <div class="collection__loading" data-loading>
                   {%- render 'loader' -%}
@@ -111,20 +86,18 @@
                   data-partial
                   data-collection-products-count="{{ collection.products_count }}"
                 >
-                  <div
-                    class="
+                  <div class="
                       collection__products
                       collection__infinite-container
                       {% if collection.products_count == 0 %}
                         collection__products--no-products
                       {% endif %}
-                    "
-                  >
+                    ">
+        	{% comment %}
                     {% for product in collection.products %}
-                      {% render 'product-item',
+                      {%
+                        render 'product-item' with
                         prod: product,
-                        product_columns_desktop: section.settings.columns_desktop,
-                        product_columns_mobile: section.settings.columns_mobile,
                         aspect_ratio: settings.product_listing_aspect_ratio,
                         has_grid_reveal: true
                       %}
@@ -136,11 +109,88 @@
                         </button>
                       </div>
                     {% endfor %}
+        	{% endcomment %}
+
+        {%- assign isCollectionSplit = true -%}
+{%- if collection.description == "non-split" -%}		
+<script>console.log({{ collection | json }});</script>
+                   {%- assign isCollectionSplit = false -%}		
+  {%- endif -%}
+         {%- for product in collection.products -%}		
+             		
+             {%- assign isSplit = false -%}		
+             {%- for tag in product.tags -%}		
+               {%- if tag == "split" and isCollectionSplit == true -%}		
+                 {%- assign isSplit = true -%}		
+                 {%- endif -%}		
+               {%- endfor -%}		
+             		
+             {%- if isSplit == true -%}		
+               {%- assign currentVariantColor = "" -%}
+
+               {%- for variant in product.variants -%}	
+                 	
+                 {%- assign variantColor = variant.title | split: " " | first | downcase -%}	
+
+{% if variantColor contains "*" %}
+{% else %}
+{%- if variantColor != currentVariantColor -%}		
+                   {%- assign currentVariantColor = variantColor -%}		
+                   {%- assign foundFirstImage = false -%}		
+                   {% for media in product.media %}		
+                     {% assign altName = media.alt | split: " " | first | downcase %}		
+                     {% if variantColor == altName and foundFirstImage == false and media.media_type == "image" %}		
+                       {%- assign foundFirstImage = true -%}		
+                       {% assign altIndex = media.position %}		
+                       {% assign altIndex = altIndex | minus: 1 %}		
+                       {% endif %}		
+                     {% endfor %}
+{%- if collection.description == "sale" -%}
+                    {%- if variant.compare_at_price > 0 -%}
+                   <script>console.log({{ variant.compare_at_price | json }});</script>
+                    {%		
+                        render 'product-item' with		
+                        prod: product,		
+                        aspect_ratio: settings.product_listing_aspect_ratio,		
+                        has_grid_reveal: true,		
+                        indexForVariant: altIndex,		
+                        selectedVariant: variant		
+                      %}
+                           {% endif %}
+                                              {% else %}
+
+                   {%		
+                        render 'product-item' with		
+                        prod: product,		
+                        aspect_ratio: settings.product_listing_aspect_ratio,		
+                        has_grid_reveal: true,		
+                        indexForVariant: altIndex,		
+                        selectedVariant: variant		
+                      %}		
+                     {% endif %}
+{% endif %}		
+
+                 
+                 
+
+                   {%- endif -%}		
+                 {%- endfor -%}		
+               {% else %}		
+               {%		
+                        render 'product-item' with		
+                        prod: product,		
+                        aspect_ratio: settings.product_listing_aspect_ratio,		
+                        has_grid_reveal: true,		
+                      %}		
+               {%- endif -%}		
+             {%- endfor -%}
+        
                   </div>
 
                   {% unless paginated %}
                     <div>
-                      {% render 'pagination',
+                      {%
+                        render 'pagination' with
                         paginate: paginate,
                         type: 'general.pagination.products',
                         display_paginate_item_count_only: true
@@ -158,13 +208,15 @@
                   {% if paginated %}
                     <div>
                       {% if paginate.pages > 1 %}
-                        {% render 'pagination',
+                        {%
+                          render 'pagination' with
                           paginate: paginate,
                           type: 'general.pagination.products',
                           show_item_count: true
                         %}
                       {% else %}
-                        {% render 'pagination',
+                        {%
+                          render 'pagination' with
                           paginate: paginate,
                           type: 'general.pagination.products',
                           display_paginate_item_count_only: true
@@ -179,16 +231,15 @@
         </div>
       {% endpaginate %}
 
-      {% render 'filter-drawer',
+      {%
+        render 'filter-drawer' with
         results: collection,
         show_sort: section.settings.show_sort,
         show_filters: section.settings.show_filters,
         show_swatch_filters: section.settings.show_swatch_filters,
-        swatch_options: swatch_options,
         show_chip_filters: section.settings.show_chip_filters,
-        chip_options: chip_options,
         chip_layout: section.settings.chip_layout,
-        collapse_filter_groups: section.settings.collapse_filter_groups_mobile
+        collapse_filter_groups_mobile: section.settings.collapse_filter_groups_mobile
       %}
     {%- else -%}
       <div class="collection__empty ta-c">
@@ -210,41 +261,25 @@
     },
     {
       "type": "select",
-      "id": "columns_desktop",
-      "label": "t:shared.settings.column_count.desktop.label",
+      "id": "columns",
+      "label": "t:sections.collection_sections_shared.settings.collection_columns.label",
       "default": "4",
       "options": [
         {
           "value": "2",
-          "label": "t:shared.settings.column_count.columns.option_2"
+          "label": "t:sections.collection_sections_shared.settings.columns.option_2"
         },
         {
           "value": "3",
-          "label": "t:shared.settings.column_count.columns.option_3"
+          "label": "t:sections.collection_sections_shared.settings.columns.option_3"
         },
         {
           "value": "4",
-          "label": "t:shared.settings.column_count.columns.option_4"
+          "label": "t:sections.collection_sections_shared.settings.columns.option_4"
         },
         {
           "value": "5",
-          "label": "t:shared.settings.column_count.columns.option_5"
-        }
-      ]
-    },
-    {
-      "type": "select",
-      "id": "columns_mobile",
-      "label": "t:shared.settings.column_count.mobile.label",
-      "default": "2",
-      "options": [
-        {
-          "value": "1",
-          "label": "t:shared.settings.column_count.columns.option_1"
-        },
-        {
-          "value": "2",
-          "label": "t:shared.settings.column_count.columns.option_2"
+          "label": "t:sections.collection_sections_shared.settings.columns.option_5"
         }
       ]
     },
@@ -315,42 +350,13 @@
       "type": "checkbox",
       "id": "enable_sticky_filter_bar",
       "label": "t:shared.settings.enable_sticky_filter_bar.label",
-      "info": "t:shared.settings.enable_sticky_filter_bar.info",
       "default": true
-    },
-    {
-      "type": "select",
-      "id": "desktop_filter_location",
-      "label": "t:shared.settings.desktop_filter_location.label",
-      "options": [
-        {
-          "value": "filter_bar",
-          "label": "t:shared.settings.desktop_filter_location.options.filter_bar"
-        },
-        {
-          "value": "sidebar",
-          "label": "t:shared.settings.desktop_filter_location.options.sidebar"
-        }
-      ]
     },
     {
       "type": "checkbox",
       "id": "collapse_filter_bar",
       "label": "t:shared.settings.collapse_filter_bar.label",
       "default": true
-    },
-    {
-      "type": "checkbox",
-      "id": "enable_sticky_filter_sidebar",
-      "label": "t:shared.settings.enable_sticky_filter_sidebar.label",
-      "default": true
-    },
-    {
-      "type": "checkbox",
-      "id": "collapse_filter_groups_desktop",
-      "label": "t:shared.settings.collapse_filter_groups_desktop.label",
-      "default": true,
-      "info": "t:shared.settings.collapse_filter_groups_desktop.info"
     },
     {
       "type": "checkbox",

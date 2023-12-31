@@ -1,3 +1,4 @@
+
 <div
   class="
     quick-product--wrap
@@ -12,9 +13,7 @@
     {% endif %}
   "
   aria-modal="true"
-  {% unless open %}
-    aria-hidden="true"
-  {% endunless %}
+  {% unless open %}aria-hidden="true" {% endunless %}
   data-quick-view-modal
 >
   <div class="modal__wash"></div>
@@ -28,8 +27,9 @@
       data-modal-close
       class="modal__close-icon"
       aria-label="{{ 'general.accessibility.close_modal' | t }}"
-    >
-      {% render 'icon-button', small: true, icon: 'close' %}
-    </button>
+        >
+          {% render 'icon-button' with small: true, icon: 'close' %}
+        </button>
+    </div>
   </div>
 </div>

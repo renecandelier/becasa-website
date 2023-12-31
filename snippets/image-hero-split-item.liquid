@@ -1,9 +1,3 @@
-{% liquid
-  assign prioritize_loading = false
-  if section.index == 1 and index == 1
-    assign prioritize_loading = true
-  endif
-%}
 {%- capture tag -%}
   {%- if block.settings.link_text == blank and block.settings.link != blank -%}a{%- else -%}div{%- endif -%}
 {%- endcapture -%}
@@ -52,8 +46,7 @@
       focal_point: block.settings.focal_point,
       include_placeholder: true,
       placeholder_natural_fallback_ratio: placeholder_aspect_ratio,
-      animate: true,
-      prioritize_loading: prioritize_loading
+      animate: true
     -%}
   </div>
   <div class="image-hero-split-item__text-container">

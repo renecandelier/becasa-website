@@ -47,11 +47,7 @@
         {%- if recommendations.products_count > 0 -%}
           {%- for product in recommendations.products limit: max_products -%}
             <div class="recommended-products__slide carousel__slide swiper-slide" data-slide>
-              {% render 'product-item',
-                prod: product,
-                product_columns: section.settings.columns,
-                aspect_ratio: settings.product_listing_aspect_ratio
-              %}
+              {% render 'product-item', prod: product, aspect_ratio: settings.product_listing_aspect_ratio %}
             </div>
           {%- endfor -%}
         {%- endif -%}
@@ -102,36 +98,36 @@
     {
       "type": "select",
       "id": "columns",
-      "label": "t:shared.settings.column_count.desktop.label",
+      "label": "t:sections.collection_sections_shared.settings.columns.label",
       "default": "4",
       "options": [
         {
           "value": "3",
-          "label": "t:shared.settings.column_count.columns.option_3"
+          "label": "t:sections.collection_sections_shared.settings.columns.option_3"
         },
         {
           "value": "4",
-          "label": "t:shared.settings.column_count.columns.option_4"
+          "label": "t:sections.collection_sections_shared.settings.columns.option_4"
         },
         {
           "value": "5",
-          "label": "t:shared.settings.column_count.columns.option_5"
+          "label": "t:sections.collection_sections_shared.settings.columns.option_5"
         }
       ]
     },
     {
       "type": "select",
       "id": "mobile_columns",
-      "label": "t:shared.settings.column_count.mobile.label",
+      "label": "t:sections.collection_sections_shared.settings.mobile_columns.label",
       "default": "2",
       "options": [
         {
           "value": "1",
-          "label": "t:shared.settings.column_count.columns.option_1"
+          "label": "t:sections.collection_sections_shared.settings.mobile_columns.option_1"
         },
         {
           "value": "2",
-          "label": "t:shared.settings.column_count.columns.option_2"
+          "label": "t:sections.collection_sections_shared.settings.mobile_columns.option_2"
         }
       ]
     },

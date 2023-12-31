@@ -1,11 +1,9 @@
 {%- if section.settings.custom_liquid != blank -%}
-  <div
-    class="
+  <div class="
       section
       section--divider-{{ section.settings.divider_style }}
       {{ section.settings.section_padding }}
-    "
-  >
+    ">
     {{ section.settings.custom_liquid }}
   </div>
 {%- endif -%}
@@ -14,9 +12,6 @@
 {
   "name": "t:sections.custom_liquid.name",
   "tag": "section",
-  "disabled_on": {
-    "groups": ["header", "custom.overlay"]
-  },
   "settings": [
     {
       "type": "liquid",

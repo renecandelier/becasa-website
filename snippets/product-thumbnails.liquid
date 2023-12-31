@@ -1,16 +1,3 @@
-{%- comment -%}
-  Pass these variables into snippet:
-  Required:
-
-  * featured_media: { Object } Used to highlight the initial selected thumbnail.
-  * aspect_ratio: { String } Applies the media's aspect ratio setting to the thumbnails.
-
-  Optional:
-
-  * initial_variant_media_position: { Number } The first of a variant's media range. Used in conjunction with `next_variant_media_index` for multiple variant media.
-  * next_variant_media_index: { Number } The last of a variant's media range. Used in conjunction with `initial_variant_media_position` for multiple variant media.
-{%- endcomment -%}
-
 {% if product.media.size > 1 %}
   <div
     class="product-thumbnails"
@@ -30,12 +17,9 @@
     </button>
     <div class="product-thumbnails__viewport" data-scroll-container-viewport>
       <div class="scroll-sentinal scroll-sentinal--start" data-position="start"></div>
-      <ul class="product-thumbnails__items">
+      <ul class="product-thumbnails__items" >
         {% for media in product.media %}
-          {% if forloop.index < initial_variant_media_position or forloop.index > next_variant_media_index %}
-            {% continue %}
-          {% endif %}
-          <li class="product-thumbnails__item">
+          <li class="product-thumbnails__item" {% if product.selected_or_first_available_variant.featured_media.alt != blank and product.selected_or_first_available_variant.featured_media.alt != media.alt %}style="display: none"{% endif %}>
             <button
               type="button"
               class="product-thumbnails__item-link{% if media.id == featured_media.id %} active{% endif %}"

@@ -1,5 +1,5 @@
 {%- liquid
-  assign alignment_values = section.settings.alignment | split: '_'
+  assign alignment_values = section.settings.alignment | split: "_"
   assign heading_alignment = alignment_values | first
   assign content_alignment = alignment_values | last
 -%}
@@ -106,9 +106,6 @@
 {
   "name": "t:sections.rich_text.name",
   "tag": "section",
-  "disabled_on": {
-    "groups": ["header", "custom.overlay"]
-  },
   "settings": [
     {
       "type": "select",

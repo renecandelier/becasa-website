@@ -34,7 +34,6 @@
     >
       {%- if has_children and can_show_children -%}
         {%- liquid
-          assign sub_menu_id = link.handle | append: '-menu-' | append: forloop.index0
           assign child_is_active = false
           for link in link.links
             if link.active
@@ -51,20 +50,8 @@
           endfor
         -%}
 
-        <!-- if top level item is a link, render a clickable anchor link -->
-        {%- capture trigger_tag -%}{% if link.url %}a{% else %}button{% endif %}{%- endcapture -%}
-        {%- capture trigger_additional_attributes -%}
-          {% if link.url %}
-            href="{{ link.url }}"
-            {% if link.active %}
-              aria-current="page"
-            {% endif %}
-          {% else %}
-            type="button"
-          {% endif %}
-        {%- endcapture -%}
-
-        <{{ trigger_tag }}
+        <button
+          type="button"
           class="navigation__submenu-trigger fs-navigation-base no-transition{% if child_is_active %} active{% endif %}"
           data-link
           data-parent
@@ -77,8 +64,6 @@
           {% endif %}
           aria-haspopup="true"
           aria-expanded="false"
-          aria-controls="{{ sub_menu_id }}"
-          {{ trigger_additional_attributes }}
         >
           <span class="link-hover">
             {{ link.title }}
@@ -86,7 +71,7 @@
           <span class="header__links-icon">
             {% render 'icon' with icon: 'chevron-small' %}
           </span>
-        </{{ trigger_tag }}>
+        </button>
 
         {%- if has_children and can_show_children -%}
           {%- if show_meganav -%}
@@ -96,11 +81,10 @@
               meganav_settings: meganav_settings,
               link: link,
               shopify_attributes: meganav_shopify_attributes,
-              meganav_type: meganav_type,
-              menu_id: sub_menu_id
+              meganav_type: meganav_type
             -%}
           {%- else -%}
-            {%- render 'navigation-submenu', menu: link.links, depth: 1, menu_id: sub_menu_id -%}
+            {%- render 'navigation-submenu' with menu: link.links, depth: 1 -%}
           {%- endif -%}
         {%- endif -%}
         {%- assign has_children = false -%}

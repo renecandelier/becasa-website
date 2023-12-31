@@ -1,40 +1,30 @@
-{{ 'partial-shopify-product-reviews.css' | asset_url | stylesheet_tag }}
-
-{% liquid
+{%- liquid
   assign current_variant = product.selected_or_first_available_variant
   assign featured_media = current_variant.featured_media | default: product.featured_media
   assign first_3d_model = product.media | where: 'media_type', 'model' | first
   assign gallery_style = section.settings.gallery_style
-  assign gallery_style_mobile = section.settings.gallery_style_mobile
   assign gallery_size = section.settings.gallery_size
   assign gallery_overflow = section.settings.gallery_overflow
-  assign gallery_overflow_mobile = section.settings.gallery_overflow
   assign image_aspect_ratio = section.settings.image_aspect_ratio
 
   if gallery_style == 'thumbnails'
     assign gallery_overflow = 'never'
   endif
 
-  if gallery_style_mobile == 'carousel'
-    assign gallery_overflow_mobile = 'never'
-  endif
-
-  # If there's only a single image in the gallery, display as list
+  # If only single image in gallery display as list
   if product.media.size == 1
     assign gallery_style = 'list'
-    assign gallery_style_mobile = 'list'
   endif
 
-  case gallery_size
-    when 'small'
-      assign desktop_image_container_percentage = 46
-    when 'medium'
-      assign desktop_image_container_percentage = 56
-    when 'large'
-      assign desktop_image_container_percentage = 64
-    when 'xlarge'
-      assign desktop_image_container_percentage = 72
-  endcase
+  if gallery_size == 'small'
+    assign desktop_image_container_percentage = 46
+  elsif gallery_size == 'medium'
+    assign desktop_image_container_percentage = 56
+  elsif gallery_size == 'large'
+    assign desktop_image_container_percentage = 64
+  elsif gallery_size == 'xlarge'
+    assign desktop_image_container_percentage = 72
+  endif
 
   if gallery_style == 'grid'
     assign desktop_image_percentage_width = desktop_image_container_percentage | divided_by: 2
@@ -42,148 +32,99 @@
     assign desktop_image_percentage_width = desktop_image_container_percentage
   endif
 
-  if section.settings.enable_multiple_variant_media
-    assign media_delimiters_positions = product.variants | map: 'featured_media' | uniq | map: 'position'
-
-    if current_variant.featured_media
-      assign initial_variant_media_index = current_variant.featured_media.position | minus: 1
-      assign initial_variant_media_position = current_variant.featured_media.position
-
-      for delimiter_position in media_delimiters_positions
-        if delimiter_position == initial_variant_media_position
-          if media_delimiters_positions[forloop.index] == blank
-            assign next_variant_media_index = product.media.last.position
-            assign next_variant_media_position = product.media.last.position | plus: 1
-          else
-            assign next_variant_media_index = media_delimiters_positions[forloop.index] | minus: 1
-            assign next_variant_media_position = media_delimiters_positions[forloop.index]
-          endif
-          break
-        endif
-      endfor
-
-      assign media_group_size = next_variant_media_position | minus: initial_variant_media_position
-    endif
-  endif
-
-  assign media_size = media_group_size | default: product.media.size
-  assign media_show_limit = media_group_size | default: product.media.size
+  assign media_show_limit = product.media.size
   assign over_media_show_limit = false
-  assign over_media_show_limit_mobile = false
 
-  # Unless the desktop gallery overflow is 'never', or the desktop display is 'thumbnails', initialize
-  # media overflow variables
   unless gallery_overflow == 'never'
     assign media_per_row = 1
-
     if gallery_style == 'grid'
       assign media_per_row = 2
     endif
 
     assign gallery_overflow_number = gallery_overflow | times: 1.0
     assign media_limit = gallery_overflow_number | times: media_per_row
-
     # add 1 because n+1th row should be partially visible
     assign media_show_limit = gallery_overflow_number | plus: 1 | times: media_per_row
-
-    assign transition_multiplier = media_size | times: 1.0 | divided_by: media_per_row | ceil | minus: gallery_overflow_number | times: media_per_row | at_most: 4
+    assign transition_multiplier = product.media.size | times: 1.0 | divided_by: media_per_row | ceil | minus: gallery_overflow_number | times: media_per_row | at_most: 4
     assign overflow_gallery_aspect_ratio = 'auto'
 
-    if media_limit < media_size
+    if media_limit < product.media.size
       assign over_media_show_limit = true
-    endif
 
-    if image_aspect_ratio == 'natural'
-      capture overflow_gallery_aspect_ratio
-        render 'product-media-overflow-aspect', product: product, media_show_limit: media_show_limit, media_per_row: media_per_row
-      endcapture
-    else
-      case image_aspect_ratio
-        when 'portrait'
+      if image_aspect_ratio == 'natural'
+        assign cumulative_height = 0
+
+        for media in product.media
+          if forloop.index > media_show_limit
+            break
+          endif
+
+          unless media_per_row == 1
+            assign remainder = forloop.index | modulo: media_per_row
+
+            if remainder == 0
+              continue
+            endif
+
+            assign next_inverse_aspect_ratio = 0
+            assign next_media = product.media[forloop.index]
+
+            unless next_media == blank
+              assign next_inverse_aspect_ratio = 1
+              unless next_media.type == 'model'
+                assign next_inverse_aspect_ratio = 1 | divided_by: next_media.aspect_ratio
+              endunless
+            endunless
+          endunless
+
+          assign inverse_aspect_ratio = 1
+          unless media.type == 'model'
+            assign inverse_aspect_ratio = 1 | divided_by: media.aspect_ratio
+          endunless
+
+          assign tallest_in_row = inverse_aspect_ratio | at_least: next_inverse_aspect_ratio
+
+          if forloop.index > media_limit
+            # Calculate tease row
+            assign tallest_in_row = 0.35 | times: media_per_row
+          endif
+
+          assign cumulative_height = cumulative_height | plus: tallest_in_row
+        endfor
+
+        assign overflow_gallery_aspect_ratio = 1 | divided_by: cumulative_height | times: media_per_row
+      else
+        if image_aspect_ratio == 'portrait'
           assign image_fill_aspect_ratio = 0.66666
-        when 'landscape'
+        elsif image_aspect_ratio == 'landscape'
           assign image_fill_aspect_ratio = 1.5
-        when 'square'
+        elsif image_aspect_ratio == 'square'
           assign image_fill_aspect_ratio = 1
-      endcase
+        endif
 
-      # Multiply by aspect ratio to maintain a constant height for the tease row
-      #   Using a constant percentage would vary with image height
-      assign tease_row_ratio = 0.35 | times: image_fill_aspect_ratio | times: media_per_row
+        # Multiply by aspect ratio to maintain a constant height for the tease row,
+        # instead of a constant percentage visible (which will vary with image height)
+        assign tease_row_ratio = 0.35 | times: image_fill_aspect_ratio | times: media_per_row
 
-      assign height = gallery_overflow_number | plus: tease_row_ratio
-      assign width = image_fill_aspect_ratio | times: media_per_row
-      assign overflow_gallery_aspect_ratio = width | divided_by: height
+        assign height = gallery_overflow_number | plus: tease_row_ratio
+        assign width = image_fill_aspect_ratio | times: media_per_row
+
+        assign overflow_gallery_aspect_ratio = width | divided_by: height
+      endif
     endif
   endunless
-
-  # Unless the mobile gallery overflow is 'never', or the mobile display is 'carousel', initialize
-  # media overflow variables
-  unless gallery_overflow_mobile == 'never'
-    assign media_per_row_mobile = 1
-
-    if gallery_style_mobile == 'grid'
-      assign media_per_row_mobile = 2
-    endif
-
-    assign gallery_overflow_number_mobile = gallery_overflow_mobile | times: 1.0
-    assign media_limit_mobile = gallery_overflow_number_mobile | times: media_per_row_mobile
-
-    # add 1 because n+1th row should be partially visible
-    assign media_show_limit_mobile = gallery_overflow_number_mobile | plus: 1 | times: media_per_row_mobile
-
-    assign transition_multiplier_mobile = media_size | times: 1.0 | divided_by: media_per_row_mobile | ceil | minus: gallery_overflow_number_mobile | times: media_per_row_mobile | at_most: 4
-    assign overflow_gallery_aspect_ratio_mobile = 'auto'
-
-    if media_limit_mobile < media_size
-      assign over_media_show_limit_mobile = true
-    endif
-
-    if image_aspect_ratio == 'natural'
-      capture overflow_gallery_aspect_ratio_mobile
-        render 'product-media-overflow-aspect', product: product, media_show_limit: media_show_limit_mobile, media_per_row: media_per_row_mobile
-      endcapture
-    else
-      case image_aspect_ratio
-        when 'portrait'
-          assign image_fill_aspect_ratio_mobile = 0.66666
-        when 'landscape'
-          assign image_fill_aspect_ratio_mobile = 1.5
-        when 'square'
-          assign image_fill_aspect_ratio_mobile = 1
-      endcase
-
-      # Multiply by aspect ratio to maintain a constant height for the tease row
-      #   Using a constant percentage would vary with image height
-      assign tease_row_ratio_mobile = 0.35 | times: image_fill_aspect_ratio_mobile | times: media_per_row_mobile
-
-      assign height_mobile = gallery_overflow_number_mobile | plus: tease_row_ratio_mobile
-      assign width_mobile = image_fill_aspect_ratio_mobile | times: media_per_row_mobile
-      assign overflow_gallery_aspect_ratio_mobile = width_mobile | divided_by: height_mobile
-    endif
-  endunless
-
-  # Offset the show limit for multiple variant mode
-  assign media_show_limit = media_show_limit | plus: initial_variant_media_index
-
-  # Account for gutter between columns and page outer space
-  capture desktop_image_sizes_attribute
-    echo desktop_image_percentage_width | append: 'vw'
-  endcapture
-
-  capture product_url
-    echo shop.url | append: product.url
-  endcapture
-
-  assign featured_media_size = featured_media.width | append: 'x'
-
-  if product.featured_media
-    capture product_featured_image_url
-      echo product.featured_media | image_url: featured_media_size | prepend: 'https:' | json
-    endcapture
-  endif
 -%}
 
+{% comment %}account for gutter between columns and page outer space{% endcomment %}
+{%- capture desktop_image_sizes_attribute -%}{{ desktop_image_percentage_width }}vw{%- endcapture -%}
+
+{%- capture product_url -%}{{ shop.url | append: product.url }}{%- endcapture -%}
+{%- assign featured_media_size = featured_media.width | append: 'x' -%}
+{%- if product.featured_media -%}
+  {%- capture product_featured_image_url -%}
+    {{- product.featured_media | image_url: featured_media_size | prepend: 'https:' | json -}}
+  {%- endcapture -%}
+{% endif %}
 <div
   class="
     product
@@ -196,204 +137,96 @@
   data-section-type="product"
   data-current-product-id="{{ current_variant.id }}"
   data-product-has-only-default-variant="{{ product.has_only_default_variant }}"
-  data-enable-sticky-container="{{ section.settings.enable_sticky_product_details }}"
-  data-loop-mobile-carousel="{{ section.settings.enable_mobile_carousel_looping }}"
+  data-enable-sticky-product-details="{{ section.settings.enable_sticky_product_details }}"
   data-gallery-size="{{ gallery_size }}"
-  data-enable-multiple-variant-media="{{ section.settings.enable_multiple_variant_media }}"
-  data-initial-media-id="{{ featured_media.id }}"
   data-is-full-product="true"
-  data-product-handle="{{ product.handle }}"
 >
-  {% if section.settings.show_breadcrumbs or section.settings.show_navigation_buttons -%}
+  {% if section.settings.show_breadcrumbs or section.settings.show_navigation_buttons %}
     <div class="product__breadcrumbs">
       {% render 'breadcrumbs',
         show_breadcrumbs: section.settings.show_breadcrumbs,
         show_navigation_buttons: section.settings.show_navigation_buttons
       %}
     </div>
-  {%- endif %}
-
+  {%- endif -%}
   <div class="product__top product__primary">
     <div class="product__primary-left">
-      {% if gallery_style_mobile == 'carousel' -%}
-        <div class="product__media-container below-mobile carousel swiper{% if section.settings.enable_product_lightbox %} lightbox-media-container{% endif %}">
-          <div class="product__media carousel__wrapper swiper-wrapper">
-            {% for media in product.media -%}
-              {% liquid
-                assign prioritize_loading = false
-
-                if forloop.first or forloop.index == initial_variant_media_position
-                  assign prioritize_loading = true
-                endif
-
-                if forloop.index < initial_variant_media_position or forloop.index > next_variant_media_index
-                  continue
-                endif
-
-                assign media_aspect_ratio = image_aspect_ratio
-
-                if media.media_type == 'model'
-                  assign media_aspect_ratio = 'square'
-                endif
-
-                assign is_featured_media = false
-
-                if media == featured_media
-                  assign is_featured_media = true
-                endif
-              -%}
-              <div
-                class="product__media-item carousel_slide swiper-slide"
-                data-is-featured="{{ is_featured_media }}"
-                data-slide-index="{{ forloop.index0 }}"
-                data-media-item-id="{{ media.id }}"
-                data-media-type="{{ media.media_type }}"
-                data-product-media-wrapper
-                data-aspect-ratio="{{ media_aspect_ratio }}"
-              >
-                {% render 'media',
-                  fallback_alt: product.title,
-                  media: media,
-                  featured_media: featured_media,
-                  enable_product_lightbox: section.settings.enable_product_lightbox,
-                  loop_video: section.settings.enable_video_looping,
-                  aspect_ratio: media_aspect_ratio,
-                  sizes: '90vw',
-                  prioritize_loading: prioritize_loading,
-                  within_carousel: true
-                %}
-              </div>
-            {%- else -%}
-              <div class="product__media-item placeholder-image">
-                {{ 'image' | placeholder_svg_tag: 'placeholder-svg' }}
-              </div>
-            {%- endfor %}
-          </div>
-
-          <div class="swiper-pagination"></div>
-        </div>
-      {%- else -%}
-        {% comment -%}
-          Mobile gallery style other than 'carousel'
-        {% endcomment -%}
-        <div
-          class="product__media-container below-mobile{% if section.settings.enable_product_lightbox %} lightbox-media-container{% endif %}"
-          data-gallery-style="{{ gallery_style_mobile }}"
-        >
-          <div
-            class="product__media"
-            {% if over_media_show_limit_mobile %}
-              data-product-media="closed"
-              style="
-                --overflow-gallery-aspect-ratio: {{ overflow_gallery_aspect_ratio_mobile }};
-                --overflow-gallery-transition-multiplier: {{ transition_multiplier_mobile }};
-              "
+      <div class="product__media-container below-mobile carousel {% if section.settings.enable_product_lightbox %} lightbox-media-container{% endif %}">
+        <div class="product__media ">
+          {%- for media in product.media -%}
+            {% assign prioritize_loading = false %}
+            {% if forloop.first %}
+              {% assign prioritize_loading = true %}
+            {% endif %}
+            {%- assign media_aspect_ratio = image_aspect_ratio -%}
+            {%- if media.media_type == 'model' -%}
+              {%- assign media_aspect_ratio = 'square' -%}
             {%- endif -%}
-          >
-            {% for media in product.media -%}
-              {% liquid
-                if forloop.index < initial_variant_media_position or forloop.index > next_variant_media_index
-                  continue
-                endif
-
-                assign media_aspect_ratio = image_aspect_ratio
-
-                if media.media_type == 'model'
-                  assign media_aspect_ratio = 'square'
-                endif
-              -%}
-              <div
-                class="
-                  product__media-item
-                  {% if forloop.index0 >= media_show_limit %}product__media-item--hide-on-load{% endif %}
-                  animation--product-media
-                "
-                data-media-item-id="{{ media.id }}"
-                data-media-type="{{ media.media_type }}"
-                data-product-media-wrapper
-              >
-                {% render 'media',
-                  media: media,
-                  fallback_alt: product.title,
-                  featured_media: featured_media,
-                  enable_product_lightbox: section.settings.enable_product_lightbox,
-                  loop_video: section.settings.enable_video_looping,
-                  aspect_ratio: media_aspect_ratio,
-                  sizes: '90vw',
-                  animate: true
-                %}
-              </div>
-            {%- else -%}
-              <div class="product__media-item placeholder-image">
-                {{ 'image' | placeholder_svg_tag: 'placeholder-svg' }}
-              </div>
-            {%- endfor %}
-
-            {% if over_media_show_limit_mobile -%}
-              <div class="product__media-show-more" data-more-media-bar>
-                <button
-                  class="btn btn--tertiary btn--small"
-                  type="button"
-                  data-more-media
-                  data-lang-more-media="{{ 'products.product.more_media' | t | escape }}"
-                  data-lang-less-media="{{ 'products.product.less_media' | t | escape }}"
-                >
-                  {{ 'products.product.more_media' | t }}
-                </button>
-              </div>
-            {%- endif %}
-          </div>
+            <div
+              class="product__media-item "
+              data-media-item-id="{{ media.id }}"
+              data-media-type="{{ media.media_type }}"
+              data-product-media-wrapper
+              data-aspect-ratio="{{ media_aspect_ratio }}"
+              {% if product.selected_or_first_available_variant.featured_media.alt != blank and product.selected_or_first_available_variant.featured_media.alt != media.alt %}style="display: none"{% endif %}
+            >
+              {% render 'media',
+                fallback_alt: product.title,
+                media: media,
+                featured_media: featured_media,
+                enable_product_lightbox: section.settings.enable_product_lightbox,
+                loop_video: section.settings.enable_video_looping,
+                aspect_ratio: media_aspect_ratio,
+                sizes: '90vw',
+                prioritize_loading: prioritize_loading,
+                within_carousel: true,
+                product:product
+              %}
+            </div>
+          {%- else -%}
+            <div class="product__media-item placeholder-image">
+              {{ 'image' | placeholder_svg_tag: 'placeholder-svg' }}
+            </div>
+          {%- endfor -%}
         </div>
-      {%- endif %}
-
+        <div class="swiper-pagination"></div>
+      </div>
       <div
         class="product__media-container above-mobile{% if section.settings.enable_product_lightbox %} lightbox-media-container{% endif %}"
         data-gallery-style="{{ gallery_style }}"
       >
-        {% if gallery_style == 'thumbnails' -%}
-          {%
-            render 'product-thumbnails',
-            featured_media: featured_media,
-            aspect_ratio: image_aspect_ratio,
-            initial_variant_media_position: initial_variant_media_position,
-            next_variant_media_index: next_variant_media_index,
-          %}
-        {%- endif %}
+        {% if gallery_style == 'thumbnails' %}
+          {% render 'product-thumbnails', featured_media: featured_media, aspect_ratio: image_aspect_ratio %}
+        {% endif %}
         <div
           class="product__media"
-          {% if over_media_show_limit -%}
+          {% if over_media_show_limit %}
             data-product-media="closed"
             style="
               --overflow-gallery-aspect-ratio: {{ overflow_gallery_aspect_ratio }};
               --overflow-gallery-transition-multiplier: {{ transition_multiplier }};
             "
-          {%- endif %}
+          {%- endif -%}
         >
-          {% for media in product.media -%}
-            {% liquid
-              if forloop.index < initial_variant_media_position or forloop.index > next_variant_media_index
-                continue
-              endif
-
-              assign media_aspect_ratio = image_aspect_ratio
-
-              if media.media_type == 'model'
-                assign media_aspect_ratio = 'square'
-              endif
-            -%}
+          {%- for media in product.media -%}
+            {%- assign media_aspect_ratio = image_aspect_ratio -%}
+            {%- if media.media_type == 'model' -%}
+              {%- assign media_aspect_ratio = 'square' -%}
+            {%- endif -%}
             <div
               class="
                 product__media-item
                 {% if forloop.index0 >= media_show_limit %}product__media-item--hide-on-load{% endif %}
-                {% unless media.id == featured_media.id or gallery_style != "thumbnails" %}hidden{% endunless %}
+                {% unless media.id == featured_media.id or gallery_style != "thumbnails" %} hidden{% endunless %}
                 animation--product-media
               "
+              data-media-type="{{ media.media_type }}"
               data-media-item-id="{{ media.id }}"
               data-media-type="{{ media.media_type }}"
               data-product-media-wrapper
-              {% if gallery_style == 'grid' or media.media_type == 'image' or media.media_type == 'model' -%}
+              {% if gallery_style == 'grid' or media.media_type == 'image' or media.media_type == 'model' %}
                 data-aspect-ratio="{{ media_aspect_ratio }}"
-              {%- endif %}
+              {% endif %}
             >
               {% render 'media',
                 media: media,
@@ -410,9 +243,8 @@
             <div class="product__media-item placeholder-image">
               {{ 'image' | placeholder_svg_tag: 'placeholder-svg' }}
             </div>
-          {%- endfor %}
-
-          {% if over_media_show_limit -%}
+          {%- endfor -%}
+          {%- if over_media_show_limit -%}
             <div class="product__media-show-more" data-more-media-bar>
               <button
                 class="btn btn--tertiary btn--small"
@@ -424,11 +256,11 @@
                 {{ 'products.product.more_media' | t }}
               </button>
             </div>
-          {%- endif %}
+          {%- endif -%}
         </div>
       </div>
 
-      {% if first_3d_model -%}
+      {%- if first_3d_model -%}
         <button
           aria-label="{{ 'products.product.view_in_space_label' | t }}"
           class="product__view-in-space btn btn--primary btn--full"
@@ -443,46 +275,31 @@
             <span class="product__view-in-space-text">{{ 'products.product.view_in_space' | t }}</span>
           </span>
         </button>
-      {%- endif %}
+      {%- endif -%}
 
-      {% capture left_side_blocks -%}
+      {%- capture left_side_blocks -%}
         {%- render 'product-blocks', blocks: section.blocks, prod: product, is_quick: false, column: 'left' -%}
-      {%- endcapture %}
-
-      {% unless left_side_blocks == blank -%}
+      {%- endcapture -%}
+      {% unless left_side_blocks == blank %}
         <div class="left-side-blocks for-desktop">
           {{ left_side_blocks }}
         </div>
-      {%- endunless %}
+      {% endunless %}
     </div>
 
     <div class="product__details product__primary-right">
-      <div class="product__meta" data-sticky-container>
-        {%
-          render 'product-blocks',
+      <div class="product__meta">
+        {%- render 'product-blocks',
           blocks: section.blocks,
           prod: product,
           is_quick: false,
           column: 'right',
           current_variant: current_variant,
-          featured_media: featured_media,
-          aspect_ratio: image_aspect_ratio,
-        %}
-
-        {% comment -%}
-          Render a dummy product form if buy buttons are absent
-        {% endcomment -%}
-        {% liquid
-          assign buy_buttons_enabled = section.blocks | where: 'type', 'buy_buttons'
-
-          if buy_buttons_enabled == blank
-            render 'product-form', prod: product, hidden: true
-          endif
+          featured_media: featured_media
         -%}
-
-        {% comment -%}
+        {%- comment -%}
           Live region for announcing updated price and availability to screen readers
-        {% endcomment -%}
+        {%- endcomment -%}
         <p
           class="visually-hidden"
           data-product-status
@@ -490,10 +307,10 @@
           role="status"
         ></p>
 
-        {% comment -%}
+        {%- comment -%}
           Live region for announcing that the product form has been submitted and the
           product is in the process being added to the cart
-        {% endcomment -%}
+        {%- endcomment -%}
         <p
           class="visually-hidden"
           data-loader-status
@@ -504,24 +321,23 @@
           {{ 'products.product.loader_label' | t }}
         </p>
 
-        {% comment -%}
-          Shell for Shopify product review accordion hidden by default
-        {% endcomment -%}
-        {% liquid
-          assign review_title = 'products.product.reviews' | t
-
-          render 'product-block-accordion', classes: 'product-reviews hidden', heading: review_title, small_text: true
+        {%- comment -%}Shell for Shopify product review accordion hidden by default{%- endcomment -%}
+        {%- assign review_title = 'products.product.reviews' | t -%}
+        {%- render 'product-block-accordion',
+          classes: 'product-reviews hidden',
+          heading: review_title,
+          small_text: true
         -%}
       </div>
     </div>
   </div>
 
   <div class="product__bottom">
-    {% unless left_side_blocks == blank -%}
+    {% unless left_side_blocks == blank %}
       <div class="left-side-blocks for-mobile">
         {{ left_side_blocks }}
       </div>
-    {%- endunless %}
+    {% endunless %}
   </div>
 </div>
 
@@ -531,18 +347,16 @@
   window.ShopifyXR=window.ShopifyXR||function(){(ShopifyXR.q=ShopifyXR.q||[]).push(arguments)}
   ShopifyXR('addModels', {{ models }});
 </script>
-
 <script src="//cdn.shopify.com/shopifycloud/shopify-xr-js/assets/v1.0/shopify-xr.en.js" defer="defer"></script>
 
-{% unless product == empty -%}
+{%- unless product == empty -%}
   <script type="application/json" id="ProductJson-{{ section.id }}">
     {{ product | json }}
   </script>
-
   <script type="application/json" id="ModelJson-{{ section.id }}">
     {{ product.media | where: 'media_type', 'model' | json }}
   </script>
-{%- endunless %}
+{%- endunless -%}
 
 <script type="application/ld+json">
   {
@@ -550,30 +364,30 @@
     "@type": "Product",
     "name": {{ product.title | json }},
     "url": {{ product_url | json }},
-    {% if product.featured_media -%}
+    {%- if product.featured_media -%}
       "image": [{{ product_featured_image_url }}],
-    {%- endif %}
+    {%- endif -%}
     "description": {{ product.description | strip_html | json }},
-    {% if current_variant.sku != blank -%}
+    {%- if current_variant.sku != blank -%}
       "sku": {{ current_variant.sku | json }},
-    {%- endif %}
+    {%- endif -%}
     "brand": {
       "@type": "Thing",
       "name": {{ product.vendor | json }}
     },
     "offers": [
-      {% for variant in product.variants -%}
+      {%- for variant in product.variants -%}
         {
           "@type" : "Offer",
-          {% if variant.sku != blank -%}
+          {%- if variant.sku != blank -%}
             "sku": {{ variant.sku | json }},
-          {%- endif %}
+          {%- endif -%}
           "availability" : "http://schema.org/{% if variant.available %}InStock{% else %}OutOfStock{% endif %}",
           "price" : {{ variant.price | divided_by: 100.00 | json }},
           "priceCurrency" : {{ cart.currency.iso_code | json }},
           "url" : {{ shop.url | append: variant.url | json }}
         }{% unless forloop.last %},{% endunless %}
-      {%- endfor %}
+      {%- endfor -%}
     ]
   }
 </script>
@@ -636,26 +450,6 @@
     },
     {
       "type": "select",
-      "id": "gallery_style_mobile",
-      "label": "t:sections.main_product_overview.settings.gallery_style_mobile.label",
-      "default": "carousel",
-      "options": [
-        {
-          "value": "carousel",
-          "label": "t:sections.main_product_overview.settings.gallery_style_mobile.option_carousel"
-        },
-        {
-          "value": "list",
-          "label": "t:sections.main_product_overview.settings.gallery_style_mobile.option_list"
-        },
-        {
-          "value": "grid",
-          "label": "t:sections.main_product_overview.settings.gallery_style_mobile.option_grid"
-        }
-      ]
-    },
-    {
-      "type": "select",
       "id": "gallery_size",
       "label": "t:sections.main_product_overview.settings.gallery_size.label",
       "default": "large",
@@ -703,12 +497,6 @@
       ]
     },
     {
-      "id": "enable_mobile_carousel_looping",
-      "type": "checkbox",
-      "label": "t:sections.main_product_overview.settings.enable_mobile_carousel_looping.label",
-      "default": false
-    },
-    {
       "id": "enable_video_looping",
       "type": "checkbox",
       "label": "t:sections.main_product_overview.settings.enable_video_looping.label",
@@ -746,28 +534,6 @@
     },
     {
       "type": "header",
-      "content": "t:sections.main_product_overview.settings.media_grouping__header.content"
-    },
-    {
-      "id": "enable_multiple_variant_media",
-      "type": "checkbox",
-      "label": "t:sections.main_product_overview.settings.enable_multiple_variant_media.label",
-      "info": "t:sections.main_product_overview.settings.enable_multiple_variant_media.info",
-      "default": false
-    },
-    {
-      "type": "header",
-      "content": "t:sections.main_product_overview.settings.gift_card_header.content"
-    },
-    {
-      "type": "checkbox",
-      "id": "enable_gift_card_recipient",
-      "default": true,
-      "label": "t:sections.main_product_overview.settings.enable_gift_card_recipient.label",
-      "info": "t:sections.main_product_overview.settings.enable_gift_card_recipient.info"
-    },
-    {
-      "type": "header",
       "content": "t:shared.settings.section_style.header_style.content"
     },
     {
@@ -793,54 +559,6 @@
           "default": true,
           "label": "t:sections.main_product_overview.blocks.buy_buttons.settings.show_dynamic_checkout.label",
           "info": "t:sections.main_product_overview.blocks.buy_buttons.settings.show_dynamic_checkout.info"
-        },
-        {
-          "type": "header",
-          "content": "t:sections.main_product_overview.blocks.buy_buttons.settings.header__sticky_atc_bar.content"
-        },
-        {
-          "type": "paragraph",
-          "content": "t:sections.main_product_overview.blocks.buy_buttons.settings.paragraph__sticky_atc_bar.content"
-        },
-        {
-          "type": "checkbox",
-          "id": "enable_sticky_atc_bar_desktop",
-          "label": "t:sections.main_product_overview.blocks.buy_buttons.settings.enable_sticky_atc_bar_desktop.label",
-          "default": false
-        },
-        {
-          "type": "checkbox",
-          "id": "enable_sticky_atc_bar_mobile",
-          "label": "t:sections.main_product_overview.blocks.buy_buttons.settings.enable_sticky_atc_bar_mobile.label",
-          "default": false
-        },
-        {
-          "id": "divider_width",
-          "type": "select",
-          "label": "t:sections.main_product_overview.blocks.buy_buttons.settings.divider_width.label",
-          "default": "none",
-          "options": [
-            {
-              "value": "none",
-              "label": "t:sections.main_product_overview.blocks.buy_buttons.settings.divider_width.option_none"
-            },
-            {
-              "value": "border--thin",
-              "label": "t:sections.main_product_overview.blocks.buy_buttons.settings.divider_width.option_border_thin"
-            },
-            {
-              "value": "border--thick",
-              "label": "t:sections.main_product_overview.blocks.buy_buttons.settings.divider_width.option_border_thick"
-            },
-            {
-              "value": "shadow--small",
-              "label": "t:sections.main_product_overview.blocks.buy_buttons.settings.divider_width.option_shadow_small"
-            },
-            {
-              "value": "shadow--large",
-              "label": "t:sections.main_product_overview.blocks.buy_buttons.settings.divider_width.option_shadow_large"
-            }
-          ]
         }
       ]
     },
@@ -992,6 +710,7 @@
     {
       "type": "custom_liquid",
       "name": "t:sections.main_product_overview.blocks.custom_liquid.name",
+      "limit": 1,
       "settings": [
         {
           "type": "select",
@@ -1597,12 +1316,6 @@
           "id": "show_status_bar",
           "label": "t:sections.main_product_overview.blocks.inventory_counter.settings.show_status_bar.label",
           "default": true
-        },
-        {
-          "type": "checkbox",
-          "id": "show_untracked_quantity",
-          "label": "t:sections.main_product_overview.blocks.inventory_counter.settings.show_untracked_quantity.label",
-          "default": false
         }
       ]
     },
@@ -1894,23 +1607,6 @@
         },
         {
           "type": "header",
-          "content": "t:sections.main_product_overview.blocks.variant_picker.settings.header__siblings.content",
-          "info": "t:sections.main_product_overview.blocks.variant_picker.settings.header__siblings.info"
-        },
-        {
-          "type": "checkbox",
-          "id": "siblings_show_product_image",
-          "label": "t:sections.main_product_overview.blocks.variant_picker.settings.siblings_show_product_image.label",
-          "default": true
-        },
-        {
-          "id": "siblings_option_name",
-          "type": "text",
-          "label": "t:sections.main_product_overview.blocks.variant_picker.settings.siblings_option_name.label",
-          "default": "Color"
-        },
-        {
-          "type": "header",
           "content": "t:sections.main_product_overview.blocks.variant_picker.settings.header__chips.content"
         },
         {
@@ -1932,155 +1628,6 @@
               "label": "t:sections.main_product_overview.blocks.variant_picker.settings.chip_layout.option_natural"
             }
           ]
-        }
-      ]
-    },
-    {
-      "type": "secure_payment",
-      "name": "t:sections.main_product_overview.blocks.secure_payment.name",
-      "limit": 1,
-      "settings": [
-        {
-          "type": "select",
-          "id": "column_placement",
-          "label": "t:sections.main_product_details.blocks.shared.settings.column_placement.label",
-          "default": "right",
-          "options": [
-            {
-              "value": "left",
-              "label": "t:sections.main_product_details.blocks.shared.settings.column_placement.option_left"
-            },
-            {
-              "value": "right",
-              "label": "t:sections.main_product_details.blocks.shared.settings.column_placement.option_right"
-            }
-          ]
-        },
-        {
-          "type": "header",
-          "content": "t:sections.main_product_overview.blocks.secure_payment.settings.header__presentation.content"
-        },
-        {
-          "id": "text_alignment",
-          "type": "select",
-          "label": "t:sections.main_product_overview.blocks.secure_payment.settings.text_alignment.label",
-          "default": "left",
-          "options": [
-            {
-              "value": "left",
-              "label": "t:shared.settings.alignment_horizontal.option_left"
-            },
-            {
-              "value": "center",
-              "label": "t:shared.settings.alignment_horizontal.option_center"
-            }
-          ]
-        },
-        {
-          "id": "text_position",
-          "type": "select",
-          "label": "t:sections.main_product_overview.blocks.secure_payment.settings.text_position.label",
-          "default": "above",
-          "options": [
-            {
-              "value": "above",
-              "label": "t:sections.main_product_overview.blocks.secure_payment.settings.text_position.option_above"
-            },
-            {
-              "value": "below",
-              "label": "t:sections.main_product_overview.blocks.secure_payment.settings.text_position.option_below"
-            }
-          ]
-        },
-        {
-          "type": "header",
-          "content": "t:sections.main_product_overview.blocks.secure_payment.settings.header__payment_icons.content"
-        },
-        {
-          "id": "show_payment_icons",
-          "type": "checkbox",
-          "label": "t:sections.main_product_overview.blocks.secure_payment.settings.show_payment_icons.label",
-          "default": true
-        },
-        {
-          "id": "heading_text",
-          "type": "text",
-          "label": "t:sections.main_product_overview.blocks.secure_payment.settings.heading_text.label",
-          "default": "100% Secure payments"
-        },
-        {
-          "type": "select",
-          "id": "heading_icon",
-          "label": "t:sections.main_product_overview.blocks.secure_payment.settings.heading_icon.label",
-          "default": "security-badge",
-          "options": [{"value":"none","label":"t:shared.settings.icon.option_none"},{"value":"bank","label":"t:shared.settings.icon.option_bank"},{"value":"bill","label":"t:shared.settings.icon.option_bill"},{"value":"bottle","label":"t:shared.settings.icon.option_bottle"},{"value":"chat","label":"t:shared.settings.icon.option_chat"},{"value":"chat-empty","label":"t:shared.settings.icon.option_chat_empty"},{"value":"checked-box","label":"t:shared.settings.icon.option_checked_box"},{"value":"clothes-button","label":"t:shared.settings.icon.option_clothes_button"},{"value":"clothes-hanger","label":"t:shared.settings.icon.option_clothes_hanger"},{"value":"cotton","label":"t:shared.settings.icon.option_cotton"},{"value":"envelope","label":"t:shared.settings.icon.option_envelope"},{"value":"globe","label":"t:shared.settings.icon.option_globe"},{"value":"hand-washing","label":"t:shared.settings.icon.option_hand_washing"},{"value":"heart","label":"t:shared.settings.icon.option_heart"},{"value":"laundry-dryer","label":"t:shared.settings.icon.option_laundry_dryer"},{"value":"laundry-washer","label":"t:shared.settings.icon.option_laundry_washer"},{"value":"leaf","label":"t:shared.settings.icon.option_leaf"},{"value":"lipstick","label":"t:shared.settings.icon.option_lipstick"},{"value":"measuring-tape","label":"t:shared.settings.icon.option_measuring_tape"},{"value":"model-silhouette","label":"t:shared.settings.icon.option_silhouette"},{"value":"money-bills","label":"t:shared.settings.icon.option_money_bills"},{"value":"moving-truck","label":"t:shared.settings.icon.option_moving_truck"},{"value":"package-open","label":"t:shared.settings.icon.option_package_open"},{"value":"package-closed","label":"t:shared.settings.icon.option_package_closed"},{"value":"padlock","label":"t:shared.settings.icon.option_padlock"},{"value":"paper-airplane","label":"t:shared.settings.icon.option_paper_airplane"},{"value":"paw-print","label":"t:shared.settings.icon.option_paw_print"},{"value":"plant","label":"t:shared.settings.icon.option_plant"},{"value":"price-tag","label":"t:shared.settings.icon.option_price_tag"},{"value":"question-mark","label":"t:shared.settings.icon.option_question_mark"},{"value":"recycle-symbol","label":"t:shared.settings.icon.option_recycle_symbol"},{"value":"ruler","label":"t:shared.settings.icon.option_ruler"},{"value":"scissors","label":"t:shared.settings.icon.option_scissors"},{"value":"security-badge","label":"t:shared.settings.icon.option_security_badge"},{"value":"stiletto","label":"t:shared.settings.icon.option_stiletto"},{"value":"stopwatch","label":"t:shared.settings.icon.option_stopwatch"},{"value":"sunflower","label":"t:shared.settings.icon.option_sunflower"},{"value":"t-shirt","label":"t:shared.settings.icon.option_tshirt"},{"value":"washing-symbol","label":"t:shared.settings.icon.option_washing_symbol"},{"value":"water-bottle","label":"t:shared.settings.icon.option_water_bottle"}]
-        },
-        {
-          "id": "optional_text",
-          "type": "richtext",
-          "label": "t:sections.main_product_overview.blocks.secure_payment.settings.optional_text.label",
-          "default": "<p>Your details are protected and safe with us.</p>"
-        },
-        {
-          "id": "text_size",
-          "type": "select",
-          "label": "t:sections.main_product_overview.blocks.secure_payment.settings.text_size.label",
-          "default": "regular",
-          "options": [
-            {
-              "value": "small",
-              "label": "t:shared.settings.text_font_class.option_small"
-            },
-            {
-              "value": "regular",
-              "label": "t:shared.settings.text_font_class.option_regular"
-            },
-            {
-              "value": "large",
-              "label": "t:shared.settings.text_font_class.option_large"
-            }
-          ]
-        },
-        {
-          "type": "header",
-          "content": "t:sections.main_product_overview.blocks.secure_payment.settings.header__trust-content.content"
-        },
-        {
-          "id": "trust_image",
-          "type": "image_picker",
-          "label": "t:sections.main_product_overview.blocks.secure_payment.settings.trust_image.label"
-        },
-        {
-          "id": "trust_image_size",
-          "type": "range",
-          "label": "t:sections.main_product_overview.blocks.secure_payment.settings.trust_image_size.label",
-          "min": 10,
-          "max": 100,
-          "step": 1,
-          "default": 100,
-          "unit": "%"
-        },
-        {
-          "type": "header",
-          "content": "t:sections.main_product_overview.blocks.shared_settings.header__display_as_row"
-        },
-        {
-          "id": "display_as_collapsible_row",
-          "type": "checkbox",
-          "label": "t:sections.main_product_overview.blocks.shared_settings.display_as_collapsible_row.label",
-          "default": false
-        },
-        {
-          "id": "expand_by_default",
-          "type": "checkbox",
-          "label": "t:sections.main_product_overview.blocks.shared_settings.expand_by_default.label",
-          "default": true
-        },
-        {
-          "id": "collapsible_row_title",
-          "type": "text",
-          "label": "t:sections.main_product_overview.blocks.shared_settings.collapsible_row_title.label",
-          "default": "Payments & Security"
         }
       ]
     }

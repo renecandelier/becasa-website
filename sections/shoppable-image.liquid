@@ -1,49 +1,3 @@
-{{ 'component-shoppable.css' | asset_url | stylesheet_tag }}
-{%- liquid
-  assign non_image_half = 100 | minus: section.settings.image_size
-  assign non_image_half = non_image_half | divided_by: 100.00
--%}
-
-{%- assign image_sizes_fraction = non_image_half | times: 0.55 -%}
-{%- capture image_sizes -%}
-  (min-width: 960px) calc(((100vw - (2 * clamp(18px, 3.3vw, 3.3vw))) * {{ image_sizes_fraction }}) - 34px), 160px
-{%- endcapture -%}
-
-{%- capture swiper_content -%}
-  <div class="shoppable-feature__carousel-outer">
-    <div class="shoppable-feature__carousel swiper">
-      <div class="shoppable-feature__carousel-inner swiper-wrapper">
-        {%- for block in section.blocks -%}
-          <div
-            class="swiper-slide"
-            {% unless forloop.first %}
-              inert
-            {% endunless %}
-          >
-            {% render 'product-card-mini', product: block.settings.product_item, index: forloop.index, image_sizes: image_sizes %}
-          </div>
-        {%- else -%}
-          <div
-            class="swiper-slide"
-            {% unless forloop.first %}
-              inert
-            {% endunless %}
-          >
-            {% render 'product-card-mini', placeholder: true, index: forloop.index, image_sizes: image_sizes %}
-          </div>
-        {%- endfor -%}
-      </div>
-    </div>
-    <button class="slider-nav-button slider-nav-button-prev" title="{{ 'general.accessibility.previous' | t }}">
-      {% render 'icon', icon: 'chevron' %}
-    </button>
-    <button class="slider-nav-button slider-nav-button-next" title="{{ 'general.accessibility.next' | t }}">
-      {% render 'icon', icon: 'chevron' %}
-    </button>
-    <div class="swiper-pagination fs-body-50"></div>
-  </div>
-{%- endcapture %}
-
 <div
   data-section-id="{{ section.id }}"
   data-section-type="shoppable"
@@ -64,6 +18,7 @@
     --transparent-hotspot-background-darker: {{ settings.color_text | color_to_rgb | replace: 'rgb', 'rgba' | replace: ')', ', .8)' }};
   "
 >
+  <div class="shoppable-image__wash" data-shoppable-wash></div>
   <div class="section__inner">
     <div class="section-introduction animation--section-introduction">
       {%- unless section.settings.heading == blank -%}
@@ -75,7 +30,7 @@
       {%- endunless -%}
 
       {%-
-        render 'button-block'
+        render 'button-block' with
         wrapper_class: "section-introduction__button",
         link: section.settings.link,
         label: section.settings.link_text,
@@ -87,15 +42,15 @@
     <div class="shoppable-image__image-container shoppable__image-container">
       <div class="shoppable-image__image-container-inner">
         <div class="shoppable-image__image-wrapper">
-          {% render 'image',
+          {%
+            render 'image' with
             image: section.settings.image,
             wrapper_class: 'shoppable-image__image',
-            focal_point: 'image_presentation',
             aspect_ratio: section.settings.aspect_ratio,
             placeholder_name: 'collection-4',
             include_placeholder: true,
-            placeholder_natural_fallback_ratio: 'landscape',
-            sizes: '(min-width: 960px) calc(100vw - calc(2 * 3.3vw)), calc(100vw - calc(2 * clamp(18px, 3.3vw, 3.3vw)))',
+            placeholder_natural_fallback_ratio: 'landscape'
+            sizes: "(min-width: 960px) calc(100vw - calc(2 * 3.3vw)), calc(100vw - calc(2 * clamp(18px, 3.3vw, 3.3vw)))",
             animate: true
           %}
         </div>
@@ -103,7 +58,7 @@
 
       {%- for block in section.blocks -%}
         {%
-          render 'shoppable-item',
+          render 'shoppable-item' with
           block: block,
           index: forloop.index0,
           product_item: block.settings.product_item,
@@ -114,20 +69,32 @@
       {%- endfor -%}
     </div>
   </div>
-  {%- render 'mobile-drawer',
-    class: 'shoppable-feature-mobile-drawer animation--shoppable-feature-mobile-drawer',
-    content: swiper_content
-  -%}
 </div>
 
 {% schema %}
 {
   "name": "t:sections.shoppable_image.name",
   "tag": "section",
-  "disabled_on": {
-    "groups": ["header", "custom.overlay"],
-    "templates": ["password"]
-  },
+  "templates": [
+    "404",
+    "article",
+    "blog",
+    "cart",
+    "collection",
+    "list-collections",
+    "customers/account",
+    "customers/activate_account",
+    "customers/addresses",
+    "customers/login",
+    "customers/order",
+    "customers/register",
+    "customers/reset_password",
+    "gift_card",
+    "index",
+    "page",
+    "product",
+    "search"
+  ],
   "settings": [
     {
       "id": "image",

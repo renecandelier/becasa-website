@@ -1,5 +1,3 @@
-{{ 'template-article.css' | asset_url | stylesheet_tag }}
-
 {%- capture image_sizes -%}
   (min-width: 720px) calc(calc(50vw - calc(2 * clamp(18px, 3.3vw, 3.3vw)))), calc(100vw - calc(2 * 3.3vw))
 {%- endcapture -%}
@@ -42,10 +40,11 @@
     {%- endfor -%}
   {%- endif -%}
 {%- endcapture -%}
-
+ {% comment %}		***&&&***
+ deleted article-item		
+ {% endcomment %}
 <div
   class="
-    article-item
     {% if blog_article != blank and blog_article.image == blank or show_featured_image != true %}article-item--has-no-image{% endif %}
     {% if is_featured %}article-item--is-featured{% endif %}
     animation--article-item
@@ -105,7 +104,7 @@
 
         {%- if show_excerpt and blog_article.excerpt_or_content -%}
           <div class="article-item__excerpt">
-            <p>{{ blog_article.excerpt_or_content | strip_html | truncatewords: excerpt_truncate_amount }}</p>
+            <p>{{ blog_article.excerpt_or_content | truncatewords: excerpt_truncate_amount | strip_html }}</p>
           </div>
         {%- endif -%}
 
@@ -137,7 +136,7 @@
             {{- 'blogs.article.by' | t }}
             {{ 'homepage.onboarding.article_author' | t -}}
           </span>
-          {{ 'now' | time_tag: format: 'abbreviated_date' }}
+          {{ "now" | time_tag: format: 'abbreviated_date' }}
         </p>
         <div class="article-item__excerpt">{{ 'homepage.onboarding.article_excerpt' | t }}</div>
       </div>

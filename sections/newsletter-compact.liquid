@@ -44,14 +44,12 @@
     --text-alignment: {{ section.settings.alignment }};
   "
 >
-  <div
-    class="
+  <div class="
       newsletter-compact__inner
       {% if has_background %}
         {{ section_classes }}
       {% endif %}
-    "
-  >
+    ">
     {%- if section.settings.background_image != blank -%}
       <div class="newsletter-compact__background-image-wrapper">
         {%-
@@ -167,9 +165,6 @@
 {
   "name": "t:sections.newsletter_compact.name",
   "tag": "section",
-  "disabled_on": {
-    "groups": ["header", "custom.overlay"]
-  },
   "settings": [
     {
       "type": "select",
@@ -220,8 +215,8 @@
       "id": "focal_point",
       "type": "select",
       "label": "t:shared.settings.focal_point.label",
-      "options": [{"label":"t:shared.settings.focal_point.option_image","value":"image_presentation"},{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
-      "default": "image_presentation"
+      "options": [{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
+      "default": "center"
     },
     {
       "type": "header",

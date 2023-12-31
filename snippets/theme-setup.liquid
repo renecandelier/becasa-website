@@ -11,18 +11,15 @@
 {%- endcapture -%}
 
 <script>
-  console.log('Stiletto v2.4.0 by Fluorescent');
+  console.log('Stiletto v1.6.0 by Fluorescent');
 
   document.documentElement.className = document.documentElement.className.replace('no-js', '');
   if (window.matchMedia(`(prefers-reduced-motion: reduce)`) === true || window.matchMedia(`(prefers-reduced-motion: reduce)`).matches === true) {
     document.documentElement.classList.add('prefers-reduced-motion');
-  } else {
-    document.documentElement.classList.add('do-anim');
   }
 
   window.theme = {
-    version: 'v2.4.0',
-    themeName: 'Stiletto',
+    version: 'v1.6.0',
     moneyFormat: {{ shop.money_format | json }},
     strings: {
       name: {{ shop.name | json }},
@@ -76,10 +73,6 @@
       chevron: {{ chevron_icon | json }},
       close: {{ close_icon | json }},
       zoom: {{ zoom_icon | json }}
-    },
-    coreData: {
-      n: "Stiletto",
-      v: "v2.4.0",
     }
   }
 

@@ -18,25 +18,15 @@
   {% endif %}
 >
   {%- if media.media_type == 'image' -%}
-    {%- capture media_link_element -%}
-      {%- if enable_product_lightbox or link -%}
-        a
-      {%- else -%}
-        div
-      {%- endif -%}
-    {%- endcapture -%}
     {%- capture media_atributes -%}
+      href="{{ link }}"
       {% if enable_product_lightbox %}
-        href="{{ media.src | image_url }}" class="lightbox-image no-transition" data-pswp-src="
-        {{- media.src | image_url -}}
-        " data-pswp-width="
+        class="lightbox-image no-transition {% if product.selected_or_first_available_variant.featured_media.alt != blank and product.selected_or_first_available_variant.featured_media.alt != media.alt %} lighthouse__hide_img {% else %} lighthouse__visible_img  {% endif %} " data-pswp-src="{{ media.src | image_url }}" data-pswp-width="
         {{- media.width -}}
         " data-pswp-height="{{ media.height }}"
-      {%- elsif link -%}
-        href="{{ link }}"
-      {%- endif -%}
+      {% endif %}
     {%- endcapture -%}
-    <{{ media_link_element }} {{ media_atributes }}>
+    <a {{ media_atributes }}>
       {%
         render 'image' with
         image: media,
@@ -46,9 +36,9 @@
         fallback_alt: fallback_alt,
         animate: animate
       %}
-    </{{ media_link_element }}>
+    </a>
   {%- elsif media.media_type == 'video' -%}
-    {{ media | video_tag: image_size: '1024x' }}
+    {{ media | video_tag: autoplay: true, image_size: '1024x' }}
   {%- elsif media.media_type == 'external_video' -%}
     {%- liquid
       if loop_video

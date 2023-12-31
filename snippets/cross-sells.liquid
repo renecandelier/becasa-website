@@ -66,13 +66,9 @@
 
                 {% if item.price_varies %}
                   {%- assign sale_price = item.price | money -%}
-                  
-                  <div class="sale">
-                    {{ 'products.product.on_sale_from_html' | t: price: sale_price }}
-                    {%- if section.settings.show_product_currency %} {{ cart.currency.iso_code }}{% endif -%}
-                  </div>
+                  {{ 'products.product.on_sale_from_html' | t: price: sale_price }}
                 {% else %}
-                  <div class="sale">
+                  <div class="sale" data-price>
                     {{ item.price | money -}}
                     {%- if section.settings.show_product_currency %} {{ cart.currency.iso_code }}{% endif %}
                   </div>
@@ -81,7 +77,6 @@
                 {% if item.price_varies %}
                   {%- assign price = item.price | money -%}
                   {{ 'products.product.from_lowest_price_html' | t: lowest_price: price }}
-                  {%- if section.settings.show_product_currency %} {{ cart.currency.iso_code }}{% endif -%}
                 {% else %}
                   <span class="cross-sells__item-price">
                     {{- item.price | money -}}

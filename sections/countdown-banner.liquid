@@ -33,15 +33,16 @@
     --overlay-opacity: {{ overlay_opacity }};
     --min-height: {{ min_height }}px;
     --min-height-mobile: {{ min_height_mobile }}px;
-    {% render 'overlay-button-vars', color_button_text: section.settings.button_text_color, color_button_background: section.settings.button_background_color %}
+    {% render 'overlay-button-vars' with color_button_text: section.settings.button_text_color, color_button_background: section.settings.button_background_color %}
   "
   data-section-id="{{ section.id }}"
   data-section-type="countdown-banner"
 >
   <div class="countdown-banner__inner">
     {%- if section.settings.mobile_image != blank -%}
-      {%- render 'image',
-        wrapper_class: 'countdown-banner__image countdown-banner__image--mobile',
+      {%-
+        render 'image' with
+        wrapper_class: "countdown-banner__image countdown-banner__image--mobile",
         image: section.settings.mobile_image,
         focal_point: section.settings.mobile_focal_point,
         sizes: image_sizes
@@ -49,8 +50,9 @@
     {%- endif -%}
 
     {%- if section.settings.image != blank -%}
-      {%- render 'image',
-        wrapper_class: 'countdown-banner__image',
+      {%-
+        render 'image' with
+        wrapper_class: "countdown-banner__image",
         image: section.settings.image,
         focal_point: section.settings.focal_point,
         sizes: image_sizes
@@ -72,7 +74,8 @@
           </div>
         {%- endif -%}
 
-        {%- render 'countdown-timer',
+        {%-
+          render 'countdown-timer' with
           year: section.settings.year,
           month: section.settings.month,
           day: section.settings.day,
@@ -90,8 +93,9 @@
         {%- if section.settings.link_text != blank or section.settings.link_text_2 != blank -%}
           <div class="countdown-banner__button-group section-blocks__button">
             {%- if section.settings.link_text -%}
-              {%- render 'button-block',
-                wrapper_class: 'countdown-banner__button',
+              {%-
+                render 'button-block' with
+                wrapper_class: "countdown-banner__button",
                 link: section.settings.link,
                 label: section.settings.link_text,
                 is_overlay: true,
@@ -100,8 +104,9 @@
               -%}
             {%- endif -%}
             {%- if section.settings.link_text_2 -%}
-              {%- render 'button-block',
-                wrapper_class: 'countdown-banner__button',
+              {%-
+                render 'button-block' with
+                wrapper_class: "countdown-banner__button",
                 link: section.settings.link_2,
                 label: section.settings.link_text_2,
                 is_overlay: true,
@@ -121,9 +126,6 @@
   "name": "t:sections.countdown_banner.name",
   "tag": "section",
   "class": "shopify-section--full-width",
-  "disabled_on": {
-    "groups": ["header", "custom.overlay"]
-  },
   "settings": [
     {
       "type": "range",
@@ -153,7 +155,7 @@
       "type": "number",
       "id": "year",
       "label": "t:shared.settings.countdown.year.label",
-      "default": 2023
+      "default": 2022
     },
     {
       "type": "select",
@@ -342,15 +344,15 @@
       "id": "focal_point",
       "type": "select",
       "label": "t:shared.settings.focal_point.label",
-      "options": [{"label":"t:shared.settings.focal_point.option_image","value":"image_presentation"},{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
-      "default": "image_presentation"
+      "options": [{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
+      "default": "center"
     },
     {
       "id": "mobile_focal_point",
       "type": "select",
       "label": "t:shared.settings.countdown.mobile_focal_point.label",
-      "options": [{"label":"t:shared.settings.focal_point.option_image","value":"image_presentation"},{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
-      "default": "image_presentation"
+      "options": [{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
+      "default": "center"
     },
     {
       "type": "header",

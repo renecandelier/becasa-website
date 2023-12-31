@@ -1,6 +1,6 @@
 {%- liquid
   assign overlay_opacity = block.settings.overlay_opacity | divided_by: 100.0
-  assign text_position = block.settings.text_position | split: '_'
+  assign text_position = block.settings.text_position | split: "_"
   assign horizontal_position = text_position | first
   assign vertical_position = text_position | last
 
@@ -12,7 +12,7 @@
     assign text_position_modifier = 'right'
   endif
 
-  assign text_position_mobile = block.settings.text_position_mobile | split: '_'
+  assign text_position_mobile = block.settings.text_position_mobile | split: "_"
   assign horizontal_position_mobile = text_position_mobile | first
   assign vertical_position_mobile = text_position_mobile | last
 
@@ -34,11 +34,6 @@
 
   if block.settings.link_1 != blank and block.settings.link_text_1 != blank and block.settings.link_2 != blank and block.settings.link_text_2 != blank
     assign has_2_buttons = true
-  endif
-
-  assign prioritize_loading = false
-  if section.index == 1 and index == 1
-    assign prioritize_loading = true
   endif
 -%}
 <div
@@ -69,20 +64,17 @@
   <div class="slideshow-slide__inner">
     <div class="slideshow-slide__image-container">
       {%- if block.settings.image_mobile != blank -%}
-        {%-
-          render 'image' with
+        {%- render 'image' with
           wrapper_class: "slideshow-slide__image slideshow-slide__image--mobile",
           image: block.settings.image_mobile,
           sizes: "100vw",
           focal_point: block.settings.mobile_focal_point,
           placeholder_name: "lifestyle-1",
-          animate: true,
-          prioritize_loading: prioritize_loading
+          animate: true
         -%}
       {%- endif -%}
 
-      {%-
-        render 'image' with
+      {%- render 'image' with
         wrapper_class: "slideshow-slide__image",
         image: block.settings.image,
         sizes: "100vw",
@@ -91,7 +83,6 @@
         placeholder_natural_fallback_ratio: placeholder_aspect_ratio,
         placeholder_name: "lifestyle-1",
         animate: true
-        prioritize_loading: prioritize_loading
       -%}
     </div>
     <div class="slideshow-slide__overlay"></div>
@@ -99,11 +90,7 @@
     <div class="slideshow-slide__text-container-wrapper">
       <div class="slideshow-slide__text-container">
         {%- unless block.settings.media_link == blank -%}
-          <a
-            href="{{ block.settings.media_link }}"
-            class="slideshow-slide__image-link"
-            aria-label="{{ block.settings.media_link }}"
-          ></a>
+          <a href="{{ block.settings.media_link }}" class="slideshow-slide__image-link" aria-label="{{ block.settings.media_link }}"></a>
         {%- endunless -%}
 
         <div class="slideshow-slide__text-container-inner section-blocks animation--section-blocks">
@@ -132,8 +119,7 @@
           {%- endunless -%}
 
           {% if has_2_buttons %}
-            <div
-              class="
+            <div class="
                 slideshow-slide__buttons-wrapper
                 button-block__inline-wrapper
                 button-block__inline-wrapper--justify-{{ text_position_modifier }}
@@ -144,8 +130,7 @@
           {% endif %}
 
           {%- if block.settings.link_1 != blank and block.settings.link_text_1 -%}
-            {%-
-              render 'button-block' with
+            {%- render 'button-block' with
               wrapper_class: "slideshow-slide__text-container-image-button section-blocks__button",
               link: block.settings.link_1,
               label: block.settings.link_text_1,
@@ -157,8 +142,7 @@
           {%- endif -%}
 
           {%- if block.settings.link_2 != blank and block.settings.link_text_2 -%}
-            {%-
-              render 'button-block' with
+            {%- render 'button-block' with
               wrapper_class: "slideshow-slide__text-container-image-button section-blocks__button",
               link: block.settings.link_2,
               label: block.settings.link_text_2,

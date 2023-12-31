@@ -1,15 +1,10 @@
 {%- liquid
-  assign mobile_column_count = 2
-  if columns_mobile == 1
-    assign mobile_column_count = 1
-  endif
+  assign sizes = "(max-width: 720px) calc((90vw - 12px) / 2), (max-width: 1400px) calc((93.4vw - (12px * 3)) / 4), 304px"
 
-  assign sizes = '(max-width: 720px) calc((90vw - 12px) /[[mcc]]), (max-width: 1400px) calc((93.4vw - (12px * 3)) / 4), 304px' | replace: '[[mcc]]', mobile_column_count
-
-  if columns_desktop == 4
-    assign sizes = '(max-width: 720px) calc((90vw - 12px) /[[mcc]]), (max-width: 1400px) calc((93.4vw - (12px * 3)) / 4), 304px' | replace: '[[mcc]]', mobile_column_count
-  elsif columns_desktop == 5
-    assign sizes = '(max-width: 720px) calc((90vw - 12px) /[[mcc]]), (max-width: 1400px) calc((93.4vw - (12px * 3)) / 4), 304px' | replace: '[[mcc]]', mobile_column_count
+  if columns == 4
+    assign sizes = "(max-width: 720px) calc((90vw - 12px) / 2), (max-width: 1400px) calc((93.4vw - (12px * 3)) / 4), 304px"
+  elsif columns == 5
+    assign sizes = "(max-width: 720px) calc((90vw - 12px) / 2), (max-width: 1400px) calc((93.4vw - (12px * 3)) / 4), 304px"
   endif
 -%}
 

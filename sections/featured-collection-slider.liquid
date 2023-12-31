@@ -147,10 +147,26 @@
   "name": "t:sections.featured_collection_slider.name",
   "tag": "section",
   "class": "featured-collections-slider-wrap",
-  "disabled_on": {
-    "groups": ["header", "custom.overlay"],
-    "templates": ["password"]
-  },
+  "templates": [
+    "404",
+    "article",
+    "blog",
+    "cart",
+    "collection",
+    "list-collections",
+    "customers/account",
+    "customers/activate_account",
+    "customers/addresses",
+    "customers/login",
+    "customers/order",
+    "customers/register",
+    "customers/reset_password",
+    "gift_card",
+    "index",
+    "page",
+    "product",
+    "search"
+  ],
   "settings": [
     {
       "type": "text",
@@ -189,36 +205,36 @@
     {
       "type": "select",
       "id": "columns",
-      "label": "t:shared.settings.column_count.desktop.label",
+      "label": "t:sections.collection_sections_shared.settings.columns.label",
       "default": "4",
       "options": [
         {
           "value": "3",
-          "label": "t:shared.settings.column_count.columns.option_3"
+          "label": "t:sections.collection_sections_shared.settings.columns.option_3"
         },
         {
           "value": "4",
-          "label": "t:shared.settings.column_count.columns.option_4"
+          "label": "t:sections.collection_sections_shared.settings.columns.option_4"
         },
         {
           "value": "5",
-          "label": "t:shared.settings.column_count.columns.option_5"
+          "label": "t:sections.collection_sections_shared.settings.columns.option_5"
         }
       ]
     },
     {
       "type": "select",
       "id": "mobile_columns",
-      "label": "t:shared.settings.column_count.mobile.label",
+      "label": "t:sections.collection_sections_shared.settings.mobile_columns.label",
       "default": "2",
       "options": [
         {
           "value": "1",
-          "label": "t:shared.settings.column_count.columns.option_1"
+          "label": "t:sections.collection_sections_shared.settings.mobile_columns.option_1"
         },
         {
           "value": "2",
-          "label": "t:shared.settings.column_count.columns.option_2"
+          "label": "t:sections.collection_sections_shared.settings.mobile_columns.option_2"
         }
       ]
     },

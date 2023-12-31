@@ -2,12 +2,12 @@
   if position == blank
     assign position = 'left'
   endif
-  assign social_accounts = 'Facebook, Instagram, LinkedIn, Pinterest, Snapchat, Tiktok, Tumblr, Twitter, Vimeo, WhatsApp, YouTube' | split: ', '
+  assign social_accounts = 'Facebook, Twitter, Pinterest, Instagram, Snapchat, Tiktok, Tumblr, YouTube, Vimeo, LinkedIn' | split: ', '
   assign social_count = 0
 
   for social in social_accounts
     assign social_handle = social | handleize
-    assign social_link = 'social_' | append: social_handle | append: '_link'
+    assign social_link = "social_" | append: social_handle | append: '_link'
 
     if settings[social_link] != blank
       assign social_count = social_count | plus: 1
