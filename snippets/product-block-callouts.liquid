@@ -44,11 +44,12 @@
 {% endcapture %}
 
 {% if block_settings.display_as_collapsible_row %}
+  {% assign heading = block.settings.title | default: block.settings.collapsible_row_title %}
   {%-
-    render 'product-block-accordion' with
+    render 'product-block-accordion',
     block: block,
     block_settings: block.settings,
-    heading: block.settings.title,
+    heading: heading,
     content: content,
   -%}
 {% else %}

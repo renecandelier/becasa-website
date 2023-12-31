@@ -36,7 +36,9 @@
       aria-expanded="{% if open %}true{% else %}false{% endif %}"
       aria-controls="{{ block.id }}"
     >
-      <h3 class="{{ label_font }} {{ label_font_size }}">{{ heading }}</h3>
+      <h3 class="{{ label_font }} {{ label_font_size }}">
+        {{ heading }}
+      </h3>
       <div class="accordion__label-icons">
         {% render 'icon', icon: 'plus' %}
         {% render 'icon', icon: 'minus' %}

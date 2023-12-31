@@ -8,6 +8,8 @@
     photoswipe: "{{ 'photoswipe-chunk.js' | asset_url }}",
     swiper: "{{ 'swiper-chunk.js' | asset_url }}",
     nouislider: "{{ 'nouislider-chunk.js' | asset_url }}",
+    polyfillInert: "{{ 'polyfill-inert-chunk.js' | asset_url }}",
+    polyfillResizeObserver: "{{ 'polyfill-resize-observer-chunk.js' | asset_url }}",
   };
 </script>
 
@@ -17,11 +19,14 @@
 {% if useUnminThemeJS %}
   <script type="module" src="{{ 'theme.js' | asset_url }}"></script>
 {% else %}
-  <script type="module" src="{{ 'theme.js' | asset_url }}"></script>
+  <script type="module" src="{{ 'theme.min.js' | asset_url }}"></script>
 {% endif %}
 
 {% # Set the following line to true to import custom-events.js %}
 {% assign useCustomEvents = false %}
+
+{% # Set the following line to true to import custom.css %}
+{% assign useCustomCSS = false %}
 
 {% if useCustomEvents %}
   <script src="{{ 'custom-events.js' | asset_url }}" defer></script>
@@ -37,5 +42,8 @@
   defineVH();
 </script>
 
-{{ 'theme.css' | asset_url | stylesheet_tag }}
-{{ 'custom.css' | asset_url | stylesheet_tag }}
+{{ 'theme.css' | asset_url | stylesheet_tag: preload: true }}
+
+{% if useCustomCSS %}
+  {{ 'custom.css' | asset_url | stylesheet_tag: preload: true }}
+{% endif %}

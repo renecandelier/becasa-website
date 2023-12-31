@@ -1,3 +1,9 @@
+{%- comment -%}
+  Pass in:
+  - prod: object The product object
+  - hidden: boolean (optional, used to not trip up javascript if buy button is removed)
+{%- endcomment -%}
+
 {%- liquid
   assign product_available_label = 'products.product.add_to_cart' | t
   assign product_unavailable_label = 'products.product.sold_out' | t
@@ -8,15 +14,15 @@
 -%}
 
 {%- capture form_classes -%}
-  product-form product-form-{{ section.id }}
+  product-form product-form-{{ section.id }} {% if hidden %}visually-hidden{% endif %}
 {%- endcapture -%}
 
 {% form 'product',
-  product,
+  prod,
   class: form_classes,
   novalidate: 'novalidate',
   data-product-form: '',
-  data-product-handle: product.handle,
+  data-product-handle: prod.handle,
   data-current-product-id: current_variant.id
 %}
   {% comment %}
@@ -25,13 +31,13 @@
   {% endcomment %}
   <div class="product-form__quantity">
     <div class="product__label-wrapper">
-      <label class="product__label {{ label_classes }}" for="Quantity-Input-{{ product.id }}">
+      <label class="product__label {{ label_classes }}" for="Quantity-Input-{{ prod.id }}">
         {{ 'products.product.quantity' | t }}
       </label>
     </div>
     <input
       type="number"
-      id="Quantity-{{ product.id }}"
+      id="Quantity-{{ prod.id }}"
       name="quantity"
       value="1"
       min="1"
@@ -41,11 +47,13 @@
     >
   </div>
 
-  {% comment %}
+  {% comment -%}
      option field within form remains hidden but will be updated
     from outside the form if enabled.
-  {% endcomment %}
-  {%- for block in blocks -%}
+  {% endcomment -%}
+  {% assign custom_option_blocks = blocks | where: 'type', 'custom_option' -%}
+
+  {%- for block in custom_option_blocks -%}
     {%- if block.type == 'custom_option' -%}
       <div class="product-form__custom-option">
         <label>
@@ -104,7 +112,7 @@
       id="variant-selector"
       data-variant-select
     >
-      {%- for variant in product.variants -%}
+      {%- for variant in prod.variants -%}
         <option
           value="{{ variant.id }}"
           {%- if variant == current_variant -%}
@@ -118,17 +126,28 @@
     </select>
   </div>
 
+  {% comment -%}
+    With JS enabled, this form will always be hidden, but updated from an outside form.
+
+    With JS disabled, the outside form is hidden, and this form will be visible.
+  {% endcomment -%}
+  {% if section.settings.enable_gift_card_recipient and prod.gift_card? -%}
+    {% render 'gift-card-recipient-form', source: 'product-form', product: prod, form: form %}
+  {%- endif %}
+
   <div
     class="product-form__controls-group product-form__controls-group--submit"
     {% if block %}
       {{- block.shopify_attributes -}}
     {% endif %}
   >
-    <div class="
+    <div
+      class="
         product-form__item product-form__item--submit
         {%- if show_dynamic_checkout %} product-form__item--payment-button {%- endif -%}
-        {%- if product.has_only_default_variant %} product-form__item--no-variants {%- endif -%}
-      ">
+        {%- if prod.has_only_default_variant %} product-form__item--no-variants {%- endif -%}
+      "
+    >
       <button
         type="submit"
         name="add"
@@ -175,4 +194,15 @@
       {%- endunless -%}
     </div>
   </div>
+
+  {%- if block.settings.enable_sticky_atc_bar_desktop or block.settings.enable_sticky_atc_bar_mobile -%}
+    {%
+      render 'sticky-atc-bar',
+      local_settings: block.settings,
+      prod: prod,
+      current_variant: current_variant,
+      featured_media: featured_media,
+      aspect_ratio: aspect_ratio,
+    %}
+  {%- endif -%}
 {%- endform -%}

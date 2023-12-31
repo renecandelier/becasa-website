@@ -1,3 +1,17 @@
+{%- comment -%}
+  Pass these variables into snippet:
+
+  Required:
+
+  * id: unique id to avoid collisions
+
+  Optional:
+  * show_locale: show locale selector
+  * show_country: show country selector
+  * desktop_only: indicates if this UI is only shown to desktop browsers (helps optimize CSS assets)
+  * defer_styles: indicates this UI is not visible on page load (below the fold, in popup, etc) and
+                  css loading should be deferred (helps optimize CSS assets)
+{%- endcomment -%}
 {%- if show_locale or show_country -%}
   {%- form 'localization', class: 'disclosure-form' -%}
     <div class="disclosure-form__inner">
@@ -120,4 +134,26 @@
       {%- endif -%}
     </div>
   {%- endform -%}
+
+  {% assign style_link_media = 'screen' %}
+
+  {% if desktop_only %}
+    {% assign style_link_media = 'screen and (min-width: 960px)' %}
+  {% endif %}
+
+  {% if defer_styles %}
+    <link
+      rel="preload"
+      fetchpriority="low"
+      href="{{ 'partial-flag-icons.css' | asset_url }}"
+      as="style"
+      media="{{ style_link_media }}"
+      onload="this.onload=null;this.rel='stylesheet'"
+    >
+    <noscript
+      ><link rel="stylesheet" href="{{ 'partial-flag-icons.css' | asset_url }}" media="{{ style_link_media }}"
+    ></noscript>
+  {% else %}
+    {{ 'partial-flag-icons.css' | asset_url | stylesheet_tag: media: style_link_media }}
+  {% endif %}
 {%- endif -%}

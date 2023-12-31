@@ -18,10 +18,12 @@
   3.3vw) / {{ mobile_columns }})
 {%- endcapture -%}
 
-<li class="
+<li
+  class="
     event-item
     {% if block.settings.image %}event-item--has-image{% endif %}
-  ">
+  "
+>
   <{{ link_element }}
     {% unless block.settings.link == blank %}
       href="{{ block.settings.link }}"
@@ -30,11 +32,11 @@
   >
     <div class="event-item__image-wrapper">
       {%- unless block.settings.image == blank -%}
-        {%-
-          render 'image' with
-          wrapper_class: "event-item__image",
+        {%- render 'image',
+          wrapper_class: 'event-item__image',
           image: block.settings.image,
           sizes: image_sizes,
+          focal_point: 'image_presentation',
           aspect_ratio: section.settings.aspect_ratio,
           animate: true
         -%}

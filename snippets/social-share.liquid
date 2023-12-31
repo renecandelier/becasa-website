@@ -1,9 +1,22 @@
+{%- comment -%}
+  Pass in:
+    - alignment: String
+    - share_text: String
+      - Text to display on the share button
+    - url: String
+      - URL to share
+    - title: String
+      - Title to share
+    - image: String
+      - Image to share
+{%- endcomment -%}
+
 {%- liquid
   if alignment == blank
-    assign alignment = "center-above"
+    assign alignment = 'center-above'
   endif
 
-  assign alignment_values = alignment | split: "-"
+  assign alignment_values = alignment | split: '-'
   assign horizontal_alignment = alignment_values | first
   assign vertical_alignment = alignment_values | last
 
@@ -11,11 +24,13 @@
     assign share_text = 'general.social.share' | t
   endif
 -%}
-<div class="
+<div
+  class="
     social-share
     social-sharing--align-horizontal-{{ horizontal_alignment }}
     social-sharing--align-vertical-{{ vertical_alignment }}
-  ">
+  "
+>
   <button
     type="button"
     class="btn btn--small social-share__button"

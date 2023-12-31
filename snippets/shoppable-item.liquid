@@ -26,9 +26,7 @@
   {%- capture hotspot_tag_attributes -%}{% if product_item != blank %}aria-label="{{ 'general.accessibility.open_modal' | t }}" type="button"{% endif %}{%- endcapture -%}
   <div class="shoppable-item__hotspot-wrapper animation--hotspot">
     <{{ hotspot_tag }}
-      class="
-        shoppable-item__hotspot
-      "
+      class="shoppable-item__hotspot"
       {{ hotspot_tag_attributes }}
       data-index="{{index}}"
       {{ block.shopify_attributes }}
@@ -40,33 +38,12 @@
     <div
       class="
         shoppable-item__product-card
-        {% if product_item.featured_media != blank %}shoppable-item__product-card--has-image{% endif %}
         {% if horizontal_position >= 50 %}shoppable-item__product-card--align-right{% endif %}
         hidden
       "
       aria-hidden="true"
     >
-      <button
-        type="button"
-        class="shoppable-item__close"
-        data-shoppable-item-close
-        aria-label="{{ 'general.accessibility.close_modal' | t }}"
-      >
-        {% render 'icon-button' with small: true, icon: 'close' %}
-      </button>
       <a href="{{ product_item.url }}" class="shoppable-item__product-card-inner">
-        <div class="shoppable-item__image-link">
-          {%- if product_item.featured_media != blank -%}
-            {% render 'image' with
-              id: product_item.featured_media.id,
-              image: product_item.media[0].preview_image,
-              aspect_ratio: settings.product_listing_aspect_ratio,
-              wrapper_class: 'shoppable-item__image',
-              sizes: '160px'
-            %}
-          {%- endif -%}
-        </div>
-
         <div class="shoppable-item__meta">
           <div class="shoppable-item__text">
             <h4 class="shoppable-item__product-title fs-product-title">
@@ -80,16 +57,21 @@
 
                 {% if product_item.price_varies %}
                   {%- assign sale_price = product_item.price | money -%}
-                  {{ 'products.product.on_sale_from_html' | t: price: sale_price }}
+
+                  <span class="sale">
+                    {{- 'products.product.on_sale_from_html' | t: price: sale_price -}}
+                  </span>
                 {% else %}
-                  <span class="sale">{{ product_item.price | money }}<span>
+                  <span class="sale">{{ product_item.price | money }}</span>
                 {% endif %}
               </p>
 
             {% else %}
               {% if product_item.price_varies %}
                 {%- assign price = product_item.price | money -%}
-                <p class="shoppable-item__price">{{ 'products.product.from_lowest_price_html' | t: lowest_price: price }}</p>
+                <p class="shoppable-item__price">
+                  {{ 'products.product.from_lowest_price_html' | t: lowest_price: price }}
+                </p>
               {% else %}
                 <span class="shoppable-item__price">{{ product_item.price | money }}</span>
               {% endif %}
@@ -97,15 +79,6 @@
           </div>
         </div>
       </a>
-
-      <button
-        type="button"
-        class="btn btn--tertiary btn--x-small shoppable-item__quick-view-button"
-        data-quick-view-trigger
-        data-product-url="{{ product_item.url }}"
-      >
-        {{ 'products.product.quick_view' | t }}
-      </button>
     </div>
   {%- endunless -%}
 </div>
