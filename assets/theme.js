@@ -1,838 +1,3 @@
-var _createClass$1 = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck$1(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-/**
- * This work is licensed under the W3C Software and Document License
- * (http://www.w3.org/Consortium/Legal/2015/copyright-software-and-document).
- */
-
-
-(function () {
-  console.log("Helllôo")
-  // Return early if we're not running inside of the browser.
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  // Convenience function for converting NodeLists.
-  /** @type {typeof Array.prototype.slice} */
-  var slice = Array.prototype.slice;
-
-  /**
-   * IE has a non-standard name for "matches".
-   * @type {typeof Element.prototype.matches}
-   */
-  var matches = Element.prototype.matches || Element.prototype.msMatchesSelector;
-
-  /** @type {string} */
-  var _focusableElementsString = ['a[href]', 'area[href]', 'input:not([disabled])', 'select:not([disabled])', 'textarea:not([disabled])', 'button:not([disabled])', 'details', 'summary', 'iframe', 'object', 'embed', '[contenteditable]'].join(',');
-
-  /**
-   * `InertRoot` manages a single inert subtree, i.e. a DOM subtree whose root element has an `inert`
-   * attribute.
-   *
-   * Its main functions are:
-   *
-   * - to create and maintain a set of managed `InertNode`s, including when mutations occur in the
-   *   subtree. The `makeSubtreeUnfocusable()` method handles collecting `InertNode`s via registering
-   *   each focusable node in the subtree with the singleton `InertManager` which manages all known
-   *   focusable nodes within inert subtrees. `InertManager` ensures that a single `InertNode`
-   *   instance exists for each focusable node which has at least one inert root as an ancestor.
-   *
-   * - to notify all managed `InertNode`s when this subtree stops being inert (i.e. when the `inert`
-   *   attribute is removed from the root node). This is handled in the destructor, which calls the
-   *   `deregister` method on `InertManager` for each managed inert node.
-   */
-
-  var InertRoot = function () {
-    /**
-     * @param {!Element} rootElement The Element at the root of the inert subtree.
-     * @param {!InertManager} inertManager The global singleton InertManager object.
-     */
-    function InertRoot(rootElement, inertManager) {
-      _classCallCheck$1(this, InertRoot);
-
-      /** @type {!InertManager} */
-      this._inertManager = inertManager;
-
-      /** @type {!Element} */
-      this._rootElement = rootElement;
-
-      /**
-       * @type {!Set<!InertNode>}
-       * All managed focusable nodes in this InertRoot's subtree.
-       */
-      this._managedNodes = new Set();
-
-      // Make the subtree hidden from assistive technology
-      if (this._rootElement.hasAttribute('aria-hidden')) {
-        /** @type {?string} */
-        this._savedAriaHidden = this._rootElement.getAttribute('aria-hidden');
-      } else {
-        this._savedAriaHidden = null;
-      }
-      this._rootElement.setAttribute('aria-hidden', 'true');
-
-      // Make all focusable elements in the subtree unfocusable and add them to _managedNodes
-      this._makeSubtreeUnfocusable(this._rootElement);
-
-      // Watch for:
-      // - any additions in the subtree: make them unfocusable too
-      // - any removals from the subtree: remove them from this inert root's managed nodes
-      // - attribute changes: if `tabindex` is added, or removed from an intrinsically focusable
-      //   element, make that node a managed node.
-      this._observer = new MutationObserver(this._onMutation.bind(this));
-      this._observer.observe(this._rootElement, { attributes: true, childList: true, subtree: true });
-    }
-
-    /**
-     * Call this whenever this object is about to become obsolete.  This unwinds all of the state
-     * stored in this object and updates the state of all of the managed nodes.
-     */
-
-
-    _createClass$1(InertRoot, [{
-      key: 'destructor',
-      value: function destructor() {
-        this._observer.disconnect();
-
-        if (this._rootElement) {
-          if (this._savedAriaHidden !== null) {
-            this._rootElement.setAttribute('aria-hidden', this._savedAriaHidden);
-          } else {
-            this._rootElement.removeAttribute('aria-hidden');
-          }
-        }
-
-        this._managedNodes.forEach(function (inertNode) {
-          this._unmanageNode(inertNode.node);
-        }, this);
-
-        // Note we cast the nulls to the ANY type here because:
-        // 1) We want the class properties to be declared as non-null, or else we
-        //    need even more casts throughout this code. All bets are off if an
-        //    instance has been destroyed and a method is called.
-        // 2) We don't want to cast "this", because we want type-aware optimizations
-        //    to know which properties we're setting.
-        this._observer = /** @type {?} */null;
-        this._rootElement = /** @type {?} */null;
-        this._managedNodes = /** @type {?} */null;
-        this._inertManager = /** @type {?} */null;
-      }
-
-      /**
-       * @return {!Set<!InertNode>} A copy of this InertRoot's managed nodes set.
-       */
-
-    }, {
-      key: '_makeSubtreeUnfocusable',
-
-
-      /**
-       * @param {!Node} startNode
-       */
-      value: function _makeSubtreeUnfocusable(startNode) {
-        var _this2 = this;
-
-        composedTreeWalk(startNode, function (node) {
-          return _this2._visitNode(node);
-        });
-
-        var activeElement = document.activeElement;
-
-        if (!document.body.contains(startNode)) {
-          // startNode may be in shadow DOM, so find its nearest shadowRoot to get the activeElement.
-          var node = startNode;
-          /** @type {!ShadowRoot|undefined} */
-          var root = undefined;
-          while (node) {
-            if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
-              root = /** @type {!ShadowRoot} */node;
-              break;
-            }
-            node = node.parentNode;
-          }
-          if (root) {
-            activeElement = root.activeElement;
-          }
-        }
-        if (startNode.contains(activeElement)) {
-          activeElement.blur();
-          // In IE11, if an element is already focused, and then set to tabindex=-1
-          // calling blur() will not actually move the focus.
-          // To work around this we call focus() on the body instead.
-          if (activeElement === document.activeElement) {
-            document.body.focus();
-          }
-        }
-      }
-
-      /**
-       * @param {!Node} node
-       */
-
-    }, {
-      key: '_visitNode',
-      value: function _visitNode(node) {
-        if (node.nodeType !== Node.ELEMENT_NODE) {
-          return;
-        }
-        var element = /** @type {!Element} */node;
-
-        // If a descendant inert root becomes un-inert, its descendants will still be inert because of
-        // this inert root, so all of its managed nodes need to be adopted by this InertRoot.
-        if (element !== this._rootElement && element.hasAttribute('inert')) {
-          this._adoptInertRoot(element);
-        }
-
-        if (matches.call(element, _focusableElementsString) || element.hasAttribute('tabindex')) {
-          this._manageNode(element);
-        }
-      }
-
-      /**
-       * Register the given node with this InertRoot and with InertManager.
-       * @param {!Node} node
-       */
-
-    }, {
-      key: '_manageNode',
-      value: function _manageNode(node) {
-        var inertNode = this._inertManager.register(node, this);
-        this._managedNodes.add(inertNode);
-      }
-
-      /**
-       * Unregister the given node with this InertRoot and with InertManager.
-       * @param {!Node} node
-       */
-
-    }, {
-      key: '_unmanageNode',
-      value: function _unmanageNode(node) {
-        var inertNode = this._inertManager.deregister(node, this);
-        if (inertNode) {
-          this._managedNodes['delete'](inertNode);
-        }
-      }
-
-      /**
-       * Unregister the entire subtree starting at `startNode`.
-       * @param {!Node} startNode
-       */
-
-    }, {
-      key: '_unmanageSubtree',
-      value: function _unmanageSubtree(startNode) {
-        var _this3 = this;
-
-        composedTreeWalk(startNode, function (node) {
-          return _this3._unmanageNode(node);
-        });
-      }
-
-      /**
-       * If a descendant node is found with an `inert` attribute, adopt its managed nodes.
-       * @param {!Element} node
-       */
-
-    }, {
-      key: '_adoptInertRoot',
-      value: function _adoptInertRoot(node) {
-        var inertSubroot = this._inertManager.getInertRoot(node);
-
-        // During initialisation this inert root may not have been registered yet,
-        // so register it now if need be.
-        if (!inertSubroot) {
-          this._inertManager.setInert(node, true);
-          inertSubroot = this._inertManager.getInertRoot(node);
-        }
-
-        inertSubroot.managedNodes.forEach(function (savedInertNode) {
-          this._manageNode(savedInertNode.node);
-        }, this);
-      }
-
-      /**
-       * Callback used when mutation observer detects subtree additions, removals, or attribute changes.
-       * @param {!Array<!MutationRecord>} records
-       * @param {!MutationObserver} self
-       */
-
-    }, {
-      key: '_onMutation',
-      value: function _onMutation(records, self) {
-        records.forEach(function (record) {
-          var target = /** @type {!Element} */record.target;
-          if (record.type === 'childList') {
-            // Manage added nodes
-            slice.call(record.addedNodes).forEach(function (node) {
-              this._makeSubtreeUnfocusable(node);
-            }, this);
-
-            // Un-manage removed nodes
-            slice.call(record.removedNodes).forEach(function (node) {
-              this._unmanageSubtree(node);
-            }, this);
-          } else if (record.type === 'attributes') {
-            if (record.attributeName === 'tabindex') {
-              // Re-initialise inert node if tabindex changes
-              this._manageNode(target);
-            } else if (target !== this._rootElement && record.attributeName === 'inert' && target.hasAttribute('inert')) {
-              // If a new inert root is added, adopt its managed nodes and make sure it knows about the
-              // already managed nodes from this inert subroot.
-              this._adoptInertRoot(target);
-              var inertSubroot = this._inertManager.getInertRoot(target);
-              this._managedNodes.forEach(function (managedNode) {
-                if (target.contains(managedNode.node)) {
-                  inertSubroot._manageNode(managedNode.node);
-                }
-              });
-            }
-          }
-        }, this);
-      }
-    }, {
-      key: 'managedNodes',
-      get: function get() {
-        return new Set(this._managedNodes);
-      }
-
-      /** @return {boolean} */
-
-    }, {
-      key: 'hasSavedAriaHidden',
-      get: function get() {
-        return this._savedAriaHidden !== null;
-      }
-
-      /** @param {?string} ariaHidden */
-
-    }, {
-      key: 'savedAriaHidden',
-      set: function set(ariaHidden) {
-        this._savedAriaHidden = ariaHidden;
-      }
-
-      /** @return {?string} */
-      ,
-      get: function get() {
-        return this._savedAriaHidden;
-      }
-    }]);
-
-    return InertRoot;
-  }();
-
-  /**
-   * `InertNode` initialises and manages a single inert node.
-   * A node is inert if it is a descendant of one or more inert root elements.
-   *
-   * On construction, `InertNode` saves the existing `tabindex` value for the node, if any, and
-   * either removes the `tabindex` attribute or sets it to `-1`, depending on whether the element
-   * is intrinsically focusable or not.
-   *
-   * `InertNode` maintains a set of `InertRoot`s which are descendants of this `InertNode`. When an
-   * `InertRoot` is destroyed, and calls `InertManager.deregister()`, the `InertManager` notifies the
-   * `InertNode` via `removeInertRoot()`, which in turn destroys the `InertNode` if no `InertRoot`s
-   * remain in the set. On destruction, `InertNode` reinstates the stored `tabindex` if one exists,
-   * or removes the `tabindex` attribute if the element is intrinsically focusable.
-   */
-
-
-  var InertNode = function () {
-    /**
-     * @param {!Node} node A focusable element to be made inert.
-     * @param {!InertRoot} inertRoot The inert root element associated with this inert node.
-     */
-    function InertNode(node, inertRoot) {
-      _classCallCheck$1(this, InertNode);
-
-      /** @type {!Node} */
-      this._node = node;
-
-      /** @type {boolean} */
-      this._overrodeFocusMethod = false;
-
-      /**
-       * @type {!Set<!InertRoot>} The set of descendant inert roots.
-       *    If and only if this set becomes empty, this node is no longer inert.
-       */
-      this._inertRoots = new Set([inertRoot]);
-
-      /** @type {?number} */
-      this._savedTabIndex = null;
-
-      /** @type {boolean} */
-      this._destroyed = false;
-
-      // Save any prior tabindex info and make this node untabbable
-      this.ensureUntabbable();
-    }
-
-    /**
-     * Call this whenever this object is about to become obsolete.
-     * This makes the managed node focusable again and deletes all of the previously stored state.
-     */
-
-
-    _createClass$1(InertNode, [{
-      key: 'destructor',
-      value: function destructor() {
-        this._throwIfDestroyed();
-
-        if (this._node && this._node.nodeType === Node.ELEMENT_NODE) {
-          var element = /** @type {!Element} */this._node;
-          if (this._savedTabIndex !== null) {
-            element.setAttribute('tabindex', this._savedTabIndex);
-          } else {
-            element.removeAttribute('tabindex');
-          }
-
-          // Use `delete` to restore native focus method.
-          if (this._overrodeFocusMethod) {
-            delete element.focus;
-          }
-        }
-
-        // See note in InertRoot.destructor for why we cast these nulls to ANY.
-        this._node = /** @type {?} */null;
-        this._inertRoots = /** @type {?} */null;
-        this._destroyed = true;
-      }
-
-      /**
-       * @type {boolean} Whether this object is obsolete because the managed node is no longer inert.
-       * If the object has been destroyed, any attempt to access it will cause an exception.
-       */
-
-    }, {
-      key: '_throwIfDestroyed',
-
-
-      /**
-       * Throw if user tries to access destroyed InertNode.
-       */
-      value: function _throwIfDestroyed() {
-        if (this.destroyed) {
-          throw new Error('Trying to access destroyed InertNode');
-        }
-      }
-
-      /** @return {boolean} */
-
-    }, {
-      key: 'ensureUntabbable',
-
-
-      /** Save the existing tabindex value and make the node untabbable and unfocusable */
-      value: function ensureUntabbable() {
-        if (this.node.nodeType !== Node.ELEMENT_NODE) {
-          return;
-        }
-        var element = /** @type {!Element} */this.node;
-        if (matches.call(element, _focusableElementsString)) {
-          if ( /** @type {!HTMLElement} */element.tabIndex === -1 && this.hasSavedTabIndex) {
-            return;
-          }
-
-          if (element.hasAttribute('tabindex')) {
-            this._savedTabIndex = /** @type {!HTMLElement} */element.tabIndex;
-          }
-          element.setAttribute('tabindex', '-1');
-          if (element.nodeType === Node.ELEMENT_NODE) {
-            element.focus = function () {};
-            this._overrodeFocusMethod = true;
-          }
-        } else if (element.hasAttribute('tabindex')) {
-          this._savedTabIndex = /** @type {!HTMLElement} */element.tabIndex;
-          element.removeAttribute('tabindex');
-        }
-      }
-
-      /**
-       * Add another inert root to this inert node's set of managing inert roots.
-       * @param {!InertRoot} inertRoot
-       */
-
-    }, {
-      key: 'addInertRoot',
-      value: function addInertRoot(inertRoot) {
-        this._throwIfDestroyed();
-        this._inertRoots.add(inertRoot);
-      }
-
-      /**
-       * Remove the given inert root from this inert node's set of managing inert roots.
-       * If the set of managing inert roots becomes empty, this node is no longer inert,
-       * so the object should be destroyed.
-       * @param {!InertRoot} inertRoot
-       */
-
-    }, {
-      key: 'removeInertRoot',
-      value: function removeInertRoot(inertRoot) {
-        this._throwIfDestroyed();
-        this._inertRoots['delete'](inertRoot);
-        if (this._inertRoots.size === 0) {
-          this.destructor();
-        }
-      }
-    }, {
-      key: 'destroyed',
-      get: function get() {
-        return (/** @type {!InertNode} */this._destroyed
-        );
-      }
-    }, {
-      key: 'hasSavedTabIndex',
-      get: function get() {
-        return this._savedTabIndex !== null;
-      }
-
-      /** @return {!Node} */
-
-    }, {
-      key: 'node',
-      get: function get() {
-        this._throwIfDestroyed();
-        return this._node;
-      }
-
-      /** @param {?number} tabIndex */
-
-    }, {
-      key: 'savedTabIndex',
-      set: function set(tabIndex) {
-        this._throwIfDestroyed();
-        this._savedTabIndex = tabIndex;
-      }
-
-      /** @return {?number} */
-      ,
-      get: function get() {
-        this._throwIfDestroyed();
-        return this._savedTabIndex;
-      }
-    }]);
-
-    return InertNode;
-  }();
-
-  /**
-   * InertManager is a per-document singleton object which manages all inert roots and nodes.
-   *
-   * When an element becomes an inert root by having an `inert` attribute set and/or its `inert`
-   * property set to `true`, the `setInert` method creates an `InertRoot` object for the element.
-   * The `InertRoot` in turn registers itself as managing all of the element's focusable descendant
-   * nodes via the `register()` method. The `InertManager` ensures that a single `InertNode` instance
-   * is created for each such node, via the `_managedNodes` map.
-   */
-
-
-  var InertManager = function () {
-    /**
-     * @param {!Document} document
-     */
-    function InertManager(document) {
-      _classCallCheck$1(this, InertManager);
-
-      if (!document) {
-        throw new Error('Missing required argument; InertManager needs to wrap a document.');
-      }
-
-      /** @type {!Document} */
-      this._document = document;
-
-      /**
-       * All managed nodes known to this InertManager. In a map to allow looking up by Node.
-       * @type {!Map<!Node, !InertNode>}
-       */
-      this._managedNodes = new Map();
-
-      /**
-       * All inert roots known to this InertManager. In a map to allow looking up by Node.
-       * @type {!Map<!Node, !InertRoot>}
-       */
-      this._inertRoots = new Map();
-
-      /**
-       * Observer for mutations on `document.body`.
-       * @type {!MutationObserver}
-       */
-      this._observer = new MutationObserver(this._watchForInert.bind(this));
-
-      // Add inert style.
-      addInertStyle(document.head || document.body || document.documentElement);
-
-      // Wait for document to be loaded.
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', this._onDocumentLoaded.bind(this));
-      } else {
-        this._onDocumentLoaded();
-      }
-    }
-
-    /**
-     * Set whether the given element should be an inert root or not.
-     * @param {!Element} root
-     * @param {boolean} inert
-     */
-
-
-    _createClass$1(InertManager, [{
-      key: 'setInert',
-      value: function setInert(root, inert) {
-        if (inert) {
-          if (this._inertRoots.has(root)) {
-            // element is already inert
-            return;
-          }
-
-          var inertRoot = new InertRoot(root, this);
-          root.setAttribute('inert', '');
-          this._inertRoots.set(root, inertRoot);
-          // If not contained in the document, it must be in a shadowRoot.
-          // Ensure inert styles are added there.
-          if (!this._document.body.contains(root)) {
-            var parent = root.parentNode;
-            while (parent) {
-              if (parent.nodeType === 11) {
-                addInertStyle(parent);
-              }
-              parent = parent.parentNode;
-            }
-          }
-        } else {
-          if (!this._inertRoots.has(root)) {
-            // element is already non-inert
-            return;
-          }
-
-          var _inertRoot = this._inertRoots.get(root);
-          _inertRoot.destructor();
-          this._inertRoots['delete'](root);
-          root.removeAttribute('inert');
-        }
-      }
-
-      /**
-       * Get the InertRoot object corresponding to the given inert root element, if any.
-       * @param {!Node} element
-       * @return {!InertRoot|undefined}
-       */
-
-    }, {
-      key: 'getInertRoot',
-      value: function getInertRoot(element) {
-        return this._inertRoots.get(element);
-      }
-
-      /**
-       * Register the given InertRoot as managing the given node.
-       * In the case where the node has a previously existing inert root, this inert root will
-       * be added to its set of inert roots.
-       * @param {!Node} node
-       * @param {!InertRoot} inertRoot
-       * @return {!InertNode} inertNode
-       */
-
-    }, {
-      key: 'register',
-      value: function register(node, inertRoot) {
-        var inertNode = this._managedNodes.get(node);
-        if (inertNode !== undefined) {
-          // node was already in an inert subtree
-          inertNode.addInertRoot(inertRoot);
-        } else {
-          inertNode = new InertNode(node, inertRoot);
-        }
-
-        this._managedNodes.set(node, inertNode);
-
-        return inertNode;
-      }
-
-      /**
-       * De-register the given InertRoot as managing the given inert node.
-       * Removes the inert root from the InertNode's set of managing inert roots, and remove the inert
-       * node from the InertManager's set of managed nodes if it is destroyed.
-       * If the node is not currently managed, this is essentially a no-op.
-       * @param {!Node} node
-       * @param {!InertRoot} inertRoot
-       * @return {?InertNode} The potentially destroyed InertNode associated with this node, if any.
-       */
-
-    }, {
-      key: 'deregister',
-      value: function deregister(node, inertRoot) {
-        var inertNode = this._managedNodes.get(node);
-        if (!inertNode) {
-          return null;
-        }
-
-        inertNode.removeInertRoot(inertRoot);
-        if (inertNode.destroyed) {
-          this._managedNodes['delete'](node);
-        }
-
-        return inertNode;
-      }
-
-      /**
-       * Callback used when document has finished loading.
-       */
-
-    }, {
-      key: '_onDocumentLoaded',
-      value: function _onDocumentLoaded() {
-        // Find all inert roots in document and make them actually inert.
-        var inertElements = slice.call(this._document.querySelectorAll('[inert]'));
-        inertElements.forEach(function (inertElement) {
-          this.setInert(inertElement, true);
-        }, this);
-
-        // Comment this out to use programmatic API only.
-        this._observer.observe(this._document.body || this._document.documentElement, { attributes: true, subtree: true, childList: true });
-      }
-
-      /**
-       * Callback used when mutation observer detects attribute changes.
-       * @param {!Array<!MutationRecord>} records
-       * @param {!MutationObserver} self
-       */
-
-    }, {
-      key: '_watchForInert',
-      value: function _watchForInert(records, self) {
-        var _this = this;
-        records.forEach(function (record) {
-          switch (record.type) {
-            case 'childList':
-              slice.call(record.addedNodes).forEach(function (node) {
-                if (node.nodeType !== Node.ELEMENT_NODE) {
-                  return;
-                }
-                var inertElements = slice.call(node.querySelectorAll('[inert]'));
-                if (matches.call(node, '[inert]')) {
-                  inertElements.unshift(node);
-                }
-                inertElements.forEach(function (inertElement) {
-                  this.setInert(inertElement, true);
-                }, _this);
-              }, _this);
-              break;
-            case 'attributes':
-              if (record.attributeName !== 'inert') {
-                return;
-              }
-              var target = /** @type {!Element} */record.target;
-              var inert = target.hasAttribute('inert');
-              _this.setInert(target, inert);
-              break;
-          }
-        }, this);
-      }
-    }]);
-
-    return InertManager;
-  }();
-
-  /**
-   * Recursively walk the composed tree from |node|.
-   * @param {!Node} node
-   * @param {(function (!Element))=} callback Callback to be called for each element traversed,
-   *     before descending into child nodes.
-   * @param {?ShadowRoot=} shadowRootAncestor The nearest ShadowRoot ancestor, if any.
-   */
-
-
-  function composedTreeWalk(node, callback, shadowRootAncestor) {
-    if (node.nodeType == Node.ELEMENT_NODE) {
-      var element = /** @type {!Element} */node;
-      if (callback) {
-        callback(element);
-      }
-
-      // Descend into node:
-      // If it has a ShadowRoot, ignore all child elements - these will be picked
-      // up by the <content> or <shadow> elements. Descend straight into the
-      // ShadowRoot.
-      var shadowRoot = /** @type {!HTMLElement} */element.shadowRoot;
-      if (shadowRoot) {
-        composedTreeWalk(shadowRoot, callback);
-        return;
-      }
-
-      // If it is a <content> element, descend into distributed elements - these
-      // are elements from outside the shadow root which are rendered inside the
-      // shadow DOM.
-      if (element.localName == 'content') {
-        var content = /** @type {!HTMLContentElement} */element;
-        // Verifies if ShadowDom v0 is supported.
-        var distributedNodes = content.getDistributedNodes ? content.getDistributedNodes() : [];
-        for (var i = 0; i < distributedNodes.length; i++) {
-          composedTreeWalk(distributedNodes[i], callback);
-        }
-        return;
-      }
-
-      // If it is a <slot> element, descend into assigned nodes - these
-      // are elements from outside the shadow root which are rendered inside the
-      // shadow DOM.
-      if (element.localName == 'slot') {
-        var slot = /** @type {!HTMLSlotElement} */element;
-        // Verify if ShadowDom v1 is supported.
-        var _distributedNodes = slot.assignedNodes ? slot.assignedNodes({ flatten: true }) : [];
-        for (var _i = 0; _i < _distributedNodes.length; _i++) {
-          composedTreeWalk(_distributedNodes[_i], callback);
-        }
-        return;
-      }
-    }
-
-    // If it is neither the parent of a ShadowRoot, a <content> element, a <slot>
-    // element, nor a <shadow> element recurse normally.
-    var child = node.firstChild;
-    while (child != null) {
-      composedTreeWalk(child, callback);
-      child = child.nextSibling;
-    }
-  }
-
-  /**
-   * Adds a style element to the node containing the inert specific styles
-   * @param {!Node} node
-   */
-  function addInertStyle(node) {
-    if (node.querySelector('style#inert-style, link#inert-style')) {
-      return;
-    }
-    var style = document.createElement('style');
-    style.setAttribute('id', 'inert-style');
-    style.textContent = '\n' + '[inert] {\n' + '  pointer-events: none;\n' + '  cursor: default;\n' + '}\n' + '\n' + '[inert], [inert] * {\n' + '  -webkit-user-select: none;\n' + '  -moz-user-select: none;\n' + '  -ms-user-select: none;\n' + '  user-select: none;\n' + '}\n';
-    node.appendChild(style);
-  }
-
-  if (!Element.prototype.hasOwnProperty('inert')) {
-    /** @type {!InertManager} */
-    var inertManager = new InertManager(document);
-
-    Object.defineProperty(Element.prototype, 'inert', {
-      enumerable: true,
-      /** @this {!Element} */
-      get: function get() {
-        return this.hasAttribute('inert');
-      },
-      /** @this {!Element} */
-      set: function set(inert) {
-        inertManager.setInert(this, inert);
-      }
-    });
-  }
-})();
-
 var SECTION_ID_ATTR$1 = 'data-section-id';
 
 function Section(container, properties) {
@@ -1141,10 +306,16 @@ function normalizeContainers(containers) {
 
 if (window.Shopify.designMode) {
   document.addEventListener('shopify:section:load', function(event) {
+    var container;
     var id = event.detail.sectionId;
-    var container = event.target.querySelector(
-      '[' + SECTION_ID_ATTR + '="' + id + '"]'
-    );
+
+    if (window.Shopify.visualPreviewMode) {
+      container = event.target.querySelector("[data-section-id]");
+    } else {
+      container = event.target.querySelector(
+        '[' + SECTION_ID_ATTR + '="' + id + '"]'
+      );
+    }
 
     if (container !== null) {
       load(container.getAttribute(SECTION_TYPE_ATTR), container);
@@ -1737,39 +908,37 @@ module.exports = exports.default;
 
 var Delegate = /*@__PURE__*/getDefaultExportFromCjs(browser.exports);
 
-var pageTransition = (function () {
-  var pageTransitionOverlay = document.querySelector("#page-transition-overlay");
-  var animationDuration = 200;
-
+var pageTransition = (() => {
+  const pageTransitionOverlay = document.querySelector("#page-transition-overlay");
+  const animationDuration = 200;
   if (pageTransitionOverlay) {
     pageTransitionOverlay.classList.remove("skip-transition");
     setTimeout(function () {
       pageTransitionOverlay.classList.remove("active");
     }, 0);
-    setTimeout(function () {
+    setTimeout(() => {
       // Prevent the theme editor from seeing this
       pageTransitionOverlay.classList.remove("active");
     }, animationDuration);
-    var delegate = new Delegate(document.body);
+    const delegate = new Delegate(document.body);
     delegate.on("click", 'a[href]:not([href^="#"]):not(.no-transition):not([href^="mailto:"]):not([href^="tel:"]):not([target="_blank"])', onClickedToLeave);
-
     window.onpageshow = function (e) {
       if (e.persisted) {
         pageTransitionOverlay.classList.remove("active");
       }
     };
   }
-
   function onClickedToLeave(event, target) {
     // avoid interupting open-in-new-tab click
     if (event.ctrlKey || event.metaKey) return;
-    event.preventDefault(); // Hint to browser to prerender destination
+    event.preventDefault();
 
-    var linkHint = document.createElement("link");
+    // Hint to browser to prerender destination
+    let linkHint = document.createElement("link");
     linkHint.setAttribute("rel", "prerender");
     linkHint.setAttribute("href", target.href);
     document.head.appendChild(linkHint);
-    setTimeout(function () {
+    setTimeout(() => {
       window.location.href = target.href;
     }, animationDuration);
     pageTransitionOverlay.classList.add("active");
@@ -1777,13 +946,24 @@ var pageTransition = (function () {
 });
 
 /*!
-* tabbable 5.2.1
+* tabbable 5.3.3
 * @license MIT, https://github.com/focus-trap/tabbable/blob/master/LICENSE
 */
-//Auto play 'video[controls]'
-var candidateSelectors = ['input', 'select', 'textarea', 'a[href]', 'button', '[tabindex]', 'audio[controls]', 'video[controls]', '[contenteditable]:not([contenteditable="false"])', 'details>summary:first-of-type', 'details'];
+var candidateSelectors = ['input', 'select', 'textarea', 'a[href]', 'button', '[tabindex]:not(slot)', 'audio[controls]', 'video[controls]', '[contenteditable]:not([contenteditable="false"])', 'details>summary:first-of-type', 'details'];
 var candidateSelector = /* #__PURE__ */candidateSelectors.join(',');
-var matches = typeof Element === 'undefined' ? function () {} : Element.prototype.matches || Element.prototype.msMatchesSelector || Element.prototype.webkitMatchesSelector;
+var NoElement = typeof Element === 'undefined';
+var matches = NoElement ? function () {} : Element.prototype.matches || Element.prototype.msMatchesSelector || Element.prototype.webkitMatchesSelector;
+var getRootNode = !NoElement && Element.prototype.getRootNode ? function (element) {
+  return element.getRootNode();
+} : function (element) {
+  return element.ownerDocument;
+};
+/**
+ * @param {Element} el container to check in
+ * @param {boolean} includeContainer add container to check
+ * @param {(node: Element) => boolean} filter filter candidates
+ * @returns {Element[]}
+ */
 
 var getCandidates = function getCandidates(el, includeContainer, filter) {
   var candidates = Array.prototype.slice.apply(el.querySelectorAll(candidateSelector));
@@ -1795,31 +975,120 @@ var getCandidates = function getCandidates(el, includeContainer, filter) {
   candidates = candidates.filter(filter);
   return candidates;
 };
+/**
+ * @callback GetShadowRoot
+ * @param {Element} element to check for shadow root
+ * @returns {ShadowRoot|boolean} ShadowRoot if available or boolean indicating if a shadowRoot is attached but not available.
+ */
 
-var isContentEditable = function isContentEditable(node) {
-  return node.contentEditable === 'true';
+/**
+ * @callback ShadowRootFilter
+ * @param {Element} shadowHostNode the element which contains shadow content
+ * @returns {boolean} true if a shadow root could potentially contain valid candidates.
+ */
+
+/**
+ * @typedef {Object} CandidatesScope
+ * @property {Element} scope contains inner candidates
+ * @property {Element[]} candidates
+ */
+
+/**
+ * @typedef {Object} IterativeOptions
+ * @property {GetShadowRoot|boolean} getShadowRoot true if shadow support is enabled; falsy if not;
+ *  if a function, implies shadow support is enabled and either returns the shadow root of an element
+ *  or a boolean stating if it has an undisclosed shadow root
+ * @property {(node: Element) => boolean} filter filter candidates
+ * @property {boolean} flatten if true then result will flatten any CandidatesScope into the returned list
+ * @property {ShadowRootFilter} shadowRootFilter filter shadow roots;
+ */
+
+/**
+ * @param {Element[]} elements list of element containers to match candidates from
+ * @param {boolean} includeContainer add container list to check
+ * @param {IterativeOptions} options
+ * @returns {Array.<Element|CandidatesScope>}
+ */
+
+
+var getCandidatesIteratively = function getCandidatesIteratively(elements, includeContainer, options) {
+  var candidates = [];
+  var elementsToCheck = Array.from(elements);
+
+  while (elementsToCheck.length) {
+    var element = elementsToCheck.shift();
+
+    if (element.tagName === 'SLOT') {
+      // add shadow dom slot scope (slot itself cannot be focusable)
+      var assigned = element.assignedElements();
+      var content = assigned.length ? assigned : element.children;
+      var nestedCandidates = getCandidatesIteratively(content, true, options);
+
+      if (options.flatten) {
+        candidates.push.apply(candidates, nestedCandidates);
+      } else {
+        candidates.push({
+          scope: element,
+          candidates: nestedCandidates
+        });
+      }
+    } else {
+      // check candidate element
+      var validCandidate = matches.call(element, candidateSelector);
+
+      if (validCandidate && options.filter(element) && (includeContainer || !elements.includes(element))) {
+        candidates.push(element);
+      } // iterate over shadow content if possible
+
+
+      var shadowRoot = element.shadowRoot || // check for an undisclosed shadow
+      typeof options.getShadowRoot === 'function' && options.getShadowRoot(element);
+      var validShadowRoot = !options.shadowRootFilter || options.shadowRootFilter(element);
+
+      if (shadowRoot && validShadowRoot) {
+        // add shadow dom scope IIF a shadow root node was given; otherwise, an undisclosed
+        //  shadow exists, so look at light dom children as fallback BUT create a scope for any
+        //  child candidates found because they're likely slotted elements (elements that are
+        //  children of the web component element (which has the shadow), in the light dom, but
+        //  slotted somewhere _inside_ the undisclosed shadow) -- the scope is created below,
+        //  _after_ we return from this recursive call
+        var _nestedCandidates = getCandidatesIteratively(shadowRoot === true ? element.children : shadowRoot.children, true, options);
+
+        if (options.flatten) {
+          candidates.push.apply(candidates, _nestedCandidates);
+        } else {
+          candidates.push({
+            scope: element,
+            candidates: _nestedCandidates
+          });
+        }
+      } else {
+        // there's not shadow so just dig into the element's (light dom) children
+        //  __without__ giving the element special scope treatment
+        elementsToCheck.unshift.apply(elementsToCheck, element.children);
+      }
+    }
+  }
+
+  return candidates;
 };
 
-var getTabindex = function getTabindex(node) {
-  var tabindexAttr = parseInt(node.getAttribute('tabindex'), 10);
-
-  if (!isNaN(tabindexAttr)) {
-    return tabindexAttr;
-  } // Browsers do not return `tabIndex` correctly for contentEditable nodes;
-  // so if they don't have a tabindex attribute specifically set, assume it's 0.
-
-
-  if (isContentEditable(node)) {
-    return 0;
-  } // in Chrome, <details/>, <audio controls/> and <video controls/> elements get a default
-  //  `tabIndex` of -1 when the 'tabindex' attribute isn't specified in the DOM,
-  //  yet they are still part of the regular tab order; in FF, they get a default
-  //  `tabIndex` of 0; since Chrome still puts those elements in the regular tab
-  //  order, consider their tab index to be 0.
-
-
-  if ((node.nodeName === 'AUDIO' || node.nodeName === 'VIDEO' || node.nodeName === 'DETAILS') && node.getAttribute('tabindex') === null) {
-    return 0;
+var getTabindex = function getTabindex(node, isScope) {
+  if (node.tabIndex < 0) {
+    // in Chrome, <details/>, <audio controls/> and <video controls/> elements get a default
+    // `tabIndex` of -1 when the 'tabindex' attribute isn't specified in the DOM,
+    // yet they are still part of the regular tab order; in FF, they get a default
+    // `tabIndex` of 0; since Chrome still puts those elements in the regular tab
+    // order, consider their tab index to be 0.
+    // Also browsers do not return `tabIndex` correctly for contentEditable nodes;
+    // so if they don't have a tabindex attribute specifically set, assume it's 0.
+    //
+    // isScope is positive for custom element with shadow root or slot that by default
+    // have tabIndex -1, but need to be sorted by document order in order for their
+    // content to be inserted in the correct position
+    if ((isScope || /^(AUDIO|VIDEO|DETAILS)$/.test(node.tagName) || node.isContentEditable) && isNaN(parseInt(node.getAttribute('tabindex'), 10))) {
+      return 0;
+    }
   }
 
   return node.tabIndex;
@@ -1857,7 +1126,7 @@ var isTabbableRadio = function isTabbableRadio(node) {
     return true;
   }
 
-  var radioScope = node.form || node.ownerDocument;
+  var radioScope = node.form || getRootNode(node);
 
   var queryRadios = function queryRadios(name) {
     return radioScope.querySelectorAll('input[type="radio"][name="' + name + '"]');
@@ -1889,7 +1158,23 @@ var isNonTabbableRadio = function isNonTabbableRadio(node) {
   return isRadio(node) && !isTabbableRadio(node);
 };
 
-var isHidden = function isHidden(node, displayCheck) {
+var isZeroArea = function isZeroArea(node) {
+  var _node$getBoundingClie = node.getBoundingClientRect(),
+      width = _node$getBoundingClie.width,
+      height = _node$getBoundingClie.height;
+
+  return width === 0 && height === 0;
+};
+
+var isHidden = function isHidden(node, _ref) {
+  var displayCheck = _ref.displayCheck,
+      getShadowRoot = _ref.getShadowRoot;
+
+  // NOTE: visibility will be `undefined` if node is detached from the document
+  //  (see notes about this further down), which means we will consider it visible
+  //  (this is legacy behavior from a very long way back)
+  // NOTE: we check this regardless of `displayCheck="none"` because this is a
+  //  _visibility_ check, not a _display_ check
   if (getComputedStyle(node).visibility === 'hidden') {
     return true;
   }
@@ -1899,23 +1184,95 @@ var isHidden = function isHidden(node, displayCheck) {
 
   if (matches.call(nodeUnderDetails, 'details:not([open]) *')) {
     return true;
-  }
+  } // The root node is the shadow root if the node is in a shadow DOM; some document otherwise
+  //  (but NOT _the_ document; see second 'If' comment below for more).
+  // If rootNode is shadow root, it'll have a host, which is the element to which the shadow
+  //  is attached, and the one we need to check if it's in the document or not (because the
+  //  shadow, and all nodes it contains, is never considered in the document since shadows
+  //  behave like self-contained DOMs; but if the shadow's HOST, which is part of the document,
+  //  is hidden, or is not in the document itself but is detached, it will affect the shadow's
+  //  visibility, including all the nodes it contains). The host could be any normal node,
+  //  or a custom element (i.e. web component). Either way, that's the one that is considered
+  //  part of the document, not the shadow root, nor any of its children (i.e. the node being
+  //  tested).
+  // If rootNode is not a shadow root, it won't have a host, and so rootNode should be the
+  //  document (per the docs) and while it's a Document-type object, that document does not
+  //  appear to be the same as the node's `ownerDocument` for some reason, so it's safer
+  //  to ignore the rootNode at this point, and use `node.ownerDocument`. Otherwise,
+  //  using `rootNode.contains(node)` will _always_ be true we'll get false-positives when
+  //  node is actually detached.
+
+
+  var nodeRootHost = getRootNode(node).host;
+  var nodeIsAttached = (nodeRootHost === null || nodeRootHost === void 0 ? void 0 : nodeRootHost.ownerDocument.contains(nodeRootHost)) || node.ownerDocument.contains(node);
 
   if (!displayCheck || displayCheck === 'full') {
-    while (node) {
-      if (getComputedStyle(node).display === 'none') {
-        return true;
+    if (typeof getShadowRoot === 'function') {
+      // figure out if we should consider the node to be in an undisclosed shadow and use the
+      //  'non-zero-area' fallback
+      var originalNode = node;
+
+      while (node) {
+        var parentElement = node.parentElement;
+        var rootNode = getRootNode(node);
+
+        if (parentElement && !parentElement.shadowRoot && getShadowRoot(parentElement) === true // check if there's an undisclosed shadow
+        ) {
+          // node has an undisclosed shadow which means we can only treat it as a black box, so we
+          //  fall back to a non-zero-area test
+          return isZeroArea(node);
+        } else if (node.assignedSlot) {
+          // iterate up slot
+          node = node.assignedSlot;
+        } else if (!parentElement && rootNode !== node.ownerDocument) {
+          // cross shadow boundary
+          node = rootNode.host;
+        } else {
+          // iterate up normal dom
+          node = parentElement;
+        }
       }
 
-      node = node.parentElement;
-    }
-  } else if (displayCheck === 'non-zero-area') {
-    var _node$getBoundingClie = node.getBoundingClientRect(),
-        width = _node$getBoundingClie.width,
-        height = _node$getBoundingClie.height;
+      node = originalNode;
+    } // else, `getShadowRoot` might be true, but all that does is enable shadow DOM support
+    //  (i.e. it does not also presume that all nodes might have undisclosed shadows); or
+    //  it might be a falsy value, which means shadow DOM support is disabled
+    // Since we didn't find it sitting in an undisclosed shadow (or shadows are disabled)
+    //  now we can just test to see if it would normally be visible or not, provided it's
+    //  attached to the main document.
+    // NOTE: We must consider case where node is inside a shadow DOM and given directly to
+    //  `isTabbable()` or `isFocusable()` -- regardless of `getShadowRoot` option setting.
 
-    return width === 0 && height === 0;
-  }
+
+    if (nodeIsAttached) {
+      // this works wherever the node is: if there's at least one client rect, it's
+      //  somehow displayed; it also covers the CSS 'display: contents' case where the
+      //  node itself is hidden in place of its contents; and there's no need to search
+      //  up the hierarchy either
+      return !node.getClientRects().length;
+    } // Else, the node isn't attached to the document, which means the `getClientRects()`
+    //  API will __always__ return zero rects (this can happen, for example, if React
+    //  is used to render nodes onto a detached tree, as confirmed in this thread:
+    //  https://github.com/facebook/react/issues/9117#issuecomment-284228870)
+    //
+    // It also means that even window.getComputedStyle(node).display will return `undefined`
+    //  because styles are only computed for nodes that are in the document.
+    //
+    // NOTE: THIS HAS BEEN THE CASE FOR YEARS. It is not new, nor is it caused by tabbable
+    //  somehow. Though it was never stated officially, anyone who has ever used tabbable
+    //  APIs on nodes in detached containers has actually implicitly used tabbable in what
+    //  was later (as of v5.2.0 on Apr 9, 2021) called `displayCheck="none"` mode -- essentially
+    //  considering __everything__ to be visible because of the innability to determine styles.
+
+  } else if (displayCheck === 'non-zero-area') {
+    // NOTE: Even though this tests that the node's client rect is non-zero to determine
+    //  whether it's displayed, and that a detached node will __always__ have a zero-area
+    //  client rect, we don't special-case for whether the node is attached or not. In
+    //  this mode, we do want to consider nodes that have a zero area to be hidden at all
+    //  times, and that includes attached or not.
+    return isZeroArea(node);
+  } // visible, as far as we can tell, or per current `displayCheck` mode
+
 
   return false;
 }; // form fields (nested) inside a disabled fieldset are not focusable/tabbable
@@ -1924,29 +1281,21 @@ var isHidden = function isHidden(node, displayCheck) {
 
 
 var isDisabledFromFieldset = function isDisabledFromFieldset(node) {
-  if (isInput(node) || node.tagName === 'SELECT' || node.tagName === 'TEXTAREA' || node.tagName === 'BUTTON') {
-    var parentNode = node.parentElement;
+  if (/^(INPUT|BUTTON|SELECT|TEXTAREA)$/.test(node.tagName)) {
+    var parentNode = node.parentElement; // check if `node` is contained in a disabled <fieldset>
 
     while (parentNode) {
       if (parentNode.tagName === 'FIELDSET' && parentNode.disabled) {
-        // look for the first <legend> as an immediate child of the disabled
-        //  <fieldset>: if the node is in that legend, it'll be enabled even
-        //  though the fieldset is disabled; otherwise, the node is in a
-        //  secondary/subsequent legend, or somewhere else within the fieldset
-        //  (however deep nested) and it'll be disabled
+        // look for the first <legend> among the children of the disabled <fieldset>
         for (var i = 0; i < parentNode.children.length; i++) {
-          var child = parentNode.children.item(i);
+          var child = parentNode.children.item(i); // when the first <legend> (in document order) is found
 
           if (child.tagName === 'LEGEND') {
-            if (child.contains(node)) {
-              return false;
-            } // the node isn't in the first legend (in doc order), so no matter
-            //  where it is now, it'll be disabled
-
-
-            return true;
+            // if its parent <fieldset> is not nested in another disabled <fieldset>,
+            // return whether `node` is a descendant of its first <legend>
+            return matches.call(parentNode, 'fieldset[disabled] *') ? true : !child.contains(node);
           }
-        } // the node isn't in a legend, so no matter where it is now, it'll be disabled
+        } // the disabled <fieldset> containing `node` has no <legend>
 
 
         return true;
@@ -1962,7 +1311,7 @@ var isDisabledFromFieldset = function isDisabledFromFieldset(node) {
 };
 
 var isNodeMatchingSelectorFocusable = function isNodeMatchingSelectorFocusable(options, node) {
-  if (node.disabled || isHiddenInput(node) || isHidden(node, options.displayCheck) || // For a details element with a summary, the summary element gets the focus
+  if (node.disabled || isHiddenInput(node) || isHidden(node, options) || // For a details element with a summary, the summary element gets the focus
   isDetailsWithSummary(node) || isDisabledFromFieldset(node)) {
     return false;
   }
@@ -1971,35 +1320,104 @@ var isNodeMatchingSelectorFocusable = function isNodeMatchingSelectorFocusable(o
 };
 
 var isNodeMatchingSelectorTabbable = function isNodeMatchingSelectorTabbable(options, node) {
-  if (!isNodeMatchingSelectorFocusable(options, node) || isNonTabbableRadio(node) || getTabindex(node) < 0) {
+  if (isNonTabbableRadio(node) || getTabindex(node) < 0 || !isNodeMatchingSelectorFocusable(options, node)) {
     return false;
   }
 
   return true;
 };
 
-var tabbable = function tabbable(el, options) {
-  options = options || {};
+var isValidShadowRootTabbable = function isValidShadowRootTabbable(shadowHostNode) {
+  var tabIndex = parseInt(shadowHostNode.getAttribute('tabindex'), 10);
+
+  if (isNaN(tabIndex) || tabIndex >= 0) {
+    return true;
+  } // If a custom element has an explicit negative tabindex,
+  // browsers will not allow tab targeting said element's children.
+
+
+  return false;
+};
+/**
+ * @param {Array.<Element|CandidatesScope>} candidates
+ * @returns Element[]
+ */
+
+
+var sortByOrder = function sortByOrder(candidates) {
   var regularTabbables = [];
   var orderedTabbables = [];
-  var candidates = getCandidates(el, options.includeContainer, isNodeMatchingSelectorTabbable.bind(null, options));
-  candidates.forEach(function (candidate, i) {
-    var candidateTabindex = getTabindex(candidate);
+  candidates.forEach(function (item, i) {
+    var isScope = !!item.scope;
+    var element = isScope ? item.scope : item;
+    var candidateTabindex = getTabindex(element, isScope);
+    var elements = isScope ? sortByOrder(item.candidates) : element;
 
     if (candidateTabindex === 0) {
-      regularTabbables.push(candidate);
+      isScope ? regularTabbables.push.apply(regularTabbables, elements) : regularTabbables.push(element);
     } else {
       orderedTabbables.push({
         documentOrder: i,
         tabIndex: candidateTabindex,
-        node: candidate
+        item: item,
+        isScope: isScope,
+        content: elements
       });
     }
   });
-  var tabbableNodes = orderedTabbables.sort(sortOrderedTabbables).map(function (a) {
-    return a.node;
-  }).concat(regularTabbables);
-  return tabbableNodes;
+  return orderedTabbables.sort(sortOrderedTabbables).reduce(function (acc, sortable) {
+    sortable.isScope ? acc.push.apply(acc, sortable.content) : acc.push(sortable.content);
+    return acc;
+  }, []).concat(regularTabbables);
+};
+
+var tabbable = function tabbable(el, options) {
+  options = options || {};
+  var candidates;
+
+  if (options.getShadowRoot) {
+    candidates = getCandidatesIteratively([el], options.includeContainer, {
+      filter: isNodeMatchingSelectorTabbable.bind(null, options),
+      flatten: false,
+      getShadowRoot: options.getShadowRoot,
+      shadowRootFilter: isValidShadowRootTabbable
+    });
+  } else {
+    candidates = getCandidates(el, options.includeContainer, isNodeMatchingSelectorTabbable.bind(null, options));
+  }
+
+  return sortByOrder(candidates);
+};
+
+var focusable = function focusable(el, options) {
+  options = options || {};
+  var candidates;
+
+  if (options.getShadowRoot) {
+    candidates = getCandidatesIteratively([el], options.includeContainer, {
+      filter: isNodeMatchingSelectorFocusable.bind(null, options),
+      flatten: true,
+      getShadowRoot: options.getShadowRoot
+    });
+  } else {
+    candidates = getCandidates(el, options.includeContainer, isNodeMatchingSelectorFocusable.bind(null, options));
+  }
+
+  return candidates;
+};
+
+var isTabbable = function isTabbable(node, options) {
+  options = options || {};
+
+  if (!node) {
+    throw new Error('No node provided');
+  }
+
+  if (matches.call(node, candidateSelector) === false) {
+    return false;
+  }
+
+  return isNodeMatchingSelectorTabbable(options, node);
 };
 
 var focusableCandidateSelector = /* #__PURE__ */candidateSelectors.concat('iframe').join(',');
@@ -2019,7 +1437,7 @@ var isFocusable = function isFocusable(node, options) {
 };
 
 /*!
-* focus-trap 6.7.1
+* focus-trap 6.9.4
 * @license MIT, https://github.com/focus-trap/focus-trap/blob/master/LICENSE
 */
 
@@ -2028,14 +1446,9 @@ function ownKeys(object, enumerableOnly) {
 
   if (Object.getOwnPropertySymbols) {
     var symbols = Object.getOwnPropertySymbols(object);
-
-    if (enumerableOnly) {
-      symbols = symbols.filter(function (sym) {
-        return Object.getOwnPropertyDescriptor(object, sym).enumerable;
-      });
-    }
-
-    keys.push.apply(keys, symbols);
+    enumerableOnly && (symbols = symbols.filter(function (sym) {
+      return Object.getOwnPropertyDescriptor(object, sym).enumerable;
+    })), keys.push.apply(keys, symbols);
   }
 
   return keys;
@@ -2043,19 +1456,12 @@ function ownKeys(object, enumerableOnly) {
 
 function _objectSpread2(target) {
   for (var i = 1; i < arguments.length; i++) {
-    var source = arguments[i] != null ? arguments[i] : {};
-
-    if (i % 2) {
-      ownKeys(Object(source), true).forEach(function (key) {
-        _defineProperty(target, key, source[key]);
-      });
-    } else if (Object.getOwnPropertyDescriptors) {
-      Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
-    } else {
-      ownKeys(Object(source)).forEach(function (key) {
-        Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
-      });
-    }
+    var source = null != arguments[i] ? arguments[i] : {};
+    i % 2 ? ownKeys(Object(source), !0).forEach(function (key) {
+      _defineProperty(target, key, source[key]);
+    }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) {
+      Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
+    });
   }
 
   return target;
@@ -2171,6 +1577,8 @@ var getActualTarget = function getActualTarget(event) {
 };
 
 var createFocusTrap = function createFocusTrap(elements, userOptions) {
+  // SSR: a live trap shouldn't be created in this type of environment so this
+  //  should be safe code to execute if the `document` option isn't specified
   var doc = (userOptions === null || userOptions === void 0 ? void 0 : userOptions.document) || document;
 
   var config = _objectSpread2({
@@ -2180,15 +1588,28 @@ var createFocusTrap = function createFocusTrap(elements, userOptions) {
   }, userOptions);
 
   var state = {
+    // containers given to createFocusTrap()
     // @type {Array<HTMLElement>}
     containers: [],
-    // list of objects identifying the first and last tabbable nodes in all containers/groups in
-    //  the trap
+    // list of objects identifying tabbable nodes in `containers` in the trap
     // NOTE: it's possible that a group has no tabbable nodes if nodes get removed while the trap
     //  is active, but the trap should never get to a state where there isn't at least one group
     //  with at least one tabbable node in it (that would lead to an error condition that would
     //  result in an error being thrown)
-    // @type {Array<{ container: HTMLElement, firstTabbableNode: HTMLElement|null, lastTabbableNode: HTMLElement|null }>}
+    // @type {Array<{
+    //   container: HTMLElement,
+    //   tabbableNodes: Array<HTMLElement>, // empty if none
+    //   focusableNodes: Array<HTMLElement>, // empty if none
+    //   firstTabbableNode: HTMLElement|null,
+    //   lastTabbableNode: HTMLElement|null,
+    //   nextTabbableNode: (node: HTMLElement, forward: boolean) => HTMLElement|undefined
+    // }>}
+    containerGroups: [],
+    // same order/length as `containers` list
+    // references to objects in `containerGroups`, but only those that actually have
+    //  tabbable nodes in them
+    // NOTE: same order as `containers` and `containerGroups`, but __not necessarily__
+    //  the same length
     tabbableGroups: [],
     nodeFocusedBeforeActivation: null,
     mostRecentlyFocusedNode: null,
@@ -2200,14 +1621,42 @@ var createFocusTrap = function createFocusTrap(elements, userOptions) {
   };
   var trap; // eslint-disable-line prefer-const -- some private functions reference it, and its methods reference private functions, so we must declare here and define later
 
+  /**
+   * Gets a configuration option value.
+   * @param {Object|undefined} configOverrideOptions If true, and option is defined in this set,
+   *  value will be taken from this object. Otherwise, value will be taken from base configuration.
+   * @param {string} optionName Name of the option whose value is sought.
+   * @param {string|undefined} [configOptionName] Name of option to use __instead of__ `optionName`
+   *  IIF `configOverrideOptions` is not defined. Otherwise, `optionName` is used.
+   */
+
   var getOption = function getOption(configOverrideOptions, optionName, configOptionName) {
     return configOverrideOptions && configOverrideOptions[optionName] !== undefined ? configOverrideOptions[optionName] : config[configOptionName || optionName];
   };
+  /**
+   * Finds the index of the container that contains the element.
+   * @param {HTMLElement} element
+   * @returns {number} Index of the container in either `state.containers` or
+   *  `state.containerGroups` (the order/length of these lists are the same); -1
+   *  if the element isn't found.
+   */
 
-  var containersContain = function containersContain(element) {
-    return !!(element && state.containers.some(function (container) {
-      return container.contains(element);
-    }));
+
+  var findContainerIndex = function findContainerIndex(element) {
+    // NOTE: search `containerGroups` because it's possible a group contains no tabbable
+    //  nodes, but still contains focusable nodes (e.g. if they all have `tabindex=-1`)
+    //  and we still need to find the element in there
+    return state.containerGroups.findIndex(function (_ref) {
+      var container = _ref.container,
+          tabbableNodes = _ref.tabbableNodes;
+      return container.contains(element) || // fall back to explicit tabbable search which will take into consideration any
+      //  web components if the `tabbableOptions.getShadowRoot` option was used for
+      //  the trap, enabling shadow DOM support in tabbable (`Node.contains()` doesn't
+      //  look inside web components even if open)
+      tabbableNodes.find(function (node) {
+        return node === element;
+      });
+    });
   };
   /**
    * Gets the node for the given option, which is expected to be an option that
@@ -2233,6 +1682,10 @@ var createFocusTrap = function createFocusTrap(elements, userOptions) {
       }
 
       optionValue = optionValue.apply(void 0, params);
+    }
+
+    if (optionValue === true) {
+      optionValue = undefined; // use default value
     }
 
     if (!optionValue) {
@@ -2266,7 +1719,7 @@ var createFocusTrap = function createFocusTrap(elements, userOptions) {
 
     if (node === undefined) {
       // option not specified: use fallback options
-      if (containersContain(doc.activeElement)) {
+      if (findContainerIndex(doc.activeElement) >= 0) {
         node = doc.activeElement;
       } else {
         var firstTabbableGroup = state.tabbableGroups[0];
@@ -2284,22 +1737,61 @@ var createFocusTrap = function createFocusTrap(elements, userOptions) {
   };
 
   var updateTabbableNodes = function updateTabbableNodes() {
-    state.tabbableGroups = state.containers.map(function (container) {
-      var tabbableNodes = tabbable(container);
+    state.containerGroups = state.containers.map(function (container) {
+      var tabbableNodes = tabbable(container, config.tabbableOptions); // NOTE: if we have tabbable nodes, we must have focusable nodes; focusable nodes
+      //  are a superset of tabbable nodes
 
-      if (tabbableNodes.length > 0) {
-        return {
-          container: container,
-          firstTabbableNode: tabbableNodes[0],
-          lastTabbableNode: tabbableNodes[tabbableNodes.length - 1]
-        };
-      }
+      var focusableNodes = focusable(container, config.tabbableOptions);
+      return {
+        container: container,
+        tabbableNodes: tabbableNodes,
+        focusableNodes: focusableNodes,
+        firstTabbableNode: tabbableNodes.length > 0 ? tabbableNodes[0] : null,
+        lastTabbableNode: tabbableNodes.length > 0 ? tabbableNodes[tabbableNodes.length - 1] : null,
 
-      return undefined;
-    }).filter(function (group) {
-      return !!group;
-    }); // remove groups with no tabbable nodes
-    // throw if no groups have tabbable nodes and we don't have a fallback focus node either
+        /**
+         * Finds the __tabbable__ node that follows the given node in the specified direction,
+         *  in this container, if any.
+         * @param {HTMLElement} node
+         * @param {boolean} [forward] True if going in forward tab order; false if going
+         *  in reverse.
+         * @returns {HTMLElement|undefined} The next tabbable node, if any.
+         */
+        nextTabbableNode: function nextTabbableNode(node) {
+          var forward = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+          // NOTE: If tabindex is positive (in order to manipulate the tab order separate
+          //  from the DOM order), this __will not work__ because the list of focusableNodes,
+          //  while it contains tabbable nodes, does not sort its nodes in any order other
+          //  than DOM order, because it can't: Where would you place focusable (but not
+          //  tabbable) nodes in that order? They have no order, because they aren't tabbale...
+          // Support for positive tabindex is already broken and hard to manage (possibly
+          //  not supportable, TBD), so this isn't going to make things worse than they
+          //  already are, and at least makes things better for the majority of cases where
+          //  tabindex is either 0/unset or negative.
+          // FYI, positive tabindex issue: https://github.com/focus-trap/focus-trap/issues/375
+          var nodeIdx = focusableNodes.findIndex(function (n) {
+            return n === node;
+          });
+
+          if (nodeIdx < 0) {
+            return undefined;
+          }
+
+          if (forward) {
+            return focusableNodes.slice(nodeIdx + 1).find(function (n) {
+              return isTabbable(n, config.tabbableOptions);
+            });
+          }
+
+          return focusableNodes.slice(0, nodeIdx).reverse().find(function (n) {
+            return isTabbable(n, config.tabbableOptions);
+          });
+        }
+      };
+    });
+    state.tabbableGroups = state.containerGroups.filter(function (group) {
+      return group.tabbableNodes.length > 0;
+    }); // throw if no groups have tabbable nodes and we don't have a fallback focus node either
 
     if (state.tabbableGroups.length <= 0 && !getNodeForOption('fallbackFocus') // returning false not supported for this option
     ) {
@@ -2341,7 +1833,7 @@ var createFocusTrap = function createFocusTrap(elements, userOptions) {
   var checkPointerDown = function checkPointerDown(e) {
     var target = getActualTarget(e);
 
-    if (containersContain(target)) {
+    if (findContainerIndex(target) >= 0) {
       // allow the click since it ocurred inside the trap
       return;
     }
@@ -2360,7 +1852,7 @@ var createFocusTrap = function createFocusTrap(elements, userOptions) {
         //  that was clicked, whether it's focusable or not; by setting
         //  `returnFocus: true`, we'll attempt to re-focus the node originally-focused
         //  on activation (or the configured `setReturnFocus` node)
-        returnFocus: config.returnFocusOnDeactivate && !isFocusable(target)
+        returnFocus: config.returnFocusOnDeactivate && !isFocusable(target, config.tabbableOptions)
       });
       return;
     } // This is needed for mobile devices.
@@ -2380,7 +1872,7 @@ var createFocusTrap = function createFocusTrap(elements, userOptions) {
 
   var checkFocusIn = function checkFocusIn(e) {
     var target = getActualTarget(e);
-    var targetContained = containersContain(target); // In Firefox when you Tab out of an iframe the Document is briefly focused.
+    var targetContained = findContainerIndex(target) >= 0; // In Firefox when you Tab out of an iframe the Document is briefly focused.
 
     if (targetContained || target instanceof Document) {
       if (targetContained) {
@@ -2404,12 +1896,10 @@ var createFocusTrap = function createFocusTrap(elements, userOptions) {
 
     if (state.tabbableGroups.length > 0) {
       // make sure the target is actually contained in a group
-      // NOTE: the target may also be the container itself if it's tabbable
+      // NOTE: the target may also be the container itself if it's focusable
       //  with tabIndex='-1' and was given initial focus
-      var containerIndex = findIndex(state.tabbableGroups, function (_ref) {
-        var container = _ref.container;
-        return container.contains(target);
-      });
+      var containerIndex = findContainerIndex(target);
+      var containerGroup = containerIndex >= 0 ? state.containerGroups[containerIndex] : undefined;
 
       if (containerIndex < 0) {
         // target not found in any group: quite possible focus has escaped the trap,
@@ -2429,8 +1919,11 @@ var createFocusTrap = function createFocusTrap(elements, userOptions) {
           return target === firstTabbableNode;
         });
 
-        if (startOfGroupIndex < 0 && state.tabbableGroups[containerIndex].container === target) {
-          // an exception case where the target is the container itself, in which
+        if (startOfGroupIndex < 0 && (containerGroup.container === target || isFocusable(target, config.tabbableOptions) && !isTabbable(target, config.tabbableOptions) && !containerGroup.nextTabbableNode(target, false))) {
+          // an exception case where the target is either the container itself, or
+          //  a non-tabbable node that was given focus (i.e. tabindex is negative
+          //  and user clicked on it or node was programmatically given focus)
+          //  and is not followed by any other tabbable node, in which
           //  case, we should handle shift+tab as if focus were on the container's
           //  first tabbable node, and go to the last tabbable node of the LAST group
           startOfGroupIndex = containerIndex;
@@ -2452,8 +1945,11 @@ var createFocusTrap = function createFocusTrap(elements, userOptions) {
           return target === lastTabbableNode;
         });
 
-        if (lastOfGroupIndex < 0 && state.tabbableGroups[containerIndex].container === target) {
-          // an exception case where the target is the container itself, in which
+        if (lastOfGroupIndex < 0 && (containerGroup.container === target || isFocusable(target, config.tabbableOptions) && !isTabbable(target, config.tabbableOptions) && !containerGroup.nextTabbableNode(target))) {
+          // an exception case where the target is the container itself, or
+          //  a non-tabbable node that was given focus (i.e. tabindex is negative
+          //  and user clicked on it or node was programmatically given focus)
+          //  and is not followed by any other tabbable node, in which
           //  case, we should handle tab as if focus were on the container's
           //  last tabbable node, and go to the first tabbable node of the FIRST group
           lastOfGroupIndex = containerIndex;
@@ -2495,13 +1991,13 @@ var createFocusTrap = function createFocusTrap(elements, userOptions) {
   };
 
   var checkClick = function checkClick(e) {
-    if (valueOrHandler(config.clickOutsideDeactivates, e)) {
+    var target = getActualTarget(e);
+
+    if (findContainerIndex(target) >= 0) {
       return;
     }
 
-    var target = getActualTarget(e);
-
-    if (containersContain(target)) {
+    if (valueOrHandler(config.clickOutsideDeactivates, e)) {
       return;
     }
 
@@ -2565,6 +2061,14 @@ var createFocusTrap = function createFocusTrap(elements, userOptions) {
 
 
   trap = {
+    get active() {
+      return state.active;
+    },
+
+    get paused() {
+      return state.paused;
+    },
+
     activate: function activate(activateOptions) {
       if (state.active) {
         return this;
@@ -2611,6 +2115,12 @@ var createFocusTrap = function createFocusTrap(elements, userOptions) {
         return this;
       }
 
+      var options = _objectSpread2({
+        onDeactivate: config.onDeactivate,
+        onPostDeactivate: config.onPostDeactivate,
+        checkCanReturnFocus: config.checkCanReturnFocus
+      }, deactivateOptions);
+
       clearTimeout(state.delayInitialFocusTimer); // noop if undefined
 
       state.delayInitialFocusTimer = undefined;
@@ -2618,15 +2128,14 @@ var createFocusTrap = function createFocusTrap(elements, userOptions) {
       state.active = false;
       state.paused = false;
       activeFocusTraps.deactivateTrap(trap);
-      var onDeactivate = getOption(deactivateOptions, 'onDeactivate');
-      var onPostDeactivate = getOption(deactivateOptions, 'onPostDeactivate');
-      var checkCanReturnFocus = getOption(deactivateOptions, 'checkCanReturnFocus');
+      var onDeactivate = getOption(options, 'onDeactivate');
+      var onPostDeactivate = getOption(options, 'onPostDeactivate');
+      var checkCanReturnFocus = getOption(options, 'checkCanReturnFocus');
+      var returnFocus = getOption(options, 'returnFocus', 'returnFocusOnDeactivate');
 
       if (onDeactivate) {
         onDeactivate();
       }
-
-      var returnFocus = getOption(deactivateOptions, 'returnFocus', 'returnFocusOnDeactivate');
 
       var finishDeactivation = function finishDeactivation() {
         delay(function () {
@@ -2685,7 +2194,7 @@ var createFocusTrap = function createFocusTrap(elements, userOptions) {
   return trap;
 };
 
-function _toConsumableArray$1(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 // Older browsers don't support event options, feature detect it.
 
@@ -2826,7 +2335,7 @@ var disableBodyScroll = function disableBodyScroll(targetElement, options) {
     options: options || {}
   };
 
-  locks = [].concat(_toConsumableArray$1(locks), [lock]);
+  locks = [].concat(_toConsumableArray(locks), [lock]);
 
   if (isIosDevice) {
     targetElement.ontouchstart = function (event) {
@@ -2878,9 +2387,9 @@ var enableBodyScroll = function enableBodyScroll(targetElement) {
 var n$1=function(n){if("object"!=typeof(t=n)||Array.isArray(t))throw "state should be an object";var t;},t$1=function(n,t,e,c){return (r=n,r.reduce(function(n,t,e){return n.indexOf(t)>-1?n:n.concat(t)},[])).reduce(function(n,e){return n.concat(t[e]||[])},[]).map(function(n){return n(e,c)});var r;},e$1=a(),c=e$1.on,r$1=e$1.emit,o$1=e$1.hydrate;function a(e){void 0===e&&(e={});var c={};return {getState:function(){return Object.assign({},e)},hydrate:function(r){return n$1(r),Object.assign(e,r),function(){var n=["*"].concat(Object.keys(r));t$1(n,c,e);}},on:function(n,t){return (n=[].concat(n)).map(function(n){return c[n]=(c[n]||[]).concat(t)}),function(){return n.map(function(n){return c[n].splice(c[n].indexOf(t),1)})}},emit:function(r,o,u){var a=("*"===r?[]:["*"]).concat(r);(o="function"==typeof o?o(e):o)&&(n$1(o),Object.assign(e,o),a=a.concat(Object.keys(o))),t$1(a,c,e,u);}}}
 
 function wrapIframes () {
-  var elements = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
-  elements.forEach(function (el) {
-    var wrapper = document.createElement("div");
+  let elements = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+  elements.forEach(el => {
+    const wrapper = document.createElement("div");
     wrapper.classList.add("rte__iframe");
     el.parentNode.insertBefore(wrapper, el);
     wrapper.appendChild(el);
@@ -2889,9 +2398,9 @@ function wrapIframes () {
 }
 
 function wrapTables () {
-  var elements = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
-  elements.forEach(function (el) {
-    var wrapper = document.createElement("div");
+  let elements = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+  elements.forEach(el => {
+    const wrapper = document.createElement("div");
     wrapper.classList.add("rte__table-wrapper");
     wrapper.tabIndex = 0;
     el.parentNode.insertBefore(wrapper, el);
@@ -2899,260 +2408,132 @@ function wrapTables () {
   });
 }
 
-var classes$F = {
+const classes$I = {
   visible: "is-visible",
   active: "active",
   fixed: "is-fixed"
 };
-var selectors$1E = {
+const selectors$1I = {
   closeBtn: "[data-modal-close]",
   wash: ".modal__wash",
   modalContent: ".modal__content"
 };
-
-var modal = function modal(node) {
-  var focusTrap = createFocusTrap(node, {
+const modal = node => {
+  const focusTrap = createFocusTrap(node, {
     allowOutsideClick: true
   });
-  var modalContent = n$2(selectors$1E.modalContent, node);
-  var delegate = new Delegate(document);
-  delegate.on("click", selectors$1E.wash, function () {
-    return _close();
-  });
-  var events = [e$2(n$2(selectors$1E.closeBtn, node), "click", function (e) {
+  const modalContent = n$2(selectors$1I.modalContent, node);
+  const delegate = new Delegate(document);
+  delegate.on("click", selectors$1I.wash, () => _close());
+  const events = [e$2(n$2(selectors$1I.closeBtn, node), "click", e => {
     e.preventDefault();
-
     _close();
-  }), e$2(node, "keydown", function (_ref) {
-    var keyCode = _ref.keyCode;
+  }), e$2(node, "keydown", _ref => {
+    let {
+      keyCode
+    } = _ref;
     if (keyCode === 27) _close();
-  }), c("modal:open", function (state, _ref2) {
-    var modalContent = _ref2.modalContent,
-        _ref2$narrow = _ref2.narrow,
-        narrow = _ref2$narrow === void 0 ? false : _ref2$narrow;
+  }), c("modal:open", (state, _ref2) => {
+    let {
+      modalContent,
+      narrow = false
+    } = _ref2;
     l(node, "modal--narrow", narrow);
-
     _renderModalContent(modalContent);
-
     _open();
   })];
-
-  var _renderModalContent = function _renderModalContent(content) {
-    var clonedContent = content.cloneNode(true);
+  const _renderModalContent = content => {
+    const clonedContent = content.cloneNode(true);
     modalContent.innerHTML = "";
     modalContent.appendChild(clonedContent);
     wrapIframes(t$2("iframe", modalContent));
     wrapTables(t$2("table", modalContent));
   };
-
-  var _open = function _open() {
+  const _open = () => {
     // Due to this component being shared between templates we have to
     // animate around it being fixed to the window
-    u$1(node, classes$F.active);
+    u$1(node, classes$I.active);
+    document.body.setAttribute("data-fluorescent-overlay-open", "true");
     focusTrap.activate();
     disableBodyScroll(node, {
-      allowTouchMove: function allowTouchMove(el) {
+      allowTouchMove: el => {
         while (el && el !== document.body) {
           if (el.getAttribute("data-scroll-lock-ignore") !== null) {
             return true;
           }
-
           el = el.parentNode;
         }
       },
       reserveScrollBarGap: true
     });
   };
-
-  var _close = function _close() {
+  const _close = () => {
     focusTrap.deactivate();
-    i$1(node, classes$F.active);
+    i$1(node, classes$I.active);
+    document.body.setAttribute("data-fluorescent-overlay-open", "false");
     enableBodyScroll(node);
-    setTimeout(function () {
+    setTimeout(() => {
       modalContent.innerHTML = "";
     }, 300);
   };
-
-  var unload = function unload() {
-    events.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
+  const unload = () => {
+    events.forEach(unsubscribe => unsubscribe());
   };
-
   return {
-    unload: unload
+    unload
   };
 };
 
-var AnimateProductItem = (function (items) {
-  var events = [];
-  items.forEach(function (item) {
-    var imageOne = n$2(".product-item__image--one", item);
-    var imageTwo = n$2(".product-item__image--two", item);
+var AnimateProductItem = (items => {
+  const events = [];
+  items.forEach(item => {
+    const imageOne = n$2(".product-item__image--one", item);
+    const imageTwo = n$2(".product-item__image--two", item);
     t$2(".product-item-options__list", item);
-    events.push(e$2(item, "mouseenter", function () {
+    events.push(e$2(item, "mouseenter", () => {
       enterItemAnimation(imageOne, imageTwo);
     }));
-    events.push(e$2(item, "mouseleave", function () {
+    events.push(e$2(item, "mouseleave", () => {
       leaveItemAnimation(imageOne, imageTwo);
     }));
   });
-
   function enterItemAnimation(imageOne, imageTwo, optionsElements) {
     if (imageTwo) {
       u$1(imageTwo, "active");
     }
   }
-
   function leaveItemAnimation(imageOne, imageTwo, optionsElements) {
     if (imageTwo) {
       i$1(imageTwo, "active");
     }
   }
-
   return {
-    destroy: function destroy() {
-      events.forEach(function (unsubscribe) {
-        return unsubscribe();
-      });
+    destroy() {
+      events.forEach(unsubscribe => unsubscribe());
     }
   };
 });
 
-function _typeof(obj) {
-  "@babel/helpers - typeof";
-
-  return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) {
-    return typeof obj;
-  } : function (obj) {
-    return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
-  }, _typeof(obj);
-}
-
-function _classCallCheck(instance, Constructor) {
-  if (!(instance instanceof Constructor)) {
-    throw new TypeError("Cannot call a class as a function");
-  }
-}
-
-function _defineProperties(target, props) {
-  for (var i = 0; i < props.length; i++) {
-    var descriptor = props[i];
-    descriptor.enumerable = descriptor.enumerable || false;
-    descriptor.configurable = true;
-    if ("value" in descriptor) descriptor.writable = true;
-    Object.defineProperty(target, descriptor.key, descriptor);
-  }
-}
-
-function _createClass(Constructor, protoProps, staticProps) {
-  if (protoProps) _defineProperties(Constructor.prototype, protoProps);
-  if (staticProps) _defineProperties(Constructor, staticProps);
-  Object.defineProperty(Constructor, "prototype", {
-    writable: false
-  });
-  return Constructor;
-}
-
-function _slicedToArray(arr, i) {
-  return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest();
-}
-
-function _toConsumableArray(arr) {
-  return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread();
-}
-
-function _arrayWithoutHoles(arr) {
-  if (Array.isArray(arr)) return _arrayLikeToArray(arr);
-}
-
-function _arrayWithHoles(arr) {
-  if (Array.isArray(arr)) return arr;
-}
-
-function _iterableToArray(iter) {
-  if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter);
-}
-
-function _iterableToArrayLimit(arr, i) {
-  var _i = arr == null ? null : typeof Symbol !== "undefined" && arr[Symbol.iterator] || arr["@@iterator"];
-
-  if (_i == null) return;
-  var _arr = [];
-  var _n = true;
-  var _d = false;
-
-  var _s, _e;
-
-  try {
-    for (_i = _i.call(arr); !(_n = (_s = _i.next()).done); _n = true) {
-      _arr.push(_s.value);
-
-      if (i && _arr.length === i) break;
-    }
-  } catch (err) {
-    _d = true;
-    _e = err;
-  } finally {
-    try {
-      if (!_n && _i["return"] != null) _i["return"]();
-    } finally {
-      if (_d) throw _e;
-    }
-  }
-
-  return _arr;
-}
-
-function _unsupportedIterableToArray(o, minLen) {
-  if (!o) return;
-  if (typeof o === "string") return _arrayLikeToArray(o, minLen);
-  var n = Object.prototype.toString.call(o).slice(8, -1);
-  if (n === "Object" && o.constructor) n = o.constructor.name;
-  if (n === "Map" || n === "Set") return Array.from(o);
-  if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen);
-}
-
-function _arrayLikeToArray(arr, len) {
-  if (len == null || len > arr.length) len = arr.length;
-
-  for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
-
-  return arr2;
-}
-
-function _nonIterableSpread() {
-  throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
-}
-
-function _nonIterableRest() {
-  throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
-}
-
 function getMediaQuery(querySize) {
-  var value = getComputedStyle(document.documentElement).getPropertyValue("--media-".concat(querySize));
-
+  const value = getComputedStyle(document.documentElement).getPropertyValue("--media-".concat(querySize));
   if (!value) {
     console.warn("Invalid querySize passed to getMediaQuery");
     return false;
   }
-
   return value;
 }
 
 var intersectionWatcher = (function (node) {
-  var instant = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-  var margin = window.matchMedia(getMediaQuery("above-720")).matches ? 200 : 100;
-  var threshold = 0;
-
+  let instant = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+  const margin = window.matchMedia(getMediaQuery("above-720")).matches ? 200 : 100;
+  let threshold = 0;
   if (!instant) {
     threshold = Math.min(margin / node.offsetHeight, 0.5);
   }
-
-  var observer = new IntersectionObserver(function (_ref) {
-    var _ref2 = _slicedToArray(_ref, 1),
-        visible = _ref2[0].isIntersecting;
-
+  const observer = new IntersectionObserver(_ref => {
+    let [{
+      isIntersecting: visible
+    }] = _ref;
     if (visible) {
       u$1(node, "is-visible");
       observer.disconnect();
@@ -3162,7 +2543,7 @@ var intersectionWatcher = (function (node) {
   });
   observer.observe(node);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer === null || observer === void 0 ? void 0 : observer.disconnect();
     }
   };
@@ -3173,225 +2554,228 @@ var intersectionWatcher = (function (node) {
  * @param {node} element The section element
  * @param {items} array Array of animation items
  */
-
 var delayOffset = (function (node, items) {
-  var offsetStart = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
-  var delayOffset = offsetStart;
-  items.forEach(function (selector) {
-    var items = t$2(selector, node);
-    items.forEach(function (item) {
+  let offsetStart = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+  let delayOffset = offsetStart;
+  items.forEach(selector => {
+    const items = t$2(selector, node);
+    items.forEach(item => {
       item.style.setProperty("--delay-offset-multiplier", delayOffset);
       delayOffset++;
     });
   });
 });
 
-var shouldAnimate = (function (node) {
+var shouldAnimate = (node => {
   return a$1(node, "animation") && !a$1(document.documentElement, "prefers-reduced-motion");
 });
 
-var selectors$1D = {
+const selectors$1H = {
   sectionBlockItems: ".section-blocks > *",
   image: ".image-with-text__image .image__img",
   imageSmall: ".image-with-text__small-image .image__img",
   imageCaption: ".image-with-text__image-caption"
 };
-var animateImageWithText = (function (node) {
+var animateImageWithText = (node => {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1D.image, selectors$1D.imageSmall, selectors$1D.imageCaption]);
-  delayOffset(node, [selectors$1D.sectionBlockItems], 6);
-  var observer = intersectionWatcher(node);
+  delayOffset(node, [selectors$1H.image, selectors$1H.imageSmall, selectors$1H.imageCaption]);
+  delayOffset(node, [selectors$1H.sectionBlockItems], 6);
+  const observer = intersectionWatcher(node);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
     }
   };
 });
 
-var selectors$1C = {
+const selectors$1G = {
   sectionBlockItems: ".section-blocks > *",
   image: ".image-with-text-split__image .image__img"
 };
-var animateImageWithTextSplit = (function (node) {
+var animateImageWithTextSplit = (node => {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1C.image]);
-  delayOffset(node, [selectors$1C.sectionBlockItems], 6);
-  var observer = intersectionWatcher(node);
+  delayOffset(node, [selectors$1G.image]);
+  delayOffset(node, [selectors$1G.sectionBlockItems], 6);
+  const observer = intersectionWatcher(node);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
     }
   };
 });
 
-var selectors$1B = {
+const selectors$1F = {
   content: ".testimonials__item-content > *",
   image: ".testimonials__item-product-image",
   imageCaption: ".testimonials__item-product-title",
   item: ".animation--item"
 };
-var classes$E = {
+const classes$H = {
   imageRight: "testimonials__item--image-placement-right"
 };
-var animateTestimonials = (function (node) {
-  var delayItems = []; // Create an array of selectors for the animation elements
+var animateTestimonials = (node => {
+  const delayItems = [];
+
+  // Create an array of selectors for the animation elements
   // in the order they should animate in
-
-  if (a$1(node, classes$E.imageRight)) {
-    delayItems.push(selectors$1B.content);
-    delayItems.push(selectors$1B.image);
-    delayItems.push(selectors$1B.imageCaption);
+  if (a$1(node, classes$H.imageRight)) {
+    delayItems.push(selectors$1F.content);
+    delayItems.push(selectors$1F.image);
+    delayItems.push(selectors$1F.imageCaption);
   } else {
-    delayItems.push(selectors$1B.image);
-    delayItems.push(selectors$1B.imageCaption);
-    delayItems.push(selectors$1B.content);
-  } // Add the animation delay offset variables
+    delayItems.push(selectors$1F.image);
+    delayItems.push(selectors$1F.imageCaption);
+    delayItems.push(selectors$1F.content);
+  }
 
-
+  // Add the animation delay offset variables
   delayOffset(node, delayItems, 2);
-  delayOffset(node, [selectors$1B.item]);
+  delayOffset(node, [selectors$1F.item]);
 });
 
-var selectors$1A = {
+const selectors$1E = {
   content: ".quote__item-inner > *"
 };
-var animateQuotes = (function (node) {
+var animateQuotes = (node => {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1A.content]);
+  delayOffset(node, [selectors$1E.content]);
 });
 
-var selectors$1z = {
+const selectors$1D = {
   sectionBlockItems: ".animation--section-introduction > *",
   controls: ".animation--controls",
   items: ".animation--item"
 };
-var animateListSlider = (function (node) {
-  var delayItems = [selectors$1z.sectionBlockItems, selectors$1z.controls, selectors$1z.items]; // Add the animation delay offset variables
+var animateListSlider = (node => {
+  const delayItems = [selectors$1D.sectionBlockItems, selectors$1D.controls, selectors$1D.items];
 
+  // Add the animation delay offset variables
   delayOffset(node, delayItems);
-  var observer = intersectionWatcher(node);
+  const observer = intersectionWatcher(node);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
     }
   };
 });
 
-var selectors$1y = {
+const selectors$1C = {
   introductionItems: ".section-introduction > *",
-  image: ".complete-the-look__image-wrapper .image__img",
+  media: ".complete-the-look__image-wrapper .image__img, .complete-the-look__image-wrapper .video",
   product: ".complete-the-look__product",
   products: ".complete-the-look__products"
 };
-var classes$D = {
+const classes$G = {
   imageLeft: "complete-the-look--image-left"
 };
-var animateCompleteTheLook = (function (node) {
-  var delayItems = [];
-  delayItems.push(selectors$1y.introductionItems); // Create an array of selectors for the animation elements
+var animateCompleteTheLook = (node => {
+  const delayItems = [];
+  delayItems.push(selectors$1C.introductionItems);
+
+  // Create an array of selectors for the animation elements
   // in the order they should animate in
-
-  if (a$1(node, classes$D.imageLeft) || window.matchMedia(getMediaQuery("below-720")).matches) {
-    delayItems.push(selectors$1y.image);
-    delayItems.push(selectors$1y.products);
-    delayItems.push(selectors$1y.product);
+  if (a$1(node, classes$G.imageLeft) || window.matchMedia(getMediaQuery("below-720")).matches) {
+    delayItems.push(selectors$1C.media);
+    delayItems.push(selectors$1C.products);
+    delayItems.push(selectors$1C.product);
   } else {
-    delayItems.push(selectors$1y.products);
-    delayItems.push(selectors$1y.product);
-    delayItems.push(selectors$1y.image);
-  } // Add the animation delay offset variables
+    delayItems.push(selectors$1C.products);
+    delayItems.push(selectors$1C.product);
+    delayItems.push(selectors$1C.media);
+  }
 
-
+  // Add the animation delay offset variables
   delayOffset(node, delayItems);
-  var observer = intersectionWatcher(node);
+  const observer = intersectionWatcher(node);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer.destroy();
     }
   };
 });
 
-var selectors$1x = {
+const selectors$1B = {
   introductionItems: ".section-introduction > *",
   image: ".shoppable-image__image-wrapper .image__img",
   hotspots: ".shoppable-item__hotspot-wrapper"
 };
-var animateShoppableImage = (function (node) {
+var animateShoppableImage = (node => {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1x.introductionItems, selectors$1x.image, selectors$1x.hotspots]);
-  var observer = intersectionWatcher(node);
+  delayOffset(node, [selectors$1B.introductionItems, selectors$1B.image, selectors$1B.hotspots]);
+  const observer = intersectionWatcher(node);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer.destroy();
     }
   };
 });
 
-var selectors$1w = {
+const selectors$1A = {
   introductionItems: ".section-introduction > *",
   carousel: ".shoppable-feature__secondary-content .shoppable-feature__carousel-outer",
   hotspots: ".shoppable-item__hotspot-wrapper",
   mobileDrawerItems: ".animation--shoppable-feature-mobile-drawer  .shoppable-feature__carousel-outer > *:not(.swiper-pagination)"
 };
-var animateShoppableFeature = (function (node) {
+var animateShoppableFeature = (node => {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1w.introductionItems, selectors$1w.carousel], 1);
-  delayOffset(node, [selectors$1w.hotspots], 1); // Add separate delay offsets for mobile drawer
-
-  delayOffset(node, [selectors$1w.mobileDrawerItems], 1);
-  var observer = intersectionWatcher(node);
+  delayOffset(node, [selectors$1A.introductionItems, selectors$1A.carousel], 1);
+  delayOffset(node, [selectors$1A.hotspots], 1);
+  // Add separate delay offsets for mobile drawer
+  delayOffset(node, [selectors$1A.mobileDrawerItems], 1);
+  const observer = intersectionWatcher(node);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer.destroy();
     }
   };
 });
 
-var selectors$1v = {
+const selectors$1z = {
   textContent: ".image-hero-split-item__text-container-inner > *"
 };
-var animateImageHeroSplit = (function (node) {
+var animateImageHeroSplit = (node => {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1v.textContent], 1);
+  delayOffset(node, [selectors$1z.textContent], 1);
 });
 
-var selectors$1u = {
+const selectors$1y = {
   textContent: ".image-hero__text-container-inner > *"
 };
-var animateImageHero = (function (node) {
+var animateImageHero = (node => {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1u.textContent], 3);
-  var observer = intersectionWatcher(node);
+  delayOffset(node, [selectors$1y.textContent], 3);
+  const observer = intersectionWatcher(node);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
     }
   };
 });
 
-var classes$C = {
+const classes$F = {
   animation: "animation--image-compare"
 };
-var selectors$1t = {
+const selectors$1x = {
   introductionItems: ".animation--section-introduction > *",
   image: ".image_compare__image-wrapper .image__img",
   labels: ".image-compare__label-container",
   sliderLine: ".image-compare__slider-line",
   sliderButton: ".image-compare__slider-button"
 };
-var animateImageCompare = (function (node) {
-  delayOffset(node, [selectors$1t.introductionItems, selectors$1t.image, selectors$1t.labels, selectors$1t.sliderLine, selectors$1t.sliderButton]);
-  var margin = window.matchMedia(getMediaQuery("above-720")).matches ? 200 : 100;
-  var threshold = Math.min(margin / node.offsetHeight, 0.5);
-  var observer = new IntersectionObserver(function (_ref) {
-    var _ref2 = _slicedToArray(_ref, 1),
-        visible = _ref2[0].isIntersecting;
-
+var animateImageCompare = (node => {
+  delayOffset(node, [selectors$1x.introductionItems, selectors$1x.image, selectors$1x.labels, selectors$1x.sliderLine, selectors$1x.sliderButton]);
+  const margin = window.matchMedia(getMediaQuery("above-720")).matches ? 200 : 100;
+  const threshold = Math.min(margin / node.offsetHeight, 0.5);
+  const observer = new IntersectionObserver(_ref => {
+    let [{
+      isIntersecting: visible
+    }] = _ref;
     if (visible) {
-      u$1(node, "is-visible"); // Enable slider controls by removing animation class after animation duration
+      u$1(node, "is-visible");
 
-      setTimeout(function () {
-        i$1(node, classes$C.animation);
+      // Enable slider controls by removing animation class after animation duration
+      setTimeout(() => {
+        i$1(node, classes$F.animation);
       }, 1200);
       observer.disconnect();
     }
@@ -3400,335 +2784,353 @@ var animateImageCompare = (function (node) {
   });
   observer.observe(node);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer.destroy();
     }
   };
 });
 
-var selectors$1s = {
+const selectors$1w = {
   textContent: ".video__text-container > *"
 };
-var animateVideo = (function (node) {
+var animateVideo = (node => {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1s.textContent], 3);
-  var observer = intersectionWatcher(node);
+  delayOffset(node, [selectors$1w.textContent], 3);
+  const observer = intersectionWatcher(node);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
     }
   };
 });
 
-var selectors$1r = {
+const selectors$1v = {
   textContent: ".video-hero__text-container > *"
 };
-var animateVideoHero = (function (node) {
+var animateVideoHero = (node => {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1r.textContent], 3);
-  var observer = intersectionWatcher(node);
+  delayOffset(node, [selectors$1v.textContent], 3);
+  const observer = intersectionWatcher(node);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
     }
   };
 });
 
-var selectors$1q = {
+const selectors$1u = {
   articleHeading: "\n    .article__image-container,\n    .article__header-inner > *\n  ",
   articleContent: ".article__content"
 };
-var animateArticle = (function (node) {
+var animateArticle = (node => {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1q.articleHeading, selectors$1q.articleContent]);
-  var articleHeading = t$2(selectors$1q.articleHeading, node);
-  var articleContent = n$2(selectors$1q.articleContent, node);
-  var observers = articleHeading.map(function (item) {
-    return intersectionWatcher(item);
-  });
+  delayOffset(node, [selectors$1u.articleHeading, selectors$1u.articleContent]);
+  const articleHeading = t$2(selectors$1u.articleHeading, node);
+  const articleContent = n$2(selectors$1u.articleContent, node);
+  const observers = articleHeading.map(item => intersectionWatcher(item));
   observers.push(intersectionWatcher(articleContent));
   return {
-    destroy: function destroy() {
-      observers.forEach(function (observer) {
-        return observer.destroy();
-      });
+    destroy() {
+      observers.forEach(observer => observer.destroy());
     }
   };
 });
 
-var selectors$1p = {
+const selectors$1t = {
   image: ".collection-banner__image-container",
   content: ".collection-banner__text-container-inner > *"
 };
-var animateCollectionBanner = (function (node) {
+var animateCollectionBanner = (node => {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1p.image, selectors$1p.content]);
-  var observer = intersectionWatcher(node);
+  delayOffset(node, [selectors$1t.image, selectors$1t.content]);
+  const observer = intersectionWatcher(node);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
     }
   };
 });
 
-var selectors$1o = {
+const selectors$1s = {
+  stickyHeader: ".header[data-enable-sticky-header='true']",
   partial: "[data-partial]",
   filterBar: "[data-filter-bar]",
   mobileFilterBar: "[data-mobile-filters]",
   productItems: ".animation--item:not(.animation--item-revealed)"
 };
-var classes$B = {
+const classes$E = {
   hideProducts: "animation--collection-products-hide",
-  itemRevealed: "animation--item-revealed"
+  itemRevealed: "animation--item-revealed",
+  stickyFilterBar: "filter-bar--sticky"
 };
-var animateCollection = (function (node) {
-  var partial = n$2(selectors$1o.partial, node);
-  var filterbarEl = n$2(selectors$1o.filterBar, node);
-  var mobileFilterBarEl = n$2(selectors$1o.mobileFilterBar, node);
-  var filterbarObserver = null;
-
+var animateCollection = (node => {
+  const stickyHeader = n$2(selectors$1s.stickyHeader, document);
+  const partial = n$2(selectors$1s.partial, node);
+  const filterbarEl = n$2(selectors$1s.filterBar, node);
+  const mobileFilterBarEl = n$2(selectors$1s.mobileFilterBar, node);
+  let filterbarObserver = null;
   if (filterbarEl) {
     filterbarObserver = intersectionWatcher(filterbarEl, true);
   }
-
-  var mobileFilterBarObserver = null;
-
+  let mobileFilterBarObserver = null;
   if (mobileFilterBarEl) {
     mobileFilterBarObserver = intersectionWatcher(mobileFilterBarEl, true);
   }
-
   setupProductItem();
-
   function setupProductItem() {
-    var productItems = t$2(selectors$1o.productItems, node);
-    delayOffset(node, [selectors$1o.productItems]);
-    setTimeout(function () {
-      u$1(productItems, classes$B.itemRevealed);
+    let productItems = t$2(selectors$1s.productItems, node);
+    delayOffset(node, [selectors$1s.productItems]);
+    setTimeout(() => {
+      u$1(productItems, classes$E.itemRevealed);
     }, 0);
-  } // Scroll to top of collection grid after applying filters
+  }
+
+  // Scroll to top of collection grid after applying filters
   // to show the newly filtered list of products
-
-
   function _scrollIntoView() {
-    var y = partial.getBoundingClientRect().top + window.pageYOffset - filterbarEl.getBoundingClientRect().height;
+    const stickyHeaderHeight = stickyHeader ? stickyHeader.getBoundingClientRect().height / 2 : 0;
+    const y = node.getBoundingClientRect().top + window.pageYOffset - stickyHeaderHeight;
     window.scrollTo({
       top: y,
       behavior: "smooth"
     });
   }
-
   function updateContents() {
-    setupProductItem(); // Remove the fade out class
-
-    i$1(partial, classes$B.hideProducts);
-
+    setupProductItem();
+    // Remove the fade out class
+    i$1(partial, classes$E.hideProducts);
     _scrollIntoView();
   }
-
   function infiniteScrollReveal() {
     setupProductItem();
   }
-
   return {
-    updateContents: updateContents,
-    infiniteScrollReveal: infiniteScrollReveal,
-    destroy: function destroy() {
+    updateContents,
+    infiniteScrollReveal,
+    destroy() {
       var _filterbarObserver, _mobileFilterBarObser;
-
       (_filterbarObserver = filterbarObserver) === null || _filterbarObserver === void 0 ? void 0 : _filterbarObserver.destroy();
       (_mobileFilterBarObser = mobileFilterBarObserver) === null || _mobileFilterBarObser === void 0 ? void 0 : _mobileFilterBarObser.destroy();
     }
   };
 });
 
-var selectors$1n = {
+const selectors$1r = {
   saleAmount: ".animation--sale-amount",
   sectionBlockItems: ".animation--section-blocks > *",
   saleItems: ".sale-promotion .sale-promotion__type,\n  .sale-promotion .sale-promotion__unit-currency,\n  .sale-promotion .sale-promotion__unit-percent,\n  .sale-promotion .sale-promotion__unit-off,\n  .sale-promotion .sale-promotion__amount,\n  .sale-promotion .sale-promotion__per-month,\n  .sale-promotion .sale-promotion__per-year,\n  .sale-promotion .sale-promotion__terms,\n  .sale-promotion .sales-banner__button"
 };
-var animateSalesBanner = (function (node) {
-  var leftColumnDelayItems = [selectors$1n.saleAmount, selectors$1n.saleItems];
-  var rightColumnDelayItems = [selectors$1n.sectionBlockItems]; // Add the animation delay offset variables
+var animateSalesBanner = (node => {
+  const leftColumnDelayItems = [selectors$1r.saleAmount, selectors$1r.saleItems];
+  const rightColumnDelayItems = [selectors$1r.sectionBlockItems];
 
+  // Add the animation delay offset variables
   delayOffset(node, leftColumnDelayItems);
   delayOffset(node, rightColumnDelayItems, 1);
-  var observer = intersectionWatcher(node);
+  const observer = intersectionWatcher(node);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
     }
   };
 });
 
-var selectors$1m = {
+const selectors$1q = {
   sectionBlockItems: ".section-blocks > *"
 };
-var animateCountdownBanner = (function (node) {
-  var observer = intersectionWatcher(node);
-  delayOffset(node, [selectors$1m.sectionBlockItems]);
+var animateCountdownBanner = (node => {
+  const observer = intersectionWatcher(node);
+  delayOffset(node, [selectors$1q.sectionBlockItems]);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
     }
   };
 });
 
-var selectors$1l = {
+const selectors$1p = {
   items: "\n  .sales-banner__bar-item--heading,\n  .sales-banner__bar-text,\n  .sales-banner__button,\n  .countdown-banner__bar-item--heading,\n  .countdown-banner__bar-item--timer,\n  .countdown-banner__bar-text,\n  .countdown-banner__button"
 };
-var animateCountdownBar = (function (node) {
-  var observer = intersectionWatcher(node);
-  delayOffset(node, [selectors$1l.items]);
+var animateCountdownBar = (node => {
+  const observer = intersectionWatcher(node);
+  delayOffset(node, [selectors$1p.items]);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
     }
   };
 });
 
-var animatePromotionBar = (function (node) {
-  var observer = intersectionWatcher(node);
+var animatePromotionBar = (node => {
+  const observer = intersectionWatcher(node);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
     }
   };
 });
 
-var selectors$1k = {
+const selectors$1o = {
   headerItems: ".animation--blog-header > *",
   articleItem: ".article-item",
   pagination: ".blog__pagination"
 };
-var animateBlog = (function (node) {
-  delayOffset(node, [selectors$1k.headerItems, selectors$1k.articleItem, selectors$1k.pagination]);
-  var observer = intersectionWatcher(node, true);
+var animateBlog = (node => {
+  delayOffset(node, [selectors$1o.headerItems, selectors$1o.articleItem, selectors$1o.pagination]);
+  const observer = intersectionWatcher(node, true);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
     }
   };
 });
 
-var selectors$1j = {
+const selectors$1n = {
   flyouts: "[data-filter-modal]",
   animationFilterDrawerItem: ".animation--filter-drawer-item"
 };
-var classes$A = {
+const classes$D = {
   animationRevealed: "animation--filter-bar-revealed",
   animationFilterDrawerItem: "animation--filter-drawer-item"
 };
-var animateFilterDrawer = (function (node) {
-  var flyouts = t$2(selectors$1j.flyouts, node);
-  flyouts.forEach(_setupItemOffsets); // Set the position offset on each time to be animated
+var animateFilterDrawer = (node => {
+  const flyouts = t$2(selectors$1n.flyouts, node);
+  flyouts.forEach(_setupItemOffsets);
 
+  // Set the position offset on each time to be animated
   function _setupItemOffsets(flyout) {
-    delayOffset(flyout, [selectors$1j.animationFilterDrawerItem]);
-  } // Trigger the reveal animation when the drawer is opened
-
-
-  function open(flyout) {
-    u$1(flyout, classes$A.animationRevealed);
-  } // Reset the reveal animation when the drawer is closed
-
-
-  function close(flyouts) {
-    i$1(flyouts, classes$A.animationRevealed);
+    delayOffset(flyout, [selectors$1n.animationFilterDrawerItem]);
   }
 
+  // Trigger the reveal animation when the drawer is opened
+  function open(flyout) {
+    u$1(flyout, classes$D.animationRevealed);
+  }
+
+  // Reset the reveal animation when the drawer is closed
+  function close(flyouts) {
+    i$1(flyouts, classes$D.animationRevealed);
+  }
   return {
-    open: open,
-    close: close
+    open,
+    close
   };
 });
 
-var selectors$1i = {
+const selectors$1m = {
+  sidebar: ".filter-sidebar-inner",
+  sidebarItem: ".animation--filter-drawer-item"
+};
+const classes$C = {
+  animationRevealed: "animation--filter-sidebar-revealed"
+};
+var animateFilterSidebar = (node => {
+  const sidebar = n$2(selectors$1m.sidebar, node);
+
+  // Set the position offset on each time to be animated
+  delayOffset(sidebar, [selectors$1m.sidebarItem]);
+
+  // Trigger the reveal animation when the drawer is opened
+  function open(sidebar) {
+    u$1(sidebar, classes$C.animationRevealed);
+  }
+
+  // Reset the reveal animation when the drawer is closed
+  function close(sidebar) {
+    i$1(sidebar, classes$C.animationRevealed);
+  }
+  return {
+    open,
+    close
+  };
+});
+
+const selectors$1l = {
   animationItem: ".animation--drawer-menu-item"
 };
-var classes$z = {
+const classes$B = {
   animationRevealed: "animation--drawer-menu-revealed"
 };
-var animateDrawerMenu = (function (node) {
-  delayOffset(node, [selectors$1i.animationItem]); // Trigger the reveal animation when the drawer is opened
+var animateDrawerMenu = (node => {
+  delayOffset(node, [selectors$1l.animationItem]);
 
+  // Trigger the reveal animation when the drawer is opened
   function open() {
     if (shouldAnimate(node)) {
-      u$1(node, classes$z.animationRevealed);
-    }
-  } // Trigger the reveal animation when the drawer is opened
-
-
-  function close() {
-    if (shouldAnimate(node)) {
-      i$1(node, classes$z.animationRevealed);
+      u$1(node, classes$B.animationRevealed);
     }
   }
 
+  // Trigger the reveal animation when the drawer is opened
+  function close() {
+    if (shouldAnimate(node)) {
+      i$1(node, classes$B.animationRevealed);
+    }
+  }
   return {
-    open: open,
-    close: close
+    open,
+    close
   };
 });
 
-var selectors$1h = {
+const selectors$1k = {
   animationItem: ".animation--quick-cart-items > *, .animation--quick-cart-footer"
 };
-var classes$y = {
+const classes$A = {
   animationRevealed: "animation--quick-cart-revealed"
 };
-var animateQuickCart = (function (node) {
-  setup(); // Trigger the reveal animation when the drawer is opened
+var animateQuickCart = (node => {
+  setup();
 
+  // Trigger the reveal animation when the drawer is opened
   function open() {
-    u$1(node, classes$y.animationRevealed);
-  } // Reset the reveal animation when the drawer is closed
-
-
-  function close() {
-    i$1(node, classes$y.animationRevealed);
-  } // Setup delay offsets
-
-
-  function setup() {
-    delayOffset(node, [selectors$1h.animationItem]);
+    u$1(node, classes$A.animationRevealed);
   }
 
+  // Reset the reveal animation when the drawer is closed
+  function close() {
+    i$1(node, classes$A.animationRevealed);
+  }
+
+  // Setup delay offsets
+  function setup() {
+    delayOffset(node, [selectors$1k.animationItem]);
+  }
   return {
-    open: open,
-    close: close,
-    setup: setup
+    open,
+    close,
+    setup
   };
 });
 
-var selectors$1g = {
+const selectors$1j = {
   animationItems: ".animation--quick-view-items > *"
 };
-var classes$x = {
+const classes$z = {
   animationRevealed: "animation--quick-view-revealed"
 };
-var animateQuickView = (function (node) {
+var animateQuickView = (node => {
   function animate() {
     // Add the animation delay offset variables
-    delayOffset(node, [selectors$1g.animationItems]); // Trigger the reveal animation when the quick view is opened.
+    delayOffset(node, [selectors$1j.animationItems]);
+
+    // Trigger the reveal animation when the quick view is opened.
     // We can't use the `.is-visible` class added in `quick-view-modal.js`
     // because it can be added before the content is fetched.
-
-    setTimeout(function () {
-      u$1(node, classes$x.animationRevealed);
+    setTimeout(() => {
+      u$1(node, classes$z.animationRevealed);
     }, 0);
   }
-
   function reset() {
-    i$1(node, classes$x.animationRevealed);
+    i$1(node, classes$z.animationRevealed);
   }
-
   return {
-    animate: animate,
-    reset: reset
+    animate,
+    reset
   };
 });
 
-var selectors$1f = {
+const selectors$1i = {
   columns: ".meganav__list-parent > li",
   image: ".meganav__promo-image .image__img",
   overlay: ".meganav__secondary-promo-overlay",
@@ -3736,14 +3138,12 @@ var selectors$1f = {
   hasPromo: "meganav--has-promo",
   promoLeft: "meganav--promo-position-left"
 };
-var animateMeganav = (function (node) {
-  var delayItems = [];
-  var columnItems = t$2(selectors$1f.columns, node);
-
-  if (a$1(node, selectors$1f.hasPromo)) {
-    delayOffset(node, [selectors$1f.image, selectors$1f.overlay, selectors$1f.promoItems]);
-
-    if (a$1(node, selectors$1f.promoLeft)) {
+var animateMeganav = (node => {
+  const delayItems = [];
+  const columnItems = t$2(selectors$1i.columns, node);
+  if (a$1(node, selectors$1i.hasPromo)) {
+    delayOffset(node, [selectors$1i.image, selectors$1i.overlay, selectors$1i.promoItems]);
+    if (a$1(node, selectors$1i.promoLeft)) {
       // Set columnItem initial delay to i + 1 of previously delayed
       assignColumnDelays(columnItems, 4);
     } else {
@@ -3751,444 +3151,438 @@ var animateMeganav = (function (node) {
     }
   } else {
     assignColumnDelays(columnItems);
-  } // Add the animation delay offset variables
+  }
 
-
+  // Add the animation delay offset variables
   delayOffset(node, delayItems);
-
   function assignColumnDelays(items) {
-    var delayMultiplier = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-    var columnOffset;
-    items.forEach(function (item, i) {
-      var leftOffset = item.getBoundingClientRect ? item.getBoundingClientRect().left : item.offsetLeft;
+    let delayMultiplier = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+    let columnOffset;
+    items.forEach((item, i) => {
+      const leftOffset = item.getBoundingClientRect ? item.getBoundingClientRect().left : item.offsetLeft;
       if (i === 0) columnOffset = leftOffset;
-
       if (columnOffset != leftOffset) {
         columnOffset = leftOffset;
         delayMultiplier++;
       }
-
       item.style.setProperty("--delay-offset-multiplier", delayMultiplier);
     });
   }
 });
 
-var selectors$1e = {
+const selectors$1h = {
   heading: ".list-collections__heading",
   productItems: ".animation--item"
 };
-var animateListCollections = (function (node) {
-  delayOffset(node, [selectors$1e.heading, selectors$1e.productItems]);
-  var observer = intersectionWatcher(node, true);
+var animateListCollections = (node => {
+  delayOffset(node, [selectors$1h.heading, selectors$1h.productItems]);
+  const observer = intersectionWatcher(node, true);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer.destroy();
     }
   };
 });
 
-var selectors$1d = {
+const selectors$1g = {
   gridItems: ".grid-item"
 };
-var animateGrid = (function (node) {
-  delayOffset(node, [selectors$1d.gridItems]);
-  var observer = intersectionWatcher(node);
+var animateGrid = (node => {
+  delayOffset(node, [selectors$1g.gridItems]);
+  const observer = intersectionWatcher(node);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer.destroy();
     }
   };
 });
 
-var selectors$1c = {
+const selectors$1f = {
   animationItems: ".animation--purchase-confirmation-item",
   animationFooterItems: ".animation--purchase-confirmation-footer-item"
 };
-var classes$w = {
+const classes$y = {
   animationRevealed: "animation--purchase-confirmation-revealed"
 };
-var animatePurchaseConfirmation = (function (node) {
+var animatePurchaseConfirmation = (node => {
   function animate() {
     // Add the animation delay offset variables
-    delayOffset(node, [selectors$1c.animationItems]);
-    delayOffset(node, [selectors$1c.animationFooterItems]); // Trigger the reveal animation when the quick view is opened.
+    delayOffset(node, [selectors$1f.animationItems]);
+    delayOffset(node, [selectors$1f.animationFooterItems]);
 
-    setTimeout(function () {
-      u$1(node, classes$w.animationRevealed);
+    // Trigger the reveal animation when the quick view is opened.
+    setTimeout(() => {
+      u$1(node, classes$y.animationRevealed);
     }, 0);
   }
-
   function reset() {
-    i$1(node, classes$w.animationRevealed);
+    i$1(node, classes$y.animationRevealed);
   }
-
   return {
-    animate: animate,
-    reset: reset
+    animate,
+    reset
   };
 });
 
-var selectors$1b = {
+const selectors$1e = {
   pageItems: ".page-section__inner > *"
 };
-var animatePage = (function (node) {
+var animatePage = (node => {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1b.pageItems]);
-  var observer = intersectionWatcher(node, true);
+  delayOffset(node, [selectors$1e.pageItems]);
+  const observer = intersectionWatcher(node, true);
   return {
-    destroy: function destroy() {
-      observer.forEach(function (observer) {
-        return observer.destroy();
-      });
+    destroy() {
+      observer.forEach(observer => observer.destroy());
     }
   };
 });
 
-var selectors$1a = {
+const selectors$1d = {
   items: ".collapsible-row-list__inner > *"
 };
-var animateCollapsibleRowList = (function (node) {
+var animateCollapsibleRowList = (node => {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$1a.items]);
-  var observer = intersectionWatcher(node);
+  delayOffset(node, [selectors$1d.items]);
+  const observer = intersectionWatcher(node);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
     }
   };
 });
 
-var selectors$19 = {
+const selectors$1c = {
   items: ".animation--section-blocks > *"
 };
-var animateRichText = (function (node) {
-  delayOffset(node, [selectors$19.items]);
-  var observer = intersectionWatcher(node, true);
+var animateRichText = (node => {
+  delayOffset(node, [selectors$1c.items]);
+  const observer = intersectionWatcher(node, true);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
     }
   };
 });
 
-var selectors$18 = {
+const selectors$1b = {
   headerItems: ".animation--section-introduction > *",
   articleItem: ".article-item"
 };
-var animateBlogPosts = (function (node) {
-  delayOffset(node, [selectors$18.headerItems, selectors$18.articleItem]);
-  var observer = intersectionWatcher(node, true);
+var animateBlogPosts = (node => {
+  delayOffset(node, [selectors$1b.headerItems, selectors$1b.articleItem]);
+  const observer = intersectionWatcher(node, true);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
     }
   };
 });
 
-var selectors$17 = {
+const selectors$1a = {
   intro: ".animation--section-introduction > *",
   items: ".animation--item"
 };
-var animateFeaturedCollectionGrid = (function (node) {
-  delayOffset(node, [selectors$17.intro, selectors$17.items]);
-  var observer = intersectionWatcher(node);
+var animateFeaturedCollectionGrid = (node => {
+  delayOffset(node, [selectors$1a.intro, selectors$1a.items]);
+  const observer = intersectionWatcher(node);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
     }
   };
 });
 
-var selectors$16 = {
+const selectors$19 = {
   productItems: ".animation--item",
   introductionItems: ".animation--section-introduction > *"
 };
-var animateCollectionListGrid = (function (node) {
-  delayOffset(node, [selectors$16.introductionItems, selectors$16.productItems]);
-  var observer = intersectionWatcher(node);
+var animateCollectionListGrid = (node => {
+  delayOffset(node, [selectors$19.introductionItems, selectors$19.productItems]);
+  const observer = intersectionWatcher(node);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
     }
   };
 });
 
-var selectors$15 = {
+const selectors$18 = {
   animationItems: ".animation--store-availability-drawer-items > *"
 };
-var classes$v = {
+const classes$x = {
   animationRevealed: "animation--store-availability-drawer-revealed"
 };
-var animateStoreAvailabilityDrawer = (function (node) {
+var animateStoreAvailabilityDrawer = (node => {
   function animate() {
     // Set the position offset on each time to be animated
-    var items = t$2(selectors$15.animationItems, node);
-    items.forEach(function (item, i) {
+    const items = t$2(selectors$18.animationItems, node);
+    items.forEach((item, i) => {
       item.style.setProperty("--position-offset-multiplier", i);
-    }); // Trigger the reveal animation when the quick view is opened.
+    });
+
+    // Trigger the reveal animation when the quick view is opened.
     // We can't use the `.is-visible` class added in `quick-view-modal.js`
     // because it can be added before the content is fetched.
-
-    setTimeout(function () {
-      u$1(node, classes$v.animationRevealed);
+    setTimeout(() => {
+      u$1(node, classes$x.animationRevealed);
     }, 0);
   }
-
   function reset() {
-    i$1(node, classes$v.animationRevealed);
+    i$1(node, classes$x.animationRevealed);
   }
-
   return {
-    animate: animate,
-    reset: reset
+    animate,
+    reset
   };
 });
 
-var selectors$14 = {
+const selectors$17 = {
   media: ".animation--product-media"
 };
-var animateProduct = (function (node) {
+var animateProduct = (node => {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$14.media]);
-  var observer = intersectionWatcher(node, true);
+  delayOffset(node, [selectors$17.media]);
+  const observer = intersectionWatcher(node, true);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
     }
   };
 });
 
-var selectors$13 = {
+const selectors$16 = {
   headerItems: ".animation--section-introduction > *",
   animationItem: ".animation--item"
 };
-var animateContactForm = (function (node) {
-  delayOffset(node, [selectors$13.headerItems, selectors$13.animationItem]);
-  var observer = intersectionWatcher(node, true);
+var animateContactForm = (node => {
+  delayOffset(node, [selectors$16.headerItems, selectors$16.animationItem]);
+  const observer = intersectionWatcher(node, true);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
     }
   };
 });
 
-var selectors$12 = {
+const selectors$15 = {
   partial: "[data-partial]",
   filterBar: "[data-filter-bar]",
   mobileFilterBar: "[data-mobile-filters]",
   productItems: ".animation--item:not(.animation--item-revealed)"
 };
-var classes$u = {
+const classes$w = {
   hideProducts: "animation--search-products-hide",
   itemRevealed: "animation--item-revealed"
 };
-var animateSearch = (function (node) {
-  var partial = n$2(selectors$12.partial, node);
-  var filterbarEl = n$2(selectors$12.filterBar, node);
-  var mobileFilterBarEl = n$2(selectors$12.mobileFilterBar, node);
-  var filterbarObserver = null;
-
+var animateSearch = (node => {
+  const partial = n$2(selectors$15.partial, node);
+  const filterbarEl = n$2(selectors$15.filterBar, node);
+  const mobileFilterBarEl = n$2(selectors$15.mobileFilterBar, node);
+  let filterbarObserver = null;
   if (filterbarEl) {
     filterbarObserver = intersectionWatcher(filterbarEl, true);
   }
-
-  var mobileFilterBarObserver = null;
-
+  let mobileFilterBarObserver = null;
   if (mobileFilterBarEl) {
     mobileFilterBarObserver = intersectionWatcher(mobileFilterBarEl, true);
   }
-
   _setupProductItem();
-
   function _setupProductItem() {
-    var productItems = t$2(selectors$12.productItems, node);
-    delayOffset(node, [selectors$12.productItems]);
-    setTimeout(function () {
-      u$1(productItems, classes$u.itemRevealed);
+    let productItems = t$2(selectors$15.productItems, node);
+    delayOffset(node, [selectors$15.productItems]);
+    setTimeout(() => {
+      u$1(productItems, classes$w.itemRevealed);
     }, 0);
-  } // Scroll to top of search grid after applying filters
+  }
+
+  // Scroll to top of search grid after applying filters
   // to show the newly filtered list of products
-
-
   function _scrollIntoView() {
-    var y = partial.getBoundingClientRect().top + window.pageYOffset - filterbarEl.getBoundingClientRect().height;
+    const y = partial.getBoundingClientRect().top + window.pageYOffset - filterbarEl.getBoundingClientRect().height;
     window.scrollTo({
       top: y,
       behavior: "smooth"
     });
   }
-
   function updateContents() {
-    _setupProductItem(); // Remove the fade out class
-
-
-    i$1(partial, classes$u.hideProducts);
-
+    _setupProductItem();
+    // Remove the fade out class
+    i$1(partial, classes$w.hideProducts);
     _scrollIntoView();
   }
-
   function infiniteScrollReveal() {
     _setupProductItem();
   }
-
   return {
-    updateContents: updateContents,
-    infiniteScrollReveal: infiniteScrollReveal,
-    destroy: function destroy() {
+    updateContents,
+    infiniteScrollReveal,
+    destroy() {
       var _filterbarObserver, _mobileFilterBarObser;
-
       (_filterbarObserver = filterbarObserver) === null || _filterbarObserver === void 0 ? void 0 : _filterbarObserver.destroy();
       (_mobileFilterBarObser = mobileFilterBarObserver) === null || _mobileFilterBarObser === void 0 ? void 0 : _mobileFilterBarObser.destroy();
     }
   };
 });
 
-var selectors$11 = {
+const selectors$14 = {
   content: ".animation--section-blocks > *"
 };
-var animateSearchBanner = (function (node) {
+var animateSearchBanner = (node => {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$11.content]);
-  var observer = intersectionWatcher(node);
+  delayOffset(node, [selectors$14.content]);
+  const observer = intersectionWatcher(node);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
     }
   };
 });
 
-var selectors$10 = {
+const selectors$13 = {
   headerItems: ".animation--section-introduction > *",
   columnItems: ".multi-column__grid-item"
 };
-var animateMultiColumn = (function (node) {
-  delayOffset(node, [selectors$10.headerItems, selectors$10.columnItems]);
-  var observer = intersectionWatcher(node);
+var animateMultiColumn = (node => {
+  delayOffset(node, [selectors$13.headerItems, selectors$13.columnItems]);
+  const observer = intersectionWatcher(node);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer.destroy();
     }
   };
 });
 
-var selectors$$ = {
+const selectors$12 = {
   textContent: ".password__text-container-inner > *"
 };
-var animatePassword = (function (node) {
+var animatePassword = (node => {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$$.textContent], 3);
-  var observer = intersectionWatcher(node);
+  delayOffset(node, [selectors$12.textContent], 3);
+  const observer = intersectionWatcher(node);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
     }
   };
 });
 
-var selectors$_ = {
+const selectors$11 = {
   animationItem: ".animation--popup-item"
 };
-var classes$t = {
+const classes$v = {
   animationRevealed: "animation--popup-revealed"
 };
-var animatePopup = (function (node) {
-  delayOffset(node, [selectors$_.animationItem]); // Trigger the reveal animation when the drawer is opened
+var animatePopup = (node => {
+  delayOffset(node, [selectors$11.animationItem]);
 
+  // Trigger the reveal animation when the drawer is opened
   function open() {
     if (shouldAnimate(node)) {
-      u$1(node, classes$t.animationRevealed);
-    }
-  } // Trigger the reveal animation when the drawer is opened
-
-
-  function close() {
-    if (shouldAnimate(node)) {
-      i$1(node, classes$t.animationRevealed);
+      u$1(node, classes$v.animationRevealed);
     }
   }
 
+  // Trigger the reveal animation when the drawer is opened
+  function close() {
+    if (shouldAnimate(node)) {
+      i$1(node, classes$v.animationRevealed);
+    }
+  }
   return {
-    open: open,
-    close: close
+    open,
+    close
   };
 });
 
-var selectors$Z = {
+const selectors$10 = {
   items: ".animation--section-blocks > *"
 };
-var animateNewsletter = (function (node) {
-  delayOffset(node, [selectors$Z.items]);
-  var observer = intersectionWatcher(node, true);
+var animateNewsletter = (node => {
+  delayOffset(node, [selectors$10.items]);
+  const observer = intersectionWatcher(node, true);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
     }
   };
 });
 
-var selectors$Y = {
+const selectors$$ = {
   items: ".animation--section-blocks > *"
 };
-var animateNewsletterCompact = (function (node) {
-  delayOffset(node, [selectors$Y.items]);
-  var observer = intersectionWatcher(node, true);
+var animateNewsletterCompact = (node => {
+  delayOffset(node, [selectors$$.items]);
+  const observer = intersectionWatcher(node, true);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
     }
   };
 });
 
-var selectors$X = {
+const selectors$_ = {
   headerItems: ".animation--section-introduction > *",
   eventItems: ".event-item"
 };
-var animateEvents = (function (node) {
-  delayOffset(node, [selectors$X.headerItems]);
-  var observer = intersectionWatcher(node, true);
-
+var animateEvents = (node => {
+  delayOffset(node, [selectors$_.headerItems]);
+  const observer = intersectionWatcher(node, true);
   function animateEventItems() {
-    delayOffset(node, [selectors$X.eventItems]);
-    setTimeout(function () {
+    delayOffset(node, [selectors$_.eventItems]);
+    setTimeout(() => {
       u$1(node, "animate-event-items");
     }, 50);
   }
-
   return {
-    animateEventItems: animateEventItems,
-    destroy: function destroy() {
+    animateEventItems,
+    destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
     }
   };
 });
 
-var selectors$W = {
+const selectors$Z = {
   giantHeading: ".animation--giant-heading",
   sectionBlockItems: ".animation--section-blocks > *"
 };
-var animatePromoBanner = (function (node) {
+var animatePromoBanner = (node => {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$W.giantHeading, selectors$W.sectionBlockItems]);
-  var observer = intersectionWatcher(node);
+  delayOffset(node, [selectors$Z.giantHeading, selectors$Z.sectionBlockItems]);
+  const observer = intersectionWatcher(node);
   return {
-    destroy: function destroy() {
+    destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
     }
   };
 });
 
-var selectors$V = {
+const selectors$Y = {
   controls: ".product-tabs__tab-buttons",
   items: ".product-tabs__tab-list-wrapper",
   accordionItems: ".accordion"
 };
-var animateProductTabs = (function (node) {
+var animateProductTabs = (node => {
   // Add the animation delay offset variables
-  delayOffset(node, [selectors$V.controls, selectors$V.items]);
-  delayOffset(node, [selectors$V.accordionItems]);
-  var observer = intersectionWatcher(node);
+  delayOffset(node, [selectors$Y.controls, selectors$Y.items]);
+  delayOffset(node, [selectors$Y.accordionItems]);
+  const observer = intersectionWatcher(node);
   return {
-    destroy: function destroy() {
+    destroy() {
+      observer === null || observer === void 0 ? void 0 : observer.destroy();
+    }
+  };
+});
+
+const selectors$X = {
+  intro: ".animation--section-introduction > *",
+  items: ".animation--item"
+};
+var animateApps = (node => {
+  delayOffset(node, [selectors$X.intro, selectors$X.items]);
+  const observer = intersectionWatcher(node);
+  return {
+    destroy() {
       observer === null || observer === void 0 ? void 0 : observer.destroy();
     }
   };
@@ -4196,9 +3590,8 @@ var animateProductTabs = (function (node) {
 
 function makeRequest(method, url) {
   return new Promise(function (resolve, reject) {
-    var xhr = new XMLHttpRequest();
+    let xhr = new XMLHttpRequest();
     xhr.open(method, url);
-
     xhr.onload = function () {
       if (this.status >= 200 && this.status < 300) {
         resolve(xhr.response);
@@ -4206,19 +3599,17 @@ function makeRequest(method, url) {
         reject(new Error(this.status));
       }
     };
-
     xhr.onerror = function () {
       reject(new Error(this.status));
     };
-
     xhr.send();
   });
 }
 
-var classes$s = {
+const classes$u = {
   active: "active"
 };
-var selectors$U = {
+const selectors$W = {
   drawerTrigger: "[data-store-availability-drawer-trigger]",
   closeBtn: "[data-store-availability-close]",
   productTitle: "[data-store-availability-product-title]",
@@ -4228,108 +3619,98 @@ var selectors$U = {
   wash: "[data-store-availability-drawer-wash]",
   parentWrapper: "[data-store-availability-container]"
 };
-
-var storeAvailabilityDrawer = function storeAvailabilityDrawer(node) {
+const storeAvailabilityDrawer = node => {
   var focusTrap = createFocusTrap(node, {
     allowOutsideClick: true
   });
-  var wash = n$2(selectors$U.wash, node.parentNode);
-  var productTitleContainer = n$2(selectors$U.productTitle);
-  var variantTitleContainer = n$2(selectors$U.variantTitle);
-  var storeListContainer = n$2(selectors$U.storeListContainer, node);
-  var storeAvailabilityDrawerAnimate = null;
-
+  const wash = n$2(selectors$W.wash, node.parentNode);
+  const productTitleContainer = n$2(selectors$W.productTitle);
+  const variantTitleContainer = n$2(selectors$W.variantTitle);
+  const storeListContainer = n$2(selectors$W.storeListContainer, node);
+  let storeAvailabilityDrawerAnimate = null;
   if (shouldAnimate(node)) {
     storeAvailabilityDrawerAnimate = animateStoreAvailabilityDrawer(node);
   }
-
-  var events = [e$2([n$2(selectors$U.closeBtn, node), wash], "click", function (e) {
+  const events = [e$2([n$2(selectors$W.closeBtn, node), wash], "click", e => {
     e.preventDefault();
-
     _close();
-  }), e$2(node, "keydown", function (_ref) {
-    var keyCode = _ref.keyCode;
+  }), e$2(node, "keydown", _ref => {
+    let {
+      keyCode
+    } = _ref;
     if (keyCode === 27) _close();
   })];
-
-  var _handleClick = function _handleClick(target) {
-    var parentContainer = target.closest(selectors$U.parentWrapper);
-    var _parentContainer$data = parentContainer.dataset,
-        baseUrl = _parentContainer$data.baseUrl,
-        variantId = _parentContainer$data.variantId,
-        productTitle = _parentContainer$data.productTitle,
-        variantTitle = _parentContainer$data.variantTitle;
-    var variantSectionUrl = "".concat(baseUrl, "/variants/").concat(variantId, "/?section_id=store-availability");
-    makeRequest("GET", variantSectionUrl).then(function (storeAvailabilityHTML) {
-      var container = document.createElement("div");
+  const _handleClick = target => {
+    const parentContainer = target.closest(selectors$W.parentWrapper);
+    const {
+      baseUrl,
+      variantId,
+      productTitle,
+      variantTitle
+    } = parentContainer.dataset;
+    const variantSectionUrl = "".concat(baseUrl, "/variants/").concat(variantId, "/?section_id=store-availability");
+    makeRequest("GET", variantSectionUrl).then(storeAvailabilityHTML => {
+      let container = document.createElement("div");
       container.innerHTML = storeAvailabilityHTML;
-      productTitleContainer.innerText = productTitle; // Shopify returns string null on variant titles for products without varians
-
+      productTitleContainer.innerText = productTitle;
+      // Shopify returns string null on variant titles for products without varians
       variantTitleContainer.innerText = variantTitle === "null" ? "" : variantTitle;
-      var storeList = n$2(selectors$U.storeListContent, container);
+      const storeList = n$2(selectors$W.storeListContent, container);
       storeListContainer.innerHTML = "";
       storeListContainer.appendChild(storeList);
     }).then(_open);
   };
-
-  var _open = function _open() {
-    u$1(node, classes$s.active);
-
+  const _open = () => {
+    u$1(node, classes$u.active);
     if (shouldAnimate(node)) {
       storeAvailabilityDrawerAnimate.animate();
     }
-
     node.setAttribute("aria-hidden", "false");
     focusTrap.activate();
+    document.body.setAttribute("data-fluorescent-overlay-open", "true");
     disableBodyScroll(node, {
-      allowTouchMove: function allowTouchMove(el) {
+      allowTouchMove: el => {
         while (el && el !== document.body) {
           if (el.getAttribute("data-scroll-lock-ignore") !== null) {
             return true;
           }
-
           el = el.parentNode;
         }
       },
       reserveScrollBarGap: true
     });
   };
-
-  var _close = function _close() {
+  const _close = () => {
     focusTrap.deactivate();
-    i$1(node, classes$s.active);
+    i$1(node, classes$u.active);
     node.setAttribute("aria-hidden", "true");
-    setTimeout(function () {
+    setTimeout(() => {
       if (shouldAnimate(node)) {
         storeAvailabilityDrawerAnimate.reset();
       }
-
+      document.body.setAttribute("data-fluorescent-overlay-open", "false");
       enableBodyScroll(node);
     }, 500);
   };
-
-  var delegate = new Delegate(document.body);
-  delegate.on("click", selectors$U.drawerTrigger, function (_, target) {
-    return _handleClick(target);
-  });
-
-  var unload = function unload() {
-    events.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
+  const delegate = new Delegate(document.body);
+  delegate.on("click", selectors$W.drawerTrigger, (_, target) => _handleClick(target));
+  const unload = () => {
+    events.forEach(unsubscribe => unsubscribe());
   };
-
   return {
-    unload: unload
+    unload
   };
 };
 
-var strings$7 = window.theme.strings.accessibility;
-
-var handleTab = function handleTab() {
-  var tabHandler = null;
-  var formElments = ["INPUT", "TEXTAREA", "SELECT"]; // Determine if the user is a mouse or keyboard user
-
+const {
+  strings: {
+    accessibility: strings$7
+  }
+} = window.theme;
+const handleTab = () => {
+  let tabHandler = null;
+  const formElments = ["INPUT", "TEXTAREA", "SELECT"];
+  // Determine if the user is a mouse or keyboard user
   function handleFirstTab(e) {
     if (e.keyCode === 9 && !formElments.includes(document.activeElement.tagName)) {
       document.body.classList.add("user-is-tabbing");
@@ -4337,86 +3718,76 @@ var handleTab = function handleTab() {
       tabHandler = e$2(window, "mousedown", handleMouseDownOnce);
     }
   }
-
   function handleMouseDownOnce() {
     document.body.classList.remove("user-is-tabbing");
     tabHandler();
     tabHandler = e$2(window, "keydown", handleFirstTab);
   }
-
   tabHandler = e$2(window, "keydown", handleFirstTab);
 };
-
-var focusFormStatus = function focusFormStatus(node) {
-  var formStatus = n$2(".form-status", node);
+const focusFormStatus = node => {
+  const formStatus = n$2(".form-status", node);
   if (!formStatus) return;
-  var focusElement = n$2("[data-form-status]", formStatus);
+  const focusElement = n$2("[data-form-status]", formStatus);
   if (!focusElement) return;
   focusElement.focus();
 };
-
-var prefersReducedMotion = function prefersReducedMotion() {
+const prefersReducedMotion = () => {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 };
-
 function backgroundVideoHandler(container) {
-  var pause = n$2(".video-pause", container);
-  var video = container.getElementsByTagName("VIDEO")[0];
+  const pause = n$2(".video-pause", container);
+  const video = container.getElementsByTagName("VIDEO")[0];
   if (!pause || !video) return;
-
-  var pauseVideo = function pauseVideo() {
+  const pauseVideo = () => {
     video.pause();
     pause.innerText = strings$7.play_video;
   };
-
-  var playVideo = function playVideo() {
+  const playVideo = () => {
     video.play();
     pause.innerText = strings$7.pause_video;
   };
-
   if (prefersReducedMotion()) {
     pauseVideo();
   }
-
-  var pauseListener = e$2(pause, "click", function (e) {
+  const pauseListener = e$2(pause, "click", e => {
     e.preventDefault();
-
     if (video.paused) {
       playVideo();
     } else {
       pauseVideo();
     }
   });
-  return function () {
-    return pauseListener();
-  };
+  return () => pauseListener();
 }
 
-var classes$r = {
+const classes$t = {
   hidden: "hidden"
 };
-var sectionClasses = (function () {
+var sectionClasses = (() => {
   function adjustClasses() {
-    var sections = t$2(".main .shopify-section");
-    sections.forEach(function (section) {
-      var child = section.firstElementChild; // Specific to recommended hidden products
+    const sections = t$2(".main .shopify-section");
+    sections.forEach(section => {
+      const {
+        firstElementChild: child
+      } = section;
 
-      if (child && child.classList.contains(classes$r.hidden)) {
-        u$1(section, classes$r.hidden);
+      // Specific to recommended hidden products
+      if (child && child.classList.contains(classes$t.hidden)) {
+        u$1(section, classes$t.hidden);
       }
     });
   }
-
   adjustClasses();
   e$2(document, "shopify:section:load", adjustClasses);
 });
 
-var dispatchCustomEvent = function dispatchCustomEvent(eventName) {
-  var data = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-  var detail = {
+const dispatchCustomEvent = function (eventName) {
+  let data = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  const detail = {
     detail: data
   };
-  var event = new CustomEvent(eventName, data ? detail : null);
+  const event = new CustomEvent(eventName, data ? detail : null);
   document.dispatchEvent(event);
 };
 
@@ -4577,33 +3948,31 @@ function getUrlWithVariant(url, id) {
   return url.concat('?variant=').concat(id);
 }
 
-var selectors$T = {
+const selectors$V = {
   sentinal: ".scroll-sentinal",
   scrollButtons: ".scroll-button",
   scrollViewport: "[data-scroll-container-viewport]"
 };
-
-var scrollContainer = function scrollContainer(node) {
-  var sentinals = t$2(selectors$T.sentinal, node);
-  var buttons = t$2(selectors$T.scrollButtons, node);
-  var _node$dataset = node.dataset,
-      axis = _node$dataset.axis,
-      startAtEnd = _node$dataset.startAtEnd;
-  var scrollerViewport = n$2(selectors$T.scrollViewport, node);
-  window.addEventListener("load", function () {
+const scrollContainer = node => {
+  const sentinals = t$2(selectors$V.sentinal, node);
+  const buttons = t$2(selectors$V.scrollButtons, node);
+  const {
+    axis,
+    startAtEnd
+  } = node.dataset;
+  const scrollerViewport = n$2(selectors$V.scrollViewport, node);
+  window.addEventListener("load", () => {
     u$1(node, "scroll-container-initialized");
-
     if (startAtEnd === "true") {
       _startAtEnd();
     }
   }, {
     once: true
   });
-  var events = [e$2(buttons, "click", function (e) {
-    var button = e.currentTarget;
-    var scrollAttribute = axis == "vertical" ? "scrollTop" : "scrollLeft";
-    var scrollOffset = 100;
-
+  const events = [e$2(buttons, "click", e => {
+    const button = e.currentTarget;
+    const scrollAttribute = axis == "vertical" ? "scrollTop" : "scrollLeft";
+    const scrollOffset = 100;
     if (button.dataset.position === "start") {
       if (scrollerViewport[scrollAttribute] < scrollOffset * 1.5) {
         scrollerViewport[scrollAttribute] = 0;
@@ -4614,227 +3983,209 @@ var scrollContainer = function scrollContainer(node) {
       scrollerViewport[scrollAttribute] += scrollOffset;
     }
   })];
-  var ioOptions = {
+  const ioOptions = {
     root: scrollerViewport
   };
-  var intersectionObserver = new IntersectionObserver(function (entries) {
-    entries.forEach(function (entry) {
-      var position = entry.target.dataset.position;
-      var visible = entry.isIntersecting;
+  const intersectionObserver = new IntersectionObserver(function (entries) {
+    entries.forEach(entry => {
+      const position = entry.target.dataset.position;
+      const visible = entry.isIntersecting;
       node.setAttribute("data-at-".concat(position), visible ? "true" : "false");
     });
   }, ioOptions);
-  sentinals.forEach(function (sentinal) {
+  sentinals.forEach(sentinal => {
     intersectionObserver.observe(sentinal);
   });
-
-  var unload = function unload() {
-    sentinals.forEach(function (sentinal) {
+  const unload = () => {
+    sentinals.forEach(sentinal => {
       intersectionObserver.unobserve(sentinal);
     });
-    events.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
+    events.forEach(unsubscribe => unsubscribe());
   };
-
   function _startAtEnd() {
-    var scrollAttribute = axis == "vertical" ? "scrollTop" : "scrollLeft";
-    var scrollDirection = axis == "vertical" ? "scrollHeight" : "scrollWidth";
+    const scrollAttribute = axis == "vertical" ? "scrollTop" : "scrollLeft";
+    const scrollDirection = axis == "vertical" ? "scrollHeight" : "scrollWidth";
     scrollerViewport[scrollAttribute] = scrollerViewport[scrollDirection] * 2;
     node.dataset.startAtEnd = false;
   }
-
   return {
-    unload: unload
+    unload
   };
 };
 
 var n,e,i,o,t,r,f,d,p,u=[];function w(n,a){return e=window.pageXOffset,o=window.pageYOffset,r=window.innerHeight,d=window.innerWidth,void 0===i&&(i=e),void 0===t&&(t=o),void 0===p&&(p=d),void 0===f&&(f=r),(a||o!==t||e!==i||r!==f||d!==p)&&(!function(n){for(var w=0;w<u.length;w++)u[w]({x:e,y:o,px:i,py:t,vh:r,pvh:f,vw:d,pvw:p},n);}(n),i=e,t=o,f=r,p=d),requestAnimationFrame(w)}function srraf(e){return u.indexOf(e)<0&&u.push(e),n=n||w(performance.now()),{update:function(){return w(performance.now(),!0),this},destroy:function(){u.splice(u.indexOf(e),1);}}}
 
-var atBreakpointChange = function atBreakpointChange(breakpointToWatch, callback) {
-  var _screenUnderBP = function _screenUnderBP() {
-    var viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+const atBreakpointChange = (breakpointToWatch, callback) => {
+  const _screenUnderBP = () => {
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
     return viewportWidth <= breakpointToWatch;
   };
-
-  var screenUnderBP = _screenUnderBP();
-
-  var widthWatcher = srraf(function (_ref) {
-    var vw = _ref.vw;
-    var currentScreenWidthUnderBP = vw <= breakpointToWatch;
-
+  let screenUnderBP = _screenUnderBP();
+  const widthWatcher = srraf(_ref => {
+    let {
+      vw
+    } = _ref;
+    const currentScreenWidthUnderBP = vw <= breakpointToWatch;
     if (currentScreenWidthUnderBP !== screenUnderBP) {
       screenUnderBP = currentScreenWidthUnderBP;
       return callback();
     }
   });
-
-  var unload = function unload() {
+  const unload = () => {
     widthWatcher.destroy();
   };
-
   return {
-    unload: unload
+    unload
   };
 };
 
-var sel$3 = {
+const sel$4 = {
   container: ".social-share",
   button: ".social-share__button",
   popup: ".social-sharing__popup",
   copyURLButton: ".social-share__copy-url",
   successMessage: ".social-share__success-message"
 };
-var classes$q = {
+const classes$s = {
   hidden: "hidden",
   linkCopied: "social-sharing__popup--success"
 };
-var SocialShare = (function (node) {
+var SocialShare = (node => {
   if (!node) return Function();
-  var button = n$2(sel$3.button, node);
-  var popup = n$2(sel$3.popup, node);
-  var copyURLButton = n$2(sel$3.copyURLButton, node);
-  var successMessage = n$2(sel$3.successMessage, node);
-  var clickListener = e$2(window, "click", handleClick); // Hide copy button on old browsers
+  const button = n$2(sel$4.button, node);
+  const popup = n$2(sel$4.popup, node);
+  const copyURLButton = n$2(sel$4.copyURLButton, node);
+  const successMessage = n$2(sel$4.successMessage, node);
+  let clickListener = e$2(window, "click", handleClick);
 
+  // Hide copy button on old browsers
   if (!navigator.clipboard || !navigator.clipboard.writeText) {
-    u$1(copyURLButton, classes$q.hidden);
+    u$1(copyURLButton, classes$s.hidden);
   }
-
   function handleClick(evt) {
-    var buttonClicked = evt.target.closest(sel$3.button) === button;
-    var popupClicked = evt.target.closest(sel$3.popup) === popup;
-    var copyURLClicked = evt.target.closest(sel$3.copyURLButton) === copyURLButton;
-    var isActive = false;
-
+    const buttonClicked = evt.target.closest(sel$4.button) === button;
+    const popupClicked = evt.target.closest(sel$4.popup) === popup;
+    const copyURLClicked = evt.target.closest(sel$4.copyURLButton) === copyURLButton;
+    let isActive = false;
     if (buttonClicked) {
       isActive = button.getAttribute("aria-expanded") === "true";
-    } // click happend outside of this popup
+    }
 
-
+    // click happend outside of this popup
     if (!popupClicked) {
       close();
-    } // click happend in this social button and the button is not active
+    }
 
-
+    // click happend in this social button and the button is not active
     if (buttonClicked && !isActive) {
       open();
     }
-
     if (copyURLClicked) {
-      var url = copyURLButton.dataset.url;
+      const {
+        url
+      } = copyURLButton.dataset;
       writeToClipboard(url).then(showSuccessMessage, showErrorMessage);
     }
   }
-
   function close() {
     button.setAttribute("aria-expanded", false);
     popup.setAttribute("aria-hidden", true);
   }
-
   function open() {
     button.setAttribute("aria-expanded", true);
     popup.setAttribute("aria-hidden", false);
   }
-
   function writeToClipboard(str) {
     return navigator.clipboard.writeText(str);
   }
-
   function showMessage(message) {
     successMessage.innerHTML = message;
-    i$1(successMessage, classes$q.hidden);
-    u$1(popup, classes$q.linkCopied);
-    setTimeout(function () {
-      u$1(successMessage, classes$q.hidden);
-      i$1(popup, classes$q.linkCopied);
+    i$1(successMessage, classes$s.hidden);
+    u$1(popup, classes$s.linkCopied);
+    setTimeout(() => {
+      u$1(successMessage, classes$s.hidden);
+      i$1(popup, classes$s.linkCopied);
     }, 2000);
   }
-
   function showSuccessMessage() {
-    var successMessage = copyURLButton.dataset.successMessage;
+    const {
+      successMessage
+    } = copyURLButton.dataset;
     showMessage(successMessage);
   }
-
   function showErrorMessage() {
-    var errorMessage = copyURLButton.dataset.errorMessage;
+    const {
+      errorMessage
+    } = copyURLButton.dataset;
     showMessage(errorMessage || "Error copying link.");
   }
-
   function destroy() {
     close();
     clickListener();
   }
-
   return destroy;
 });
 
 function localStorageAvailable() {
   var test = "test";
-
   try {
     localStorage.setItem(test, test);
-
     if (localStorage.getItem(test) !== test) {
       return false;
     }
-
     localStorage.removeItem(test);
     return true;
   } catch (e) {
     return false;
   }
 }
-
-var PREFIX = "fluco_";
-
+const PREFIX = "fluco_";
 function getStorage(key) {
   if (!localStorageAvailable()) return null;
   return JSON.parse(localStorage.getItem(PREFIX + key));
 }
-
 function removeStorage(key) {
   if (!localStorageAvailable()) return null;
   localStorage.removeItem(PREFIX + key);
   return true;
 }
-
 function setStorage(key, val) {
   if (!localStorageAvailable()) return null;
   localStorage.setItem(PREFIX + key, val);
   return true;
 }
 
-var routes = window.theme.routes.cart || {};
-var paths = {
+const routes = window.theme.routes.cart || {};
+const paths = {
   base: "".concat(routes.base || "/cart", ".js"),
   add: "".concat(routes.add || "/cart/add", ".js"),
   change: "".concat(routes.change || "/cart/change", ".js"),
   clear: "".concat(routes.clear || "/cart/clear", ".js"),
   update: "".concat(routes.update || "/cart/update", ".js")
 };
-var strings$6 = window.theme.strings.cart; // Add a `sorted` key that orders line items
+const {
+  strings: {
+    cart: strings$6
+  }
+} = window.theme;
+
+// Add a `sorted` key that orders line items
 // in the order the customer added them if possible
-
 function sortCart(cart) {
-  var order = getStorage("cart_order") || [];
-
+  const order = getStorage("cart_order") || [];
   if (order.length) {
-    cart.sorted = _toConsumableArray(cart.items).sort(function (a, b) {
-      return order.indexOf(a.variant_id) - order.indexOf(b.variant_id);
-    });
+    cart.sorted = [...cart.items].sort((a, b) => order.indexOf(a.variant_id) - order.indexOf(b.variant_id));
     return cart;
   }
-
   cart.sorted = cart.items;
   return cart;
 }
-
 function updateItem(key, quantity) {
-  return get().then(function (_ref) {
-    var items = _ref.items;
-
-    for (var i = 0; i < items.length; i++) {
+  return get().then(_ref => {
+    let {
+      items
+    } = _ref;
+    for (let i = 0; i < items.length; i++) {
       if (items[i].key === key) {
         return changeItem(i + 1, key, quantity); // shopify cart is a 1-based index
       }
@@ -4850,54 +4201,33 @@ function changeItem(line, itemKey, quantity) {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      line: line,
-      quantity: quantity
+      line,
+      quantity
     })
-  }).then(function (res) {
-    return res.json();
-  }).then(function (cart) {
-    var item = cart.items.find(function (_ref2) {
-      var key = _ref2.key;
-      return key === itemKey;
-    }); // Throw error only if the quantity returned is less by one
-    // then the quantity change request. This is triggered when a
-    // increase quantity button is pressed when insufficient quantity
-    // exists.
-    // item will not exist if it has been removed from the cart.
-
-    if (item && item.quantity === quantity - 1) {
-      var errorMessage = {
+  }).then(res => {
+    if (res.status == "422") {
+      const error = {
         code: 422,
         message: strings$6.quantityError
       };
-      dispatchCustomEvent("cart:error", {
-        errorMessage: strings$6.quantityError
-      });
-      r$1("quick-cart:error", null, {
-        key: itemKey,
-        errorMessage: strings$6.quantityError
-      });
-      r$1("cart:error", null, {
-        key: itemKey,
-        errorMessage: strings$6.quantityError
-      });
-      throw errorMessage;
+      handleError(error, "changeItem", itemKey);
+    } else {
+      return res.json();
     }
-
+  }).then(cart => {
     r$1("cart:updated", {
-      cart: cart
+      cart
     });
     r$1("quick-cart:updated");
     return sortCart(cart);
   });
 }
-
 function addItemById(id, quantity) {
   r$1("cart:updating");
-  var data = {
+  let data = {
     items: [{
-      id: id,
-      quantity: quantity
+      id,
+      quantity
     }]
   };
   return fetch(paths.add, {
@@ -4907,51 +4237,35 @@ function addItemById(id, quantity) {
       "Content-Type": "application/json"
     },
     body: JSON.stringify(data)
-  }).then(function (r) {
-    return r.json();
-  }).then(function (res) {
+  }).then(r => r.json()).then(res => {
     if (res.status == "422") {
-      var errorMessage = {
+      const error = {
         code: 422,
         message: res.description
       };
-      dispatchCustomEvent("cart:error", {
-        errorMessage: res.description
-      });
-      r$1("quick-cart:error", null, {
-        id: id
-      });
-      r$1("cart:error", null, {
-        id: id
-      });
-      throw errorMessage;
+      handleError(error, "addItemById", id);
     }
-
-    return get().then(function (cart) {
+    return get().then(cart => {
       r$1("quick-cart:updated");
       r$1("cart:updated", {
-        cart: cart
+        cart
       });
       return {
-        res: res,
-        cart: cart
+        res,
+        cart
       };
     });
   });
 }
-
 function get() {
   return fetch(paths.base, {
     method: "GET",
     credentials: "include"
-  }).then(function (res) {
-    return res.json();
-  }).then(function (data) {
-    var sortedData = sortCart(data);
+  }).then(res => res.json()).then(data => {
+    const sortedData = sortCart(data);
     return sortedData;
   });
 }
-
 function addItem(form) {
   r$1("cart:updating");
   return fetch(paths.add, {
@@ -4962,25 +4276,17 @@ function addItem(form) {
       "X-Requested-With": "XMLHttpRequest"
     },
     body: serialize(form)
-  }).then(function (r) {
-    return r.json();
-  }).then(function (res) {
+  }).then(r => r.json()).then(res => {
     if (res.status == "422") {
-      var errorMessage = {
+      const error = {
         code: 422,
         message: res.description
       };
-      dispatchCustomEvent("cart:error", {
-        errorMessage: res.description
-      });
-      throw errorMessage;
+      handleError(error, "addItem", null);
     }
-
-    return get().then(function (cart) {
-      var order = getStorage("cart_order") || [];
-      var newOrder = [res.variant_id].concat(_toConsumableArray(order.filter(function (i) {
-        return i !== res.variant_id;
-      })));
+    return get().then(cart => {
+      const order = getStorage("cart_order") || [];
+      const newOrder = [res.variant_id, ...order.filter(i => i !== res.variant_id)];
       setStorage("cart_order", JSON.stringify(newOrder));
       r$1("cart:updated", {
         cart: sortCart(cart)
@@ -4996,21 +4302,41 @@ function addItem(form) {
       };
     });
   });
-} // !
+}
+function handleError(error, source, itemKeyOrId) {
+  dispatchCustomEvent("cart:error", {
+    errorMessage: error.message
+  });
+  if (source === "changeItem") {
+    r$1("quick-cart:error", null, {
+      key: itemKeyOrId,
+      errorMessage: strings$6.quantityError
+    });
+    r$1("cart:error", null, {
+      key: itemKeyOrId,
+      errorMessage: strings$6.quantityError
+    });
+  } else if (source === "addItemById") {
+    r$1("quick-add:error", null, {
+      id: itemKeyOrId,
+      errorMessage: strings$6.quantityError
+    });
+  }
+  throw error;
+}
+
+// !
 //  Serialize all form data into a SearchParams string
 //  (c) 2020 Chris Ferdinandi, MIT License, https://gomakethings.com
 //  @param  {Node}   form The form to serialize
 //  @return {String}      The serialized form data
 //
-
-
 function serialize(form) {
   var arr = [];
   Array.prototype.slice.call(form.elements).forEach(function (field) {
     if (!field.name || field.disabled || ["file", "reset", "submit", "button"].indexOf(field.type) > -1) {
       return;
     }
-
     if (field.type === "select-multiple") {
       Array.prototype.slice.call(field.options).forEach(function (option) {
         if (!option.selected) return;
@@ -5018,21 +4344,18 @@ function serialize(form) {
       });
       return;
     }
-
     if (["checkbox", "radio"].indexOf(field.type) > -1 && !field.checked) {
       return;
     }
-
     arr.push(encodeURIComponent(field.name) + "=" + encodeURIComponent(field.value));
   });
   return arr.join("&");
 }
-
 var cart = {
-  addItem: addItem,
-  get: get,
-  updateItem: updateItem,
-  addItemById: addItemById
+  addItem,
+  get,
+  updateItem,
+  addItemById
 };
 
 /**
@@ -5102,23 +4425,12 @@ function formatMoney$1(cents, format) {
   return formatString.replace(placeholderRegex, value);
 }
 
-var formatMoney = (function (val) {
-  return formatMoney$1(val, window.theme.moneyFormat || "${{amount}}");
-});
+var formatMoney = (val => formatMoney$1(val, window.theme.moneyFormat || "${{amount}}"));
 
 // Fetch the product data from the .js endpoint because it includes
 // more data than the .json endpoint.
-var getProduct = (function (handle) {
-  return function (cb) {
-    return fetch("".concat(window.theme.routes.products, "/").concat(handle, ".js")).then(function (res) {
-      return res.json();
-    }).then(function (data) {
-      return cb(data);
-    }).catch(function (err) {
-      return console.log(err.message);
-    });
-  };
-});
+
+var getProduct = (handle => cb => fetch("".concat(window.theme.routes.products, "/").concat(handle, ".js")).then(res => res.json()).then(data => cb(data)).catch(err => console.log(err.message)));
 
 /*!
  * slide-anim
@@ -5126,46 +4438,28 @@ var getProduct = (function (handle) {
  * (c) 2017 @yomotsu
  * Released under the MIT License.
  */
-var global$2 = window;
-var isPromiseSuppoted = typeof global$2.Promise === 'function';
-var PromiseLike = isPromiseSuppoted ? global$2.Promise : (function () {
-    function PromiseLike(executor) {
-        var callback = function () { };
-        var resolve = function () {
-            callback();
-        };
-        executor(resolve);
-        return {
-            then: function (_callback) {
-                callback = _callback;
-            }
-        };
-    }
-    return PromiseLike;
-}());
-
-var pool = [];
-var inAnimItems = {
-    add: function (el, defaultStyle, timeoutId, onCancelled) {
-        var inAnimItem = { el: el, defaultStyle: defaultStyle, timeoutId: timeoutId, onCancelled: onCancelled };
+const pool = [];
+const inAnimItems = {
+    add(el, defaultStyle, timeoutId, onCancelled) {
+        const inAnimItem = { el, defaultStyle, timeoutId, onCancelled };
         this.remove(el);
         pool.push(inAnimItem);
     },
-    remove: function (el) {
-        var index = inAnimItems.findIndex(el);
+    remove(el) {
+        const index = inAnimItems.findIndex(el);
         if (index === -1)
             return;
-        var inAnimItem = pool[index];
+        const inAnimItem = pool[index];
         clearTimeout(inAnimItem.timeoutId);
         inAnimItem.onCancelled();
         pool.splice(index, 1);
     },
-    find: function (el) {
+    find(el) {
         return pool[inAnimItems.findIndex(el)];
     },
-    findIndex: function (el) {
-        var index = -1;
-        pool.some(function (item, i) {
+    findIndex(el) {
+        let index = -1;
+        pool.some((item, i) => {
             if (item.el === el) {
                 index = i;
                 return true;
@@ -5176,53 +4470,52 @@ var inAnimItems = {
     }
 };
 
-var CSS_EASEOUT_EXPO = 'cubic-bezier( 0.19, 1, 0.22, 1 )';
-function slideDown(el, options) {
-    if (options === void 0) { options = {}; }
-    return new PromiseLike(function (resolve) {
+const CSS_EASEOUT_EXPO = 'cubic-bezier( 0.19, 1, 0.22, 1 )';
+function slideDown(el, options = {}) {
+    return new Promise((resolve) => {
         if (inAnimItems.findIndex(el) !== -1)
             return;
-        var _isVisible = isVisible(el);
-        var hasEndHeight = typeof options.endHeight === 'number';
-        var display = options.display || 'block';
-        var duration = options.duration || 400;
-        var onCancelled = options.onCancelled || function () { };
-        var defaultStyle = el.getAttribute('style') || '';
-        var style = window.getComputedStyle(el);
-        var defaultStyles = getDefaultStyles(el, display);
-        var isBorderBox = /border-box/.test(style.getPropertyValue('box-sizing'));
-        var contentHeight = defaultStyles.height;
-        var minHeight = defaultStyles.minHeight;
-        var paddingTop = defaultStyles.paddingTop;
-        var paddingBottom = defaultStyles.paddingBottom;
-        var borderTop = defaultStyles.borderTop;
-        var borderBottom = defaultStyles.borderBottom;
-        var cssDuration = duration + "ms";
-        var cssEasing = CSS_EASEOUT_EXPO;
-        var cssTransition = [
-            "height " + cssDuration + " " + cssEasing,
-            "min-height " + cssDuration + " " + cssEasing,
-            "padding " + cssDuration + " " + cssEasing,
-            "border-width " + cssDuration + " " + cssEasing
+        const _isVisible = isVisible(el);
+        const hasEndHeight = typeof options.endHeight === 'number';
+        const display = options.display || 'block';
+        const duration = options.duration || 400;
+        const onCancelled = options.onCancelled || function () { };
+        const defaultStyle = el.getAttribute('style') || '';
+        const style = window.getComputedStyle(el);
+        const defaultStyles = getDefaultStyles(el, display);
+        const isBorderBox = /border-box/.test(style.getPropertyValue('box-sizing'));
+        const contentHeight = defaultStyles.height;
+        const minHeight = defaultStyles.minHeight;
+        const paddingTop = defaultStyles.paddingTop;
+        const paddingBottom = defaultStyles.paddingBottom;
+        const borderTop = defaultStyles.borderTop;
+        const borderBottom = defaultStyles.borderBottom;
+        const cssDuration = `${duration}ms`;
+        const cssEasing = CSS_EASEOUT_EXPO;
+        const cssTransition = [
+            `height ${cssDuration} ${cssEasing}`,
+            `min-height ${cssDuration} ${cssEasing}`,
+            `padding ${cssDuration} ${cssEasing}`,
+            `border-width ${cssDuration} ${cssEasing}`
         ].join();
-        var startHeight = _isVisible ? style.height : '0px';
-        var startMinHeight = _isVisible ? style.minHeight : '0px';
-        var startPaddingTop = _isVisible ? style.paddingTop : '0px';
-        var startPaddingBottom = _isVisible ? style.paddingBottom : '0px';
-        var startBorderTopWidth = _isVisible ? style.borderTopWidth : '0px';
-        var startBorderBottomWidth = _isVisible ? style.borderBottomWidth : '0px';
-        var endHeight = (function () {
+        const startHeight = _isVisible ? style.height : '0px';
+        const startMinHeight = _isVisible ? style.minHeight : '0px';
+        const startPaddingTop = _isVisible ? style.paddingTop : '0px';
+        const startPaddingBottom = _isVisible ? style.paddingBottom : '0px';
+        const startBorderTopWidth = _isVisible ? style.borderTopWidth : '0px';
+        const startBorderBottomWidth = _isVisible ? style.borderBottomWidth : '0px';
+        const endHeight = (() => {
             if (hasEndHeight)
-                return options.endHeight + "px";
+                return `${options.endHeight}px`;
             return !isBorderBox ?
-                contentHeight - paddingTop - paddingBottom + "px" :
-                contentHeight + borderTop + borderBottom + "px";
+                `${contentHeight - paddingTop - paddingBottom}px` :
+                `${contentHeight + borderTop + borderBottom}px`;
         })();
-        var endMinHeight = minHeight + "px";
-        var endPaddingTop = paddingTop + "px";
-        var endPaddingBottom = paddingBottom + "px";
-        var endBorderTopWidth = borderTop + "px";
-        var endBorderBottomWidth = borderBottom + "px";
+        const endMinHeight = `${minHeight}px`;
+        const endPaddingTop = `${paddingTop}px`;
+        const endPaddingBottom = `${paddingBottom}px`;
+        const endBorderTopWidth = `${borderTop}px`;
+        const endBorderBottomWidth = `${borderBottom}px`;
         if (startHeight === endHeight &&
             startPaddingTop === endPaddingTop &&
             startPaddingBottom === endPaddingBottom &&
@@ -5231,7 +4524,7 @@ function slideDown(el, options) {
             resolve();
             return;
         }
-        requestAnimationFrame(function () {
+        requestAnimationFrame(() => {
             el.style.height = startHeight;
             el.style.minHeight = startMinHeight;
             el.style.paddingTop = startPaddingTop;
@@ -5243,7 +4536,7 @@ function slideDown(el, options) {
             el.style.visibility = 'visible';
             el.style.transition = cssTransition;
             el.style.webkitTransition = cssTransition;
-            requestAnimationFrame(function () {
+            requestAnimationFrame(() => {
                 el.style.height = endHeight;
                 el.style.minHeight = endMinHeight;
                 el.style.paddingTop = endPaddingTop;
@@ -5252,12 +4545,12 @@ function slideDown(el, options) {
                 el.style.borderBottomWidth = endBorderBottomWidth;
             });
         });
-        var timeoutId = setTimeout(function () {
+        const timeoutId = setTimeout(() => {
             resetStyle(el);
             el.style.display = display;
             if (hasEndHeight) {
-                el.style.height = options.endHeight + "px";
-                el.style.overflow = "hidden";
+                el.style.height = `${options.endHeight}px`;
+                el.style.overflow = `hidden`;
             }
             inAnimItems.remove(el);
             resolve();
@@ -5265,44 +4558,43 @@ function slideDown(el, options) {
         inAnimItems.add(el, defaultStyle, timeoutId, onCancelled);
     });
 }
-function slideUp(el, options) {
-    if (options === void 0) { options = {}; }
-    return new PromiseLike(function (resolve) {
+function slideUp(el, options = {}) {
+    return new Promise((resolve) => {
         if (inAnimItems.findIndex(el) !== -1)
             return;
-        var _isVisible = isVisible(el);
-        var display = options.display || 'block';
-        var duration = options.duration || 400;
-        var onCancelled = options.onCancelled || function () { };
+        const _isVisible = isVisible(el);
+        const display = options.display || 'block';
+        const duration = options.duration || 400;
+        const onCancelled = options.onCancelled || function () { };
         if (!_isVisible) {
             resolve();
             return;
         }
-        var defaultStyle = el.getAttribute('style') || '';
-        var style = window.getComputedStyle(el);
-        var isBorderBox = /border-box/.test(style.getPropertyValue('box-sizing'));
-        var minHeight = pxToNumber(style.getPropertyValue('min-height'));
-        var paddingTop = pxToNumber(style.getPropertyValue('padding-top'));
-        var paddingBottom = pxToNumber(style.getPropertyValue('padding-bottom'));
-        var borderTop = pxToNumber(style.getPropertyValue('border-top-width'));
-        var borderBottom = pxToNumber(style.getPropertyValue('border-bottom-width'));
-        var contentHeight = el.scrollHeight;
-        var cssDuration = duration + 'ms';
-        var cssEasing = CSS_EASEOUT_EXPO;
-        var cssTransition = [
-            "height " + cssDuration + " " + cssEasing,
-            "padding " + cssDuration + " " + cssEasing,
-            "border-width " + cssDuration + " " + cssEasing
+        const defaultStyle = el.getAttribute('style') || '';
+        const style = window.getComputedStyle(el);
+        const isBorderBox = /border-box/.test(style.getPropertyValue('box-sizing'));
+        const minHeight = pxToNumber(style.getPropertyValue('min-height'));
+        const paddingTop = pxToNumber(style.getPropertyValue('padding-top'));
+        const paddingBottom = pxToNumber(style.getPropertyValue('padding-bottom'));
+        const borderTop = pxToNumber(style.getPropertyValue('border-top-width'));
+        const borderBottom = pxToNumber(style.getPropertyValue('border-bottom-width'));
+        const contentHeight = el.scrollHeight;
+        const cssDuration = duration + 'ms';
+        const cssEasing = CSS_EASEOUT_EXPO;
+        const cssTransition = [
+            `height ${cssDuration} ${cssEasing}`,
+            `padding ${cssDuration} ${cssEasing}`,
+            `border-width ${cssDuration} ${cssEasing}`
         ].join();
-        var startHeight = !isBorderBox ?
-            contentHeight - paddingTop - paddingBottom + "px" :
-            contentHeight + borderTop + borderBottom + "px";
-        var startMinHeight = minHeight + "px";
-        var startPaddingTop = paddingTop + "px";
-        var startPaddingBottom = paddingBottom + "px";
-        var startBorderTopWidth = borderTop + "px";
-        var startBorderBottomWidth = borderBottom + "px";
-        requestAnimationFrame(function () {
+        const startHeight = !isBorderBox ?
+            `${contentHeight - paddingTop - paddingBottom}px` :
+            `${contentHeight + borderTop + borderBottom}px`;
+        const startMinHeight = `${minHeight}px`;
+        const startPaddingTop = `${paddingTop}px`;
+        const startPaddingBottom = `${paddingBottom}px`;
+        const startBorderTopWidth = `${borderTop}px`;
+        const startBorderBottomWidth = `${borderBottom}px`;
+        requestAnimationFrame(() => {
             el.style.height = startHeight;
             el.style.minHeight = startMinHeight;
             el.style.paddingTop = startPaddingTop;
@@ -5313,7 +4605,7 @@ function slideUp(el, options) {
             el.style.overflow = 'hidden';
             el.style.transition = cssTransition;
             el.style.webkitTransition = cssTransition;
-            requestAnimationFrame(function () {
+            requestAnimationFrame(() => {
                 el.style.height = '0';
                 el.style.minHeight = '0';
                 el.style.paddingTop = '0';
@@ -5322,7 +4614,7 @@ function slideUp(el, options) {
                 el.style.borderBottomWidth = '0';
             });
         });
-        var timeoutId = setTimeout(function () {
+        const timeoutId = setTimeout(() => {
             resetStyle(el);
             el.style.display = 'none';
             inAnimItems.remove(el);
@@ -5332,15 +4624,15 @@ function slideUp(el, options) {
     });
 }
 function slideStop(el) {
-    var elementObject = inAnimItems.find(el);
+    const elementObject = inAnimItems.find(el);
     if (!elementObject)
         return;
-    var style = window.getComputedStyle(el);
-    var height = style.height;
-    var paddingTop = style.paddingTop;
-    var paddingBottom = style.paddingBottom;
-    var borderTopWidth = style.borderTopWidth;
-    var borderBottomWidth = style.borderBottomWidth;
+    const style = window.getComputedStyle(el);
+    const height = style.height;
+    const paddingTop = style.paddingTop;
+    const paddingBottom = style.paddingBottom;
+    const borderTopWidth = style.borderTopWidth;
+    const borderBottomWidth = style.borderBottomWidth;
     resetStyle(el);
     el.style.height = height;
     el.style.paddingTop = paddingTop;
@@ -5365,35 +4657,34 @@ function resetStyle(el) {
     el.style.transition = '';
     el.style.webkitTransition = '';
 }
-function getDefaultStyles(el, defaultDisplay) {
-    if (defaultDisplay === void 0) { defaultDisplay = 'block'; }
-    var defaultStyle = el.getAttribute('style') || '';
-    var style = window.getComputedStyle(el);
+function getDefaultStyles(el, defaultDisplay = 'block') {
+    const defaultStyle = el.getAttribute('style') || '';
+    const style = window.getComputedStyle(el);
     el.style.visibility = 'hidden';
     el.style.display = defaultDisplay;
-    var width = pxToNumber(style.getPropertyValue('width'));
+    const width = pxToNumber(style.getPropertyValue('width'));
     el.style.position = 'absolute';
-    el.style.width = width + "px";
+    el.style.width = `${width}px`;
     el.style.height = '';
     el.style.minHeight = '';
     el.style.paddingTop = '';
     el.style.paddingBottom = '';
     el.style.borderTopWidth = '';
     el.style.borderBottomWidth = '';
-    var minHeight = pxToNumber(style.getPropertyValue('min-height'));
-    var paddingTop = pxToNumber(style.getPropertyValue('padding-top'));
-    var paddingBottom = pxToNumber(style.getPropertyValue('padding-bottom'));
-    var borderTop = pxToNumber(style.getPropertyValue('border-top-width'));
-    var borderBottom = pxToNumber(style.getPropertyValue('border-bottom-width'));
-    var height = el.scrollHeight;
+    const minHeight = pxToNumber(style.getPropertyValue('min-height'));
+    const paddingTop = pxToNumber(style.getPropertyValue('padding-top'));
+    const paddingBottom = pxToNumber(style.getPropertyValue('padding-bottom'));
+    const borderTop = pxToNumber(style.getPropertyValue('border-top-width'));
+    const borderBottom = pxToNumber(style.getPropertyValue('border-bottom-width'));
+    const height = el.scrollHeight;
     el.setAttribute('style', defaultStyle);
     return {
-        height: height,
-        minHeight: minHeight,
-        paddingTop: paddingTop,
-        paddingBottom: paddingBottom,
-        borderTop: borderTop,
-        borderBottom: borderBottom
+        height,
+        minHeight,
+        paddingTop,
+        paddingBottom,
+        borderTop,
+        borderBottom
     };
 }
 function pxToNumber(px) {
@@ -5401,107 +4692,91 @@ function pxToNumber(px) {
 }
 
 function accordion(node, options) {
-  var labels = t$2(".accordion__label", node);
-  var content = t$2(".accordion__content", node); // Make it accessible by keyboard
+  const labels = t$2(".accordion__label", node);
+  const content = t$2(".accordion__content", node);
 
-  labels.forEach(function (label) {
+  // Make it accessible by keyboard
+  labels.forEach(label => {
     label.href = "#";
   });
-  content.forEach(function (t) {
-    return u$1(t, "measure");
-  });
-  var labelClick = e$2(labels, "click", function (e) {
+  content.forEach(t => u$1(t, "measure"));
+  const labelClick = e$2(labels, "click", e => {
     e.preventDefault();
-    var label = e.currentTarget;
-    var group = label.parentNode,
-        content = label.nextElementSibling;
+    const label = e.currentTarget;
+    const {
+      parentNode: group,
+      nextElementSibling: content
+    } = label;
     slideStop(content);
-
     if (isVisible(content)) {
       _close(label, group, content);
     } else {
       _open(label, group, content);
     }
   });
-
   function _open(label, group, content) {
     slideDown(content);
     group.setAttribute("data-open", true);
     label.setAttribute("aria-expanded", true);
     content.setAttribute("aria-hidden", false);
   }
-
   function _close(label, group, content) {
     slideUp(content);
     group.setAttribute("data-open", false);
     label.setAttribute("aria-expanded", false);
     content.setAttribute("aria-hidden", true);
   }
-
   if (options.firstOpen) {
     // Open first accordion label
-    var _labels$ = labels[0],
-        group = _labels$.parentNode,
-        _content = _labels$.nextElementSibling;
-
-    _open(labels[0], group, _content);
+    const {
+      parentNode: group,
+      nextElementSibling: content
+    } = labels[0];
+    _open(labels[0], group, content);
   }
-
   function destroy() {
-    return function () {
-      return labelClick();
-    };
+    return () => labelClick();
   }
-
   return {
-    destroy: destroy
+    destroy
   };
 }
-
 function Accordions(elements) {
-  var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  let options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
   if (Array.isArray(elements) && !elements.length) return;
-  var defaultOptions = {
+  const defaultOptions = {
     firstOpen: true
   };
-  var opts = Object.assign(defaultOptions, options);
-  var accordions = [];
-
+  const opts = Object.assign(defaultOptions, options);
+  let accordions = [];
   if (elements.length) {
-    accordions = elements.map(function (node) {
-      return accordion(node, opts);
-    });
+    accordions = elements.map(node => accordion(node, opts));
   } else {
     accordions.push(accordion(elements, opts));
   }
-
   function unload() {
-    accordions.forEach(function (accordion) {
-      return accordion.destroy();
-    });
+    accordions.forEach(accordion => accordion.destroy());
   }
-
   return {
-    unload: unload
+    unload
   };
 }
 
 function Media(node) {
   if (!node) return;
-  var _window = window,
-      Shopify = _window.Shopify,
-      YT = _window.YT;
-  var elements = t$2("[data-interactive]", node);
+  const {
+    Shopify,
+    YT
+  } = window;
+  const elements = t$2("[data-interactive]", node);
   if (!elements.length) return;
-  var acceptedTypes = ["video", "model", "external_video"];
-  var activeMedia = null;
-  var featuresLoaded = false;
-  var instances = {};
-
+  const acceptedTypes = ["video", "model", "external_video"];
+  let activeMedia = null;
+  let featuresLoaded = false;
+  let instances = {};
   if (featuresLoaded) {
     elements.forEach(initElement);
   }
-
   window.Shopify.loadFeatures([{
     name: "model-viewer-ui",
     version: "1.0"
@@ -5511,9 +4786,8 @@ function Media(node) {
   }, {
     name: "video-ui",
     version: "1.0"
-  }], function () {
+  }], () => {
     featuresLoaded = true;
-
     if ("YT" in window && Boolean(YT.loaded)) {
       elements.forEach(initElement);
     } else {
@@ -5522,20 +4796,19 @@ function Media(node) {
       };
     }
   });
-
   function initElement(el) {
-    var _el$dataset = el.dataset,
-        mediaId = _el$dataset.mediaId,
-        mediaType = _el$dataset.mediaType;
+    const {
+      mediaId,
+      mediaType
+    } = el.dataset;
     if (!mediaType || !acceptedTypes.includes(mediaType)) return;
     if (Object.keys(instances).includes(mediaId)) return;
-    var instance = {
+    let instance = {
       id: mediaId,
       type: mediaType,
       container: el,
       media: el.children[0]
     };
-
     switch (instance.type) {
       case "video":
         instance.player = new Shopify.Plyr(instance.media, {
@@ -5544,55 +4817,48 @@ function Media(node) {
           }
         });
         break;
-
       case "external_video":
         {
-          instance.player = new YT.Player(instance.media); // This overlay makes it possible to swipe video embeds in carousels
+          instance.player = new YT.Player(instance.media);
 
-          var overlay = n$2(".external-video-overlay", el);
-
+          // This overlay makes it possible to swipe video embeds in carousels
+          const overlay = n$2(".external-video-overlay", el);
           if (overlay) {
-            e$2(overlay, "click", function (e) {
+            e$2(overlay, "click", e => {
               var _instance$player;
-
-              e.preventDefault(); // in some situations the iframe-js-api can't communicate and this is undef,
+              e.preventDefault();
+              // in some situations the iframe-js-api can't communicate and this is undef,
               // in this case lets faily quietly and remove the overlay (it won't come back)
-
               if ((_instance$player = instance.player) !== null && _instance$player !== void 0 && _instance$player.playVideo) {
                 instance.player.playVideo();
               }
-
               u$1(overlay, "hidden");
             });
-            instance.player.addEventListener("onStateChange", function (event) {
+            instance.player.addEventListener("onStateChange", event => {
               if (event.data === 2) {
                 i$1(overlay, "hidden");
               }
             });
           }
-
           break;
         }
-
       case "model":
         instance.viewer = new Shopify.ModelViewerUI(n$2("model-viewer", el));
-        e$2(n$2(".model-poster", el), "click", function (e) {
+        e$2(n$2(".model-poster", el), "click", e => {
           e.preventDefault();
           playModel(instance);
         });
         break;
     }
-
     instances[mediaId] = instance;
-
     if (instance.player) {
       if (instance.type === "video") {
-        instance.player.on("playing", function () {
+        instance.player.on("playing", () => {
           pauseActiveMedia(instance);
           activeMedia = instance;
         });
       } else if (instance.type === "external_video") {
-        instance.player.addEventListener("onStateChange", function (event) {
+        instance.player.addEventListener("onStateChange", event => {
           if (event.data === 1) {
             pauseActiveMedia(instance);
             activeMedia = instance;
@@ -5601,44 +4867,38 @@ function Media(node) {
       }
     }
   }
-
   function playModel(instance) {
     pauseActiveMedia(instance);
     instance.viewer.play();
     u$1(instance.container, "model-active");
     activeMedia = instance;
-    setTimeout(function () {
+    setTimeout(() => {
       n$2("model-viewer", instance.container).focus();
     }, 300);
   }
-
   function pauseActiveMedia(instance) {
     if (!activeMedia || instance == activeMedia) return;
-
     if (activeMedia.player) {
       if (activeMedia.type === "video") {
         activeMedia.player.pause();
       } else if (activeMedia.type === "external_video") {
         activeMedia.player.pauseVideo();
       }
-
       activeMedia = null;
       return;
     }
-
     if (activeMedia.viewer) {
       i$1(activeMedia.container, "model-active");
       activeMedia.viewer.pause();
       activeMedia = null;
     }
   }
-
   return {
-    pauseActiveMedia: pauseActiveMedia
+    pauseActiveMedia
   };
 }
 
-var selectors$S = {
+const selectors$U = {
   idInput: '[name="id"]',
   optionInput: '[name^="options"]',
   quantityInput: "[data-quantity-input]",
@@ -5646,118 +4906,92 @@ var selectors$S = {
   propertyInput: '[name^="properties"]'
 };
 function ProductForm(container, form, prod) {
-  var config = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
-  var product = validateProductObject(prod);
-  var listeners = [];
-
-  var getOptions = function getOptions() {
+  let config = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
+  const product = validateProductObject(prod);
+  const listeners = [];
+  const getOptions = () => {
     return _serializeOptionValues(optionInputs, function (item) {
       var regex = /(?:^(options\[))(.*?)(?:\])/;
       item.name = regex.exec(item.name)[2]; // Use just the value between 'options[' and ']'
-
       return item;
     });
   };
-
-  var getVariant = function getVariant() {
+  const getVariant = () => {
     return getVariantFromSerializedArray(product, getOptions());
   };
-
-  var getProperties = function getProperties() {
-    var properties = _serializePropertyValues(propertyInputs, function (propertyName) {
+  const getProperties = () => {
+    const properties = _serializePropertyValues(propertyInputs, function (propertyName) {
       var regex = /(?:^(properties\[))(.*?)(?:\])/;
       var name = regex.exec(propertyName)[2]; // Use just the value between 'properties[' and ']'
-
       return name;
     });
-
     return Object.entries(properties).length === 0 ? null : properties;
   };
-
-  var getQuantity = function getQuantity() {
+  const getQuantity = () => {
     return formQuantityInput[0] ? Number.parseInt(formQuantityInput[0].value, 10) : 1;
   };
-
-  var getProductFormEventData = function getProductFormEventData() {
-    return {
-      options: getOptions(),
-      variant: getVariant(),
-      properties: getProperties(),
-      quantity: getQuantity()
-    };
-  };
-
-  var onFormEvent = function onFormEvent(cb) {
+  const getProductFormEventData = () => ({
+    options: getOptions(),
+    variant: getVariant(),
+    properties: getProperties(),
+    quantity: getQuantity()
+  });
+  const onFormEvent = cb => {
     if (typeof cb === "undefined") return;
-    return function (event) {
+    return event => {
       event.dataset = getProductFormEventData();
       cb(event);
     };
   };
-
-  var setIdInputValue = function setIdInputValue(value) {
-    var idInputElement = form.querySelector(selectors$S.idInput);
-
+  const setIdInputValue = value => {
+    let idInputElement = form.querySelector(selectors$U.idInput);
     if (!idInputElement) {
       idInputElement = document.createElement("input");
       idInputElement.type = "hidden";
       idInputElement.name = "id";
       form.appendChild(idInputElement);
     }
-
     idInputElement.value = value.toString();
   };
-
-  var onSubmit = function onSubmit(event) {
+  const onSubmit = event => {
     event.dataset = getProductFormEventData();
     setIdInputValue(event.dataset.variant.id);
-
     if (config.onFormSubmit) {
       config.onFormSubmit(event);
     }
   };
-
-  var initInputs = function initInputs(selector, cb) {
-    var elements = _toConsumableArray(container.querySelectorAll(selector));
-
-    return elements.map(function (element) {
+  const initInputs = (selector, cb) => {
+    const elements = [...container.querySelectorAll(selector)];
+    return elements.map(element => {
       listeners.push(e$2(element, "change", onFormEvent(cb)));
       return element;
     });
   };
-
   listeners.push(e$2(form, "submit", onSubmit));
-  var optionInputs = initInputs(selectors$S.optionInput, config.onOptionChange);
-  var formQuantityInput = initInputs(selectors$S.quantityInput, config.onQuantityChange);
-  var propertyInputs = initInputs(selectors$S.propertyInput, config.onPropertyChange);
-
-  var destroy = function destroy() {
-    listeners.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
+  const optionInputs = initInputs(selectors$U.optionInput, config.onOptionChange);
+  const formQuantityInput = initInputs(selectors$U.quantityInput, config.onQuantityChange);
+  const propertyInputs = initInputs(selectors$U.propertyInput, config.onPropertyChange);
+  const destroy = () => {
+    listeners.forEach(unsubscribe => unsubscribe());
   };
-
   return {
-    getVariant: getVariant,
-    destroy: destroy
+    getVariant,
+    destroy
   };
 }
-
 function validateProductObject(product) {
-  if (_typeof(product) !== "object") {
+  if (typeof product !== "object") {
     throw new TypeError(product + " is not an object.");
   }
-
   if (typeof product.variants[0].options === "undefined") {
     throw new TypeError("Product object is invalid. Make sure you use the product object that is output from {{ product | json }} or from the http://[your-product-url].js route");
   }
-
   return product;
 }
-
 function _serializeOptionValues(inputs, transform) {
   return inputs.reduce(function (options, input) {
-    if (input.checked || // If input is a checked (means type radio or checkbox)
+    if (input.checked ||
+    // If input is a checked (means type radio or checkbox)
     input.type !== "radio" && input.type !== "checkbox" // Or if its any other type of input
     ) {
       options.push(transform({
@@ -5765,156 +4999,139 @@ function _serializeOptionValues(inputs, transform) {
         value: input.value
       }));
     }
-
     return options;
   }, []);
 }
-
 function _serializePropertyValues(inputs, transform) {
   return inputs.reduce(function (properties, input) {
-    if (input.checked || // If input is a checked (means type radio or checkbox)
+    if (input.checked ||
+    // If input is a checked (means type radio or checkbox)
     input.type !== "radio" && input.type !== "checkbox" // Or if its any other type of input
     ) {
       properties[transform(input.name)] = input.value;
     }
-
     return properties;
   }, {});
 }
 
-var preventDefault = (function (fn) {
-  return function (e) {
-    e.preventDefault();
-    fn();
-  };
+var preventDefault = (fn => e => {
+  e.preventDefault();
+  fn();
 });
 
-var selectors$R = {
-  imageById: function imageById(id) {
-    return "[data-media-item-id='".concat(id, "']");
-  },
+const selectors$T = {
+  imageById: id => "[data-media-item-id='".concat(id, "']"),
   imageWrapper: "[data-product-media-wrapper]",
   inYourSpace: "[data-in-your-space]"
 };
-var classes$p = {
+const classes$r = {
   hidden: "hidden"
 };
 function switchImage (container, imageId, inYourSpaceButton) {
-  var newImage = n$2(selectors$R.imageWrapper + selectors$R.imageById(imageId), container);
-  var otherImages = t$2("".concat(selectors$R.imageWrapper, ":not(").concat(selectors$R.imageById(imageId), ")"), container);
-  i$1(newImage, classes$p.hidden); // Update view in space button
+  const newImage = n$2(selectors$T.imageWrapper + selectors$T.imageById(imageId), container);
+  const otherImages = t$2("".concat(selectors$T.imageWrapper, ":not(").concat(selectors$T.imageById(imageId), ")"), container);
+  newImage && i$1(newImage, classes$r.hidden);
 
+  // Update view in space button
   if (inYourSpaceButton) {
     if (newImage.dataset.mediaType === "model") {
       inYourSpaceButton.setAttribute("data-shopify-model3d-id", newImage.dataset.mediaItemId);
     }
   }
+  otherImages.forEach(image => u$1(image, classes$r.hidden));
+}
 
-  otherImages.forEach(function (image) {
-    return u$1(image, classes$p.hidden);
-  });
+// This loads the polyfill chunk if necessary
+function provideResizeObserver() {
+  if (window.ResizeObserver) {
+    return Promise.resolve({
+      ResizeObserver
+    });
+  }
+  return import(flu.chunks.polyfillResizeObserver);
 }
 
 function quantityInput (container) {
-  var quantityWrapper = n$2(".quantity-input", container);
+  const quantityWrapper = n$2(".quantity-input", container);
   if (!quantityWrapper) return;
-  var quantityInput = n$2("[data-quantity-input]", quantityWrapper);
-  var addQuantity = n$2("[data-add-quantity]", quantityWrapper);
-  var subtractQuantity = n$2("[data-subtract-quantity]", quantityWrapper);
-
-  var handleAddQuantity = function handleAddQuantity() {
-    var currentValue = parseInt(quantityInput.value);
-    var newValue = currentValue + 1;
+  const quantityInput = n$2("[data-quantity-input]", quantityWrapper);
+  const addQuantity = n$2("[data-add-quantity]", quantityWrapper);
+  const subtractQuantity = n$2("[data-subtract-quantity]", quantityWrapper);
+  const handleAddQuantity = () => {
+    const currentValue = parseInt(quantityInput.value);
+    const newValue = currentValue + 1;
     quantityInput.value = newValue;
     quantityInput.dispatchEvent(new Event("change"));
   };
-
-  var handleSubtractQuantity = function handleSubtractQuantity() {
-    var currentValue = parseInt(quantityInput.value);
+  const handleSubtractQuantity = () => {
+    const currentValue = parseInt(quantityInput.value);
     if (currentValue === 1) return;
-    var newValue = currentValue - 1;
+    const newValue = currentValue - 1;
     quantityInput.value = newValue;
     quantityInput.dispatchEvent(new Event("change"));
   };
-
-  var events = [e$2(addQuantity, "click", handleAddQuantity), e$2(subtractQuantity, "click", handleSubtractQuantity)];
-
-  var unload = function unload() {
-    events.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
+  const events = [e$2(addQuantity, "click", handleAddQuantity), e$2(subtractQuantity, "click", handleSubtractQuantity)];
+  const unload = () => {
+    events.forEach(unsubscribe => unsubscribe());
   };
-
   return {
-    unload: unload
+    unload
   };
 }
 
-var selectors$Q = {
+const selectors$S = {
   popupTrigger: "[data-popup-trigger]"
 };
-
-var informationPopup = function informationPopup(node) {
-  var events = [];
-  var popupTriggers = t$2(selectors$Q.popupTrigger, node);
-
+const informationPopup = node => {
+  const events = [];
+  const popupTriggers = t$2(selectors$S.popupTrigger, node);
   if (!popupTriggers.length) {
     return;
   }
-
-  var listener = e$2(popupTriggers, "click", function (e) {
+  const listener = e$2(popupTriggers, "click", e => {
     e.preventDefault();
     e.stopPropagation();
-    var modalContentId = e.target.dataset.modalContentId;
-    var content = n$2("#".concat(modalContentId), node);
+    const {
+      modalContentId
+    } = e.target.dataset;
+    const content = n$2("#".concat(modalContentId), node);
     r$1("modal:open", null, {
       modalContent: content
     });
   });
   events.push(listener);
-
   function unload() {
-    events.forEach(function (evt) {
-      return evt();
-    });
+    events.forEach(evt => evt());
   }
-
   return {
-    unload: unload
+    unload
   };
 };
 
-var selectors$P = {
+const selectors$R = {
   moreButton: "[data-more-media]",
   moreBar: "[data-more-media-bar]",
   productMedia: "[data-product-media]"
 };
-var states = {
+const states = {
   closed: "closed",
   beforeOpen: "beforeOpen",
   opening: "opening",
   open: "open"
 };
-
-var moreMedia = function moreMedia(node) {
-  var moreButton = n$2(selectors$P.moreButton, node);
-
-  if (!moreButton) {
-    return;
-  }
-
-  var moreBar = n$2(selectors$P.moreBar, node);
-  var productMedia = n$2(selectors$P.productMedia, node);
-  var initialAR = parseFloat(window.getComputedStyle(productMedia).aspectRatio);
-  var isOpen = false;
-
-  var updateText = function updateText(open) {
+const moreMedia = node => {
+  if (!node) return;
+  const moreButton = n$2(selectors$R.moreButton, node);
+  if (!moreButton) return;
+  const moreBar = n$2(selectors$R.moreBar, node);
+  const productMedia = n$2(selectors$R.productMedia, node);
+  const initialAR = parseFloat(window.getComputedStyle(productMedia).aspectRatio);
+  let isOpen = false;
+  const updateText = open => {
     moreButton.innerHTML = moreButton.dataset[open ? "langLessMedia" : "langMoreMedia"];
   };
-
-  var close = function close() {
+  const close = () => {
     if (!isOpen) return;
-
     if (!isFinite(initialAR)) {
       // If AR is NaN it's either 'auto' or unsupported by the browser,
       // in which case we can't transition it. Instead, jump directly to
@@ -5924,10 +5141,9 @@ var moreMedia = function moreMedia(node) {
       updateText(false);
       return;
     }
-
     productMedia.dataset.productMedia = states.opening;
-    window.requestAnimationFrame(function () {
-      var transitionEnd = e$2(productMedia, "transitionend", function () {
+    window.requestAnimationFrame(() => {
+      const transitionEnd = e$2(productMedia, "transitionend", () => {
         transitionEnd();
         productMedia.dataset.productMedia = states.closed;
         isOpen = false;
@@ -5936,10 +5152,8 @@ var moreMedia = function moreMedia(node) {
       updateText(false);
     });
   };
-
-  var open = function open() {
+  const open = () => {
     if (isOpen) return;
-
     if (!isFinite(initialAR)) {
       // If AR is NaN it's either 'auto' or unsupported by the browser,
       // in which case we can't transition it. Instead, jump directly to
@@ -5949,23 +5163,23 @@ var moreMedia = function moreMedia(node) {
       updateText(true);
       return;
     }
-
     productMedia.dataset.productMedia = states.beforeOpen;
-    window.requestAnimationFrame(function () {
-      var _productMedia$getBoun = productMedia.getBoundingClientRect(),
-          width = _productMedia$getBoun.width;
-
-      var scrollHeight = productMedia.scrollHeight;
-      var gridGap = parseInt(window.getComputedStyle(productMedia).rowGap, 10);
-      var barBottom = parseInt(window.getComputedStyle(moreBar).bottom, 10);
-      var openAspectRatio = width / (scrollHeight - gridGap - barBottom);
+    window.requestAnimationFrame(() => {
+      const {
+        width
+      } = productMedia.getBoundingClientRect();
+      const {
+        scrollHeight
+      } = productMedia;
+      const gridGap = parseInt(window.getComputedStyle(productMedia).rowGap, 10);
+      const barBottom = parseInt(window.getComputedStyle(moreBar).bottom, 10);
+      const openAspectRatio = width / (scrollHeight - gridGap - barBottom);
       productMedia.style.setProperty("--overflow-gallery-aspect-ratio-open", openAspectRatio);
-      var transitionEnd = e$2(productMedia, "transitionend", function (e) {
+      const transitionEnd = e$2(productMedia, "transitionend", e => {
         if (e.target !== productMedia) {
           // Ignore any bubbled up event from image load transitions, etc.
           return;
         }
-
         transitionEnd();
         productMedia.dataset.productMedia = states.open;
         isOpen = true;
@@ -5974,86 +5188,94 @@ var moreMedia = function moreMedia(node) {
       updateText(true);
     });
   };
-
-  var clickListener = e$2(moreButton, "click", function () {
+  const clickListener = e$2(moreButton, "click", () => {
     isOpen ? close() : open();
   });
-  var resizeListener = e$2(window, "resize", function () {
-    return close();
-  });
-  var events = [clickListener, resizeListener];
-
-  var unload = function unload() {
-    events.forEach(function (evt) {
-      return evt();
-    });
+  const resizeListener = e$2(window, "resize", () => close());
+  const events = [clickListener, resizeListener];
+  const unload = () => {
+    events.forEach(evt => evt());
   };
-
   return {
-    unload: unload
+    unload
   };
 };
 
-var strings$5 = window.theme.strings.products;
-var selectors$O = {
+const {
+  strings: {
+    products: strings$5
+  }
+} = window.theme;
+const selectors$Q = {
   price: "[data-price]",
-  comparePrice: "[data-compare-price]"
+  comparePrice: "[data-compare-price]",
+  priceContainer: ".product__price-and-ratings"
 };
 function updatePrices (container, variant) {
-  var price = t$2(selectors$O.price, container);
-  var comparePrice = t$2(selectors$O.comparePrice, container);
-  var unavailableString = strings$5.product.unavailable;
-
+  const price = t$2(selectors$Q.price, container);
+  const comparePrice = t$2(selectors$Q.comparePrice, container);
+  const unavailableString = strings$5.product.unavailable;
   if (!variant) {
-    price.forEach(function (el) {
-      return el.innerHTML = unavailableString;
-    });
-    comparePrice.forEach(function (el) {
-      return el.innerHTML = "";
-    });
+    price.forEach(el => el.innerHTML = unavailableString);
+    comparePrice.forEach(el => el.innerHTML = "");
     return;
   }
-
-  price.forEach(function (el) {
-    return el.innerHTML = formatMoney(variant.price);
-  });
-  comparePrice.forEach(function (el) {
-    return el.innerHTML = variant.compare_at_price > variant.price ? formatMoney(variant.compare_at_price) : "";
-  });
+  const priceContainer = n$2(selectors$Q.priceContainer, container);
+  const {
+    zeroPriceDisplay,
+    customPriceContent
+  } = priceContainer.dataset;
+  let showPrice = true;
+  let priceContent = formatMoney(variant.price);
+  if (variant.compare_at_price === null) {
+    if (variant.price === 0) {
+      if (zeroPriceDisplay === "hide") {
+        showPrice = false;
+      } else {
+        if (zeroPriceDisplay === "replace") {
+          priceContent = customPriceContent;
+        }
+      }
+    }
+  }
+  priceContainer.setAttribute("data-show-price", showPrice);
+  price.forEach(el => el.innerHTML = priceContent);
+  comparePrice.forEach(el => el.innerHTML = variant.compare_at_price > variant.price ? formatMoney(variant.compare_at_price) : "");
 }
 
-var selectors$N = {
+const selectors$P = {
   productSku: "[data-product-sku]",
   productSkuContainer: ".product__vendor_and_sku"
 };
-var strings$4 = window.theme.strings.products;
+const {
+  strings: {
+    products: strings$4
+  }
+} = window.theme;
 function updateSku (container, variant) {
-  var skuElement = n$2(selectors$N.productSku, container);
-  var skuContainer = n$2(selectors$N.productSkuContainer, container);
+  const skuElement = n$2(selectors$P.productSku, container);
+  const skuContainer = n$2(selectors$P.productSkuContainer, container);
   if (!skuElement) return;
-  var sku = strings$4.product.sku;
-
-  var skuString = function skuString(value) {
-    return "".concat(sku, ": ").concat(value);
-  };
-
+  const {
+    sku
+  } = strings$4.product;
+  const skuString = value => "".concat(sku, ": ").concat(value);
   if (!variant || !variant.sku) {
     skuElement.innerText = "";
     skuContainer.setAttribute("data-showing-sku", false);
     return;
   }
-
   skuElement.innerText = skuString(variant.sku);
   skuContainer.setAttribute("data-showing-sku", true);
 }
 
 function updateBuyButton (btn, variant) {
-  var text = n$2("[data-add-to-cart-text]", btn);
-  var _btn$dataset = btn.dataset,
-      langAvailable = _btn$dataset.langAvailable,
-      langUnavailable = _btn$dataset.langUnavailable,
-      langSoldOut = _btn$dataset.langSoldOut;
-
+  const text = n$2("[data-add-to-cart-text]", btn);
+  const {
+    langAvailable,
+    langUnavailable,
+    langSoldOut
+  } = btn.dataset;
   if (!variant) {
     btn.setAttribute("disabled", "disabled");
     text.textContent = langUnavailable;
@@ -6066,49 +5288,44 @@ function updateBuyButton (btn, variant) {
   }
 }
 
-var selectors$M = {
+const selectors$O = {
   accordionShell: ".accordion.product-reviews",
   accordionContent: ".accordion__content"
 };
-var classes$o = {
+const classes$q = {
   hidden: "hidden",
   accordion: "accordion"
 };
 function reviewsHandler (node, container) {
   if (!node) return;
-  var parentAppBlockContainer = node.parentNode;
-  var accordion = n$2(selectors$M.accordionShell, container);
-  var accordionContent = n$2(selectors$M.accordionContent, accordion); // Move the contents of the reviews app into the accordion shell
+  const parentAppBlockContainer = node.parentNode;
+  const accordion = n$2(selectors$O.accordionShell, container);
+  const accordionContent = n$2(selectors$O.accordionContent, accordion);
+
+  // Move the contents of the reviews app into the accordion shell
   // Then move the contents with the accrdion back into the original
   // location.
-
   accordionContent.appendChild(node);
   parentAppBlockContainer.appendChild(accordion);
-  u$1(parentAppBlockContainer, classes$o.accordion);
-  i$1(accordion, classes$o.hidden);
+  u$1(parentAppBlockContainer, classes$q.accordion);
+  i$1(accordion, classes$q.hidden);
 }
 
 function OptionButtons(els) {
-  var groups = els.map(createOptionGroup);
-
+  const groups = els.map(createOptionGroup);
   function destroy() {
-    groups && groups.forEach(function (group) {
-      return group();
-    });
+    groups && groups.forEach(group => group());
   }
-
   return {
-    groups: groups,
-    destroy: destroy
+    groups,
+    destroy
   };
 }
-
-// ***&&&*** variant project 
-
+// ***&&&*** variant code
 function createOptionGroup(el) {
   var select = n$2("select", el);
   var buttons = t$2("[data-button]", el);
-  var buttonClick = e$2(buttons, "click", function (e) {
+  var buttonClick = e$2(buttons, "click", e => {
     e.preventDefault();
     
     var buttonEl = e.currentTarget;
@@ -6207,326 +5424,205 @@ function createOptionGroup(el) {
     
     
   });
-  return function () {
-    return buttonClick();
-  };
+  return () => buttonClick();
 }
 
-var selectors$L = {
+const selectors$N = {
   counterContainer: "[data-inventory-counter]",
   inventoryMessage: ".inventory-counter__message",
   countdownBar: ".inventory-counter__bar",
   progressBar: ".inventory-counter__bar-progress"
 };
-var classes$n = {
+const classes$p = {
   hidden: "hidden",
   inventoryLow: "inventory--low",
   inventoryEmpty: "inventory--empty",
   inventoryUnavailable: "inventory--unavailable"
 };
+const inventoryCounter = (container, config) => {
+  const variantsInventories = config.variantsInventories;
+  const counterContainer = n$2(selectors$N.counterContainer, container);
+  const inventoryMessageElement = n$2(selectors$N.inventoryMessage, container);
+  const progressBar = n$2(selectors$N.progressBar, container);
+  const {
+    lowInventoryThreshold,
+    showUntrackedQuantity,
+    stockCountdownMax,
+    unavailableText
+  } = counterContainer.dataset;
 
-var inventoryCounter = function inventoryCounter(container, config) {
-  var variantsInventories = config.variantsInventories;
-  var counterContainer = n$2(selectors$L.counterContainer, container);
-  var inventoryMessageElement = n$2(selectors$L.inventoryMessage, container);
-  var progressBar = n$2(selectors$L.progressBar, container);
-  var _counterContainer$dat = counterContainer.dataset,
-      lowInventoryThreshold = _counterContainer$dat.lowInventoryThreshold,
-      stockCountdownMax = _counterContainer$dat.stockCountdownMax,
-      unavailableText = _counterContainer$dat.unavailableText; // If the threshold or countdownmax contains anything but numbers abort
-
+  // If the threshold or countdownmax contains anything but numbers abort
   if (!lowInventoryThreshold.match(/^[0-9]+$/) || !stockCountdownMax.match(/^[0-9]+$/)) {
     return;
   }
-
-  var threshold = parseInt(lowInventoryThreshold, 10);
-  var countDownMax = parseInt(stockCountdownMax, 10);
-  l(counterContainer, classes$n.hidden, !productIventoryValid(variantsInventories[config.id]));
+  const threshold = parseInt(lowInventoryThreshold, 10);
+  const countDownMax = parseInt(stockCountdownMax, 10);
+  l(counterContainer, classes$p.hidden, !productIventoryValid(variantsInventories[config.id]));
   checkThreshold(variantsInventories[config.id]);
-  setProgressBar(variantsInventories[config.id].inventory_quantity);
+  setProgressBar(variantsInventories[config.id].inventory_quantity, variantsInventories[config.id].inventory_management);
   setInventoryMessage(variantsInventories[config.id].inventory_message);
-
   function checkThreshold(_ref) {
-    var inventory_policy = _ref.inventory_policy,
-        inventory_quantity = _ref.inventory_quantity,
-        inventory_management = _ref.inventory_management;
-    i$1(counterContainer, classes$n.inventoryLow);
-
-    if (inventory_management !== null && inventory_policy === "deny") {
-      if (inventory_quantity <= 0) {
-        u$1(counterContainer, classes$n.inventoryEmpty);
+    let {
+      inventory_policy,
+      inventory_quantity,
+      inventory_management
+    } = _ref;
+    i$1(counterContainer, classes$p.inventoryLow);
+    if (inventory_management !== null) {
+      if (inventory_quantity <= 0 && inventory_policy === "deny") {
+        u$1(counterContainer, classes$p.inventoryEmpty);
         counterContainer.setAttribute("data-stock-category", "empty");
-      } else if (inventory_quantity <= threshold) {
+      } else if (inventory_quantity <= threshold || inventory_quantity <= 0 && inventory_policy === "continue") {
         counterContainer.setAttribute("data-stock-category", "low");
       } else {
         counterContainer.setAttribute("data-stock-category", "sufficient");
       }
+    } else if (inventory_management === null && showUntrackedQuantity == "true") {
+      counterContainer.setAttribute("data-stock-category", "sufficient");
     }
   }
-
-  function setProgressBar(inventoryQuantity) {
+  function setProgressBar(inventoryQuantity, inventoryManagement) {
+    if (inventoryManagement === null && showUntrackedQuantity == "true") {
+      progressBar.style.width = "".concat(100, "%");
+      return;
+    }
     if (inventoryQuantity <= 0) {
       progressBar.style.width = "".concat(0, "%");
       return;
     }
-
-    var progressValue = inventoryQuantity < countDownMax ? inventoryQuantity / countDownMax * 100 : 100;
+    const progressValue = inventoryQuantity < countDownMax ? inventoryQuantity / countDownMax * 100 : 100;
     progressBar.style.width = "".concat(progressValue, "%");
   }
-
   function setInventoryMessage(message) {
     inventoryMessageElement.innerText = message;
   }
-
   function productIventoryValid(product) {
-    return product.inventory_message && product.inventory_policy === "deny";
+    return product.inventory_message && (product.inventory_management !== null || product.inventory_management === null && showUntrackedQuantity == "true");
   }
-
-  var update = function update(variant) {
+  const update = variant => {
     if (!variant) {
       setUnavailable();
       return;
     }
-
-    l(counterContainer, classes$n.hidden, !productIventoryValid(variantsInventories[variant.id]));
+    l(counterContainer, classes$p.hidden, !productIventoryValid(variantsInventories[variant.id]));
     checkThreshold(variantsInventories[variant.id]);
-    setProgressBar(variantsInventories[variant.id].inventory_quantity);
+    setProgressBar(variantsInventories[variant.id].inventory_quantity, variantsInventories[variant.id].inventory_management);
     setInventoryMessage(variantsInventories[variant.id].inventory_message);
   };
-
   function setUnavailable() {
-    i$1(counterContainer, classes$n.hidden);
-    u$1(counterContainer, classes$n.inventoryUnavailable);
+    i$1(counterContainer, classes$p.hidden);
+    u$1(counterContainer, classes$p.inventoryUnavailable);
     counterContainer.setAttribute("data-stock-category", "unavailable");
     setProgressBar(0);
     setInventoryMessage(unavailableText);
   }
-
   return {
-    update: update
+    update
   };
 };
 
-// LERP returns a number between start and end based on the amt
-// Often used to smooth animations
-// Eg. Given: start = 0, end = 100
-// - if amt = 0.1 then lerp will return 10
-// - if amt = 0.5 then lerp will return 50
-// - if amt = 0.9 then lerp will return 90
-var lerp = function lerp(start, end, amt) {
-  return (1 - amt) * start + amt * end;
-};
-
-var selectors$K = {
-  productMeta: ".product__meta"
-};
-var classes$m = {
-  hasSticky: "product--has-sticky-scroll"
-};
-function stickyScroll (node) {
-  var productMeta = n$2(selectors$K.productMeta, node);
-  node.style.setProperty("--product-meta-top", 0); // Init position vars
-  // The previous scroll position of the page
-
-  var previousScrollY = window.scrollY; // To keep track of the amount scrolled per event
-
-  var currentScrollAmount = 0; // Height of the header bar, used for calculating position
-  // Set in `_observeHeight()` when the --header-desktop-sticky-height var is set
-
-  var headerHeight = 0; // The value to set the product meta `top` value to
-
-  var metaTop = headerHeight;
-  var metaTopPrevious = metaTop; // The height of the product meta container
-  // Gets updated by a resize observer on the window and the meta container
-
-  var metaHeight = productMeta.offsetHeight; // The height of the product meta container plus the height of the header
-
-  var metaHeightWithHeader = metaHeight + headerHeight; // The max amount to set the meta `top` value
-  // This is equal to the number of pixels
-  // that the meta container is hidden by the viewport.
-  // Gets updated by a resize observer on the window and the meta container
-
-  var metaMaxTop = metaHeightWithHeader - window.innerHeight; // Whatch scroll updates
-
-  var scroller = srraf(function (_ref) {
-    var y = _ref.y;
-
-    _scrollHandler(y);
-  }); // Resize observer on the window and the product meta
-  // Things like accordions can change the height of the meta container
-
-  var resizeObserver = new ResizeObserver(_observeHeight);
-  resizeObserver.observe(productMeta);
-  resizeObserver.observe(document.documentElement); // Start the animation loop
-
-  requestAnimationFrame(function () {
-    return _updateMetaTopLoop();
-  });
-
-  function _observeHeight() {
-    metaHeight = productMeta.offsetHeight;
-    headerHeight = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--header-desktop-sticky-height").replace(/px/gi, ""));
-    metaHeightWithHeader = metaHeight + headerHeight;
-    metaMaxTop = metaHeightWithHeader - window.innerHeight; // Check if the product meta container is taller than the viewport
-    // and section container has room for the meta to scroll.
-    // The product meta could be taller than the images
-    // so it won't have room to scroll.
-
-    if (metaHeightWithHeader > window.innerHeight && node.offsetHeight > metaHeightWithHeader) {
-      u$1(node, classes$m.hasSticky);
-
-      _scrollHandler(window.scrollY);
-    } else {
-      i$1(node, classes$m.hasSticky);
-    }
-  }
-
-  function _scrollHandler(y) {
-    currentScrollAmount = previousScrollY - y; // The offset based on how far the page has been scrolled from last event
-
-    var currentScrollOffset = metaTop + currentScrollAmount; // The max top value while scrolling up
-
-    var topMax = headerHeight; // The max top value while scrolling down
-
-    var bottomMax = -metaMaxTop + headerHeight - 40; // Calculate the current top value based on the currentScrollOffset value
-    // in the range of topMax and bottomMax.
-
-    metaTop = Math.max(bottomMax, Math.min(currentScrollOffset, topMax)); // Update the previous scroll position for next time.
-
-    previousScrollY = y;
-  } // This is an endless RAF loop used to update the top position CSS var.
-  // We're using this with a LERP function to smooth out the position updating
-  // instead of having large jumps while scrolling fast.
-
-
-  function _updateMetaTopLoop() {
-    // We want to continue to update the top var until fully into the stopped position
-    if (metaTop !== metaTopPrevious) {
-      metaTopPrevious = lerp(metaTopPrevious, metaTop, 0.5);
-      node.style.setProperty("--product-meta-top", "".concat(metaTopPrevious, "px"));
-    }
-
-    requestAnimationFrame(function () {
-      return _updateMetaTopLoop();
-    });
-  }
-
-  function destroy() {
-    scroller === null || scroller === void 0 ? void 0 : scroller.scroller.destroy();
-    resizeObserver === null || resizeObserver === void 0 ? void 0 : resizeObserver.disconnect();
-  }
-
-  return {
-    destroy: destroy
-  };
-}
-
-var selectors$J = {
+const selectors$M = {
   item: ".product-item",
   itemInner: ".product-item__inner",
   quickViewButton: ".show-product-quickview"
 };
 function ProductItem(container) {
-  var items = t$2(selectors$J.item, container);
-  if (!items.length) return; // Add z-index for quick-buy overlap
+  const items = t$2(selectors$M.item, container);
+  if (!items.length) return;
 
-  items.forEach(function (item, i) {
-    return item.style.setProperty("--z-index-item", items.length - i);
-  });
-  var productItemAnimations = AnimateProductItem(items);
-  var quickViewButtons = t$2(selectors$J.quickViewButton, container);
-  var events = [e$2(quickViewButtons, "click", function (e) {
+  // Add z-index for quick-buy overlap
+  items.forEach((item, i) => item.style.setProperty("--z-index-item", items.length - i));
+  const productItemAnimations = AnimateProductItem(items);
+  const quickViewButtons = t$2(selectors$M.quickViewButton, container);
+  const events = [e$2(quickViewButtons, "click", e => {
     e.preventDefault();
     e.stopPropagation();
-    var linkEl = e.currentTarget;
-    var url = linkEl.getAttribute("href");
+    const linkEl = e.currentTarget;
+    const url = linkEl.getAttribute("href");
     r$1("quick-view:open", null, {
       productUrl: url
     });
   })];
-
-  var unload = function unload() {
+  const unload = () => {
     productItemAnimations.destroy();
-    events.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
+    events.forEach(unsubscribe => unsubscribe());
   };
-
   return {
-    unload: unload
+    unload
   };
 }
 
-var selectors$I = {
+const selectors$L = {
   sliderContainer: ".swiper",
   visibleSlides: ".swiper-slide-visible"
 };
-var classes$l = {
+const classes$o = {
   overflow: "has-overflow",
   carousel: "carousel"
 };
 var Carousel = (function (node) {
-  var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  let options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
   // Pass the swiper container or the contain section
-  var swiperContainer = a$1(node, classes$l.carousel) ? node : n$2(selectors$I.sliderContainer, node);
+  const swiperContainer = a$1(node, classes$o.carousel) ? node : n$2(selectors$L.sliderContainer, node);
   if (!swiperContainer) return;
-  var carousel;
-  var events = [];
-  var defaultSwiperOptions = {
+  let carousel;
+  const events = [];
+  const defaultSwiperOptions = {
     slidesPerView: 2,
     grabCursor: true,
+    preloadImages: false,
     watchSlidesProgress: true,
     on: {
-      init: function init() {
+      init: function () {
         handleOverflow(this.slides);
       },
-      breakpoint: function breakpoint() {
+      breakpoint: function () {
         onBreakpointChange(this.slides);
       }
     }
   };
-  var nextButton = n$2("[data-next]", node);
-  var prevButton = n$2("[data-prev]", node);
-  var useNav = nextButton && prevButton; // Account for additional padding if slides overflow container
+  const nextButton = n$2("[data-next]", node);
+  const prevButton = n$2("[data-prev]", node);
+  const useNav = nextButton && prevButton;
 
-  var handleOverflow = function handleOverflow(slides) {
+  // Account for additional padding if slides overflow container
+  const handleOverflow = slides => {
     // Allow breakpoints config settings to apply
-    setTimeout(function () {
-      var hasOverflow = a$1(swiperContainer, classes$l.overflow);
-      var needsOverflow = t$2(selectors$I.visibleSlides, swiperContainer).length !== slides.length;
-
+    setTimeout(() => {
+      const hasOverflow = a$1(swiperContainer, classes$o.overflow);
+      const needsOverflow = t$2(selectors$L.visibleSlides, swiperContainer).length !== slides.length;
       if (!hasOverflow && needsOverflow) {
-        u$1(swiperContainer, classes$l.overflow);
+        u$1(swiperContainer, classes$o.overflow);
       } else if (hasOverflow && !needsOverflow) {
-        i$1(swiperContainer, classes$l.overflow);
+        i$1(swiperContainer, classes$o.overflow);
       }
     }, 0);
   };
-
-  var onBreakpointChange = function onBreakpointChange(slides) {
+  const onBreakpointChange = slides => {
     handleOverflow(slides);
   };
-
   function handleFocus(event) {
-    var slide = event.target.closest(".swiper-slide");
+    const slide = event.target.closest(".swiper-slide");
+    const slideIndex = [...slide.parentElement.children].indexOf(slide);
 
-    var slideIndex = _toConsumableArray(slide.parentElement.children).indexOf(slide); // TODO: ideally this would be dependant on if slide didn't have
+    // TODO: ideally this would be dependant on if slide didn't have
     // `swiper-slide-visible` class (so would slide only as needed)
     // however that doesn't work with mobile peek, so brut forcing for now
     // and will always sliding now
-
 
     if (document.body.classList.contains("user-is-tabbing")) {
       carousel.slideTo(slideIndex);
     }
   }
+  import(flu.chunks.swiper).then(_ref => {
+    let {
+      Swiper,
+      Navigation
+    } = _ref;
+    let swiperOptions = Object.assign(defaultSwiperOptions, options);
 
-  import(flu.chunks.swiper).then(function (_ref) {
-    var Swiper = _ref.Swiper,
-        Navigation = _ref.Navigation;
-    var swiperOptions = Object.assign(defaultSwiperOptions, options); // nextEl and prevEl can be passed in check if they are before
+    // nextEl and prevEl can be passed in check if they are before
     // using the defaults
-
     if ("navigation" in swiperOptions) {
       swiperOptions = Object.assign(swiperOptions, {
         modules: [Navigation]
@@ -6540,138 +5636,110 @@ var Carousel = (function (node) {
         }
       });
     }
-
     carousel = new Swiper(swiperContainer, swiperOptions);
     events.push(e$2(swiperContainer, "focusin", handleFocus));
   });
   return {
-    destroy: function destroy() {
+    destroy: () => {
       var _carousel;
-
       (_carousel = carousel) === null || _carousel === void 0 ? void 0 : _carousel.destroy();
-      events.forEach(function (unsubscribe) {
-        return unsubscribe();
-      });
+      events.forEach(unsubscribe => unsubscribe());
     }
   };
 });
 
-var selectors$H = {
+const selectors$K = {
   wrappingContainer: ".product__block-featured-products",
   featuredProducts: "[data-featured-products]",
   featuredProductsContent: "[data-featured-products-content]",
   leftSideMobileFeaturedProducts: ".left-side-blocks.for-mobile [data-featured-products]"
 };
-
-var featuredProducts = function featuredProducts(node) {
-  var featuredProducts = t$2(selectors$H.featuredProducts, node);
+const featuredProducts = node => {
+  const featuredProducts = t$2(selectors$K.featuredProducts, node);
   if (!featuredProducts.length) return;
-  var productItems;
-  var mobileSwiper;
-  var mobileFeaturedProducts;
-  var _featuredProducts$0$d = featuredProducts[0].dataset,
-      recommendationsType = _featuredProducts$0$d.recommendationsType,
-      id = _featuredProducts$0$d.productId,
-      sectionId = _featuredProducts$0$d.sectionId,
-      enableMobileSwiper = _featuredProducts$0$d.enableMobileSwiper,
-      maxRecommendations = _featuredProducts$0$d.maxRecommendations;
-
+  let productItems;
+  let mobileSwiper;
+  let mobileFeaturedProducts;
+  const {
+    recommendationsType,
+    productId: id,
+    sectionId,
+    enableMobileSwiper,
+    maxRecommendations
+  } = featuredProducts[0].dataset;
   if (recommendationsType === "app-recommendations") {
     handleRecommendedProducts();
   } else {
     // Merchant is using custom product list
-    productItems = featuredProducts.forEach(function (productContainer) {
-      return ProductItem(productContainer);
-    });
+    productItems = featuredProducts.forEach(productContainer => ProductItem(productContainer));
     handleMobileSwiper();
   }
-
   function handleRecommendedProducts() {
-    var requestUrl = "".concat(window.theme.routes.productRecommendations, "?section_id=").concat(sectionId, "&limit=").concat(maxRecommendations, "&product_id=").concat(id, "&intent=complementary");
-    fetch(requestUrl).then(function (response) {
-      return response.text();
-    }).then(function (text) {
-      var html = document.createElement("div");
+    const requestUrl = "".concat(window.theme.routes.productRecommendations, "?section_id=").concat(sectionId, "&limit=").concat(maxRecommendations, "&product_id=").concat(id, "&intent=complementary");
+    fetch(requestUrl).then(response => response.text()).then(text => {
+      const html = document.createElement("div");
       html.innerHTML = text;
-      var recommendations = n$2(selectors$H.featuredProductsContent, html);
-
+      const recommendations = n$2(selectors$K.featuredProductsContent, html);
       if (recommendations && recommendations.innerHTML.trim().length) {
-        featuredProducts.forEach(function (block) {
-          return block.innerHTML = recommendations.innerHTML;
-        });
-        productItems = featuredProducts.map(function (productContainer) {
-          return ProductItem(productContainer);
-        }); // Remove hidden flag as content has been fetched
+        featuredProducts.forEach(block => block.innerHTML = recommendations.innerHTML);
+        productItems = featuredProducts.map(productContainer => ProductItem(productContainer));
 
-        featuredProducts.forEach(function (block) {
-          i$1(block.closest(selectors$H.wrappingContainer), "hidden");
+        // Remove hidden flag as content has been fetched
+        featuredProducts.forEach(block => {
+          i$1(block.closest(selectors$K.wrappingContainer), "hidden");
         });
         handleMobileSwiper();
       }
-    }).catch(function (error) {
+    }).catch(error => {
       throw error;
     });
   }
-
   function handleMobileSwiper() {
-    if (enableMobileSwiper !== "true") return; // Left column blocks are rendered twice to keep correct
+    if (enableMobileSwiper !== "true") return;
+    // Left column blocks are rendered twice to keep correct
     // ordering with right column blocks on mobile. Here we
     // target the mobile left version if it exists as it requires
     // the potential mobile swiper only.
-
-    mobileFeaturedProducts = n$2(selectors$H.leftSideMobileFeaturedProducts, node) || n$2(selectors$H.featuredProducts, node);
-
+    mobileFeaturedProducts = n$2(selectors$K.leftSideMobileFeaturedProducts, node) || n$2(selectors$K.featuredProducts, node);
     if (window.matchMedia(getMediaQuery("below-720")).matches) {
       _initMobileSwiper();
     }
-
-    atBreakpointChange(720, function () {
+    atBreakpointChange(720, () => {
       if (window.matchMedia(getMediaQuery("below-720")).matches) {
         _initMobileSwiper();
       } else {
         var _mobileSwiper;
-
         (_mobileSwiper = mobileSwiper) === null || _mobileSwiper === void 0 ? void 0 : _mobileSwiper.destroy();
       }
     });
   }
-
   function _initMobileSwiper() {
     mobileSwiper = Carousel(mobileFeaturedProducts, {
       slidesPerView: 2.1,
       spaceBetween: 12
     });
   }
-
   function unload() {
     var _mobileSwiper2;
-
-    productItems.forEach(function (item) {
-      return item.unload();
-    });
+    productItems.forEach(item => item.unload());
     (_mobileSwiper2 = mobileSwiper) === null || _mobileSwiper2 === void 0 ? void 0 : _mobileSwiper2.destroy();
   }
-
   return {
-    unload: unload
+    unload
   };
 };
 
-var classes$k = {
+const classes$n = {
   disabled: "disabled"
 };
-var selectors$G = {
+const selectors$J = {
   variantsWrapper: ".product__variants-wrapper",
   variantsJson: "[data-variant-json]",
   input: ".dynamic-variant-input",
   inputWrap: ".dynamic-variant-input-wrap",
-  inputWrapWithValue: function inputWrapWithValue(option) {
-    return "".concat(selectors$G.inputWrap, "[data-index=\"").concat(option, "\"]");
-  },
+  inputWrapWithValue: option => "".concat(selectors$J.inputWrap, "[data-index=\"").concat(option, "\"]"),
   buttonWrap: ".dynamic-variant-button",
-  buttonWrapWithValue: function buttonWrapWithValue(value) {
-    return "".concat(selectors$G.buttonWrap, "[data-option-value=\"").concat(value, "\"]");
-  }
+  buttonWrapWithValue: value => "".concat(selectors$J.buttonWrap, "[data-option-value=\"").concat(value, "\"]")
 };
 
 /**
@@ -6685,65 +5753,53 @@ var selectors$G = {
   * @param {node} container product container element
   * @returns {unload} remove event listeners
  */
-
 function variantAvailability (container) {
-  var variantsWrapper = n$2(selectors$G.variantsWrapper, container); // Variant options block do not exist
+  const variantsWrapper = n$2(selectors$J.variantsWrapper, container);
 
+  // Variant options block do not exist
   if (!variantsWrapper) return;
-  var _variantsWrapper$data = variantsWrapper.dataset,
-      enableDynamicProductOptions = _variantsWrapper$data.enableDynamicProductOptions,
-      currentVariantId = _variantsWrapper$data.currentVariantId;
+  const {
+    enableDynamicProductOptions,
+    currentVariantId
+  } = variantsWrapper.dataset;
   if (enableDynamicProductOptions === "false") return;
-  var productVariants = JSON.parse(n$2(selectors$G.variantsJson, container).innerText); // Using associated selects as buy buttons may be disabled.
+  const productVariants = JSON.parse(n$2(selectors$J.variantsJson, container).innerText);
 
-  var variantSelectors = t$2(selectors$G.input, container);
-  var variantSelectorWrappers = t$2(selectors$G.inputWrap, container);
-  var events = [];
+  // Using associated selects as buy buttons may be disabled.
+  const variantSelectors = t$2(selectors$J.input, container);
+  const variantSelectorWrappers = t$2(selectors$J.inputWrap, container);
+  const events = [];
   init();
-
   function init() {
-    variantSelectors.forEach(function (el) {
+    variantSelectors.forEach(el => {
       events.push(e$2(el, "change", handleChange));
     });
     setInitialAvailability();
   }
-
   function setInitialAvailability() {
     // Disable all options on initial load
-    variantSelectorWrappers.forEach(function (group) {
-      return disableVariantGroup(group);
-    });
-    var initiallySelectedVariant = productVariants.find(function (variant) {
-      return variant.id === parseInt(currentVariantId, 10);
-    });
-    var currentlySelectedValues = initiallySelectedVariant.options.map(function (value, index) {
+    variantSelectorWrappers.forEach(group => disableVariantGroup(group));
+    const initiallySelectedVariant = productVariants.find(variant => variant.id === parseInt(currentVariantId, 10));
+    const currentlySelectedValues = initiallySelectedVariant.options.map((value, index) => {
       return {
-        value: value,
+        value,
         index: "option".concat(index + 1)
       };
     });
-    var initialOptions = createAvailableOptionsTree(productVariants, currentlySelectedValues);
-
-    for (var _i = 0, _Object$entries = Object.entries(initialOptions); _i < _Object$entries.length; _i++) {
-      var _Object$entries$_i = _slicedToArray(_Object$entries[_i], 2),
-          option = _Object$entries$_i[0],
-          values = _Object$entries$_i[1];
-
+    const initialOptions = createAvailableOptionsTree(productVariants, currentlySelectedValues);
+    for (const [option, values] of Object.entries(initialOptions)) {
       manageOptionState(option, values);
     }
-  } // Create a list of all options. If any variant exists and is in stock with that option, it's considered available
+  }
 
-
+  // Create a list of all options. If any variant exists and is in stock with that option, it's considered available
   function createAvailableOptionsTree(variants, currentlySelectedValues) {
     // Reduce variant array into option availability tree
-    return variants.reduce(function (options, variant) {
+    return variants.reduce((options, variant) => {
       // Check each option group (e.g. option1, option2, option3) of the variant
-      Object.keys(options).forEach(function (index) {
+      Object.keys(options).forEach(index => {
         if (variant[index] === null) return;
-        var entry = options[index].find(function (option) {
-          return option.value === variant[index];
-        });
-
+        let entry = options[index].find(option => option.value === variant[index]);
         if (typeof entry === "undefined") {
           // If option has yet to be added to the options tree, add it
           entry = {
@@ -6752,36 +5808,34 @@ function variantAvailability (container) {
           };
           options[index].push(entry);
         }
-
-        var currentOption1 = currentlySelectedValues.find(function (_ref) {
-          var index = _ref.index;
+        const currentOption1 = currentlySelectedValues.find(_ref => {
+          let {
+            index
+          } = _ref;
           return index === "option1";
         });
-        var currentOption2 = currentlySelectedValues.find(function (_ref2) {
-          var index = _ref2.index;
+        const currentOption2 = currentlySelectedValues.find(_ref2 => {
+          let {
+            index
+          } = _ref2;
           return index === "option2";
         });
-
         switch (index) {
           case "option1":
             // Option1 inputs should always remain enabled based on all available variants
             entry.soldOut = entry.soldOut && variant.available ? false : entry.soldOut;
             break;
-
           case "option2":
             // Option2 inputs should remain enabled based on available variants that match first option group
             if (currentOption1 && variant.option1 === currentOption1.value) {
               entry.soldOut = entry.soldOut && variant.available ? false : entry.soldOut;
             }
-
             break;
-
           case "option3":
             // Option 3 inputs should remain enabled based on available variants that match first and second option group
             if (currentOption1 && variant.option1 === currentOption1.value && currentOption2 && variant.option2 === currentOption2.value) {
               entry.soldOut = entry.soldOut && variant.available ? false : entry.soldOut;
             }
-
         }
       });
       return options;
@@ -6791,9 +5845,8 @@ function variantAvailability (container) {
       option3: []
     });
   }
-
   function handleChange() {
-    var currentlySelectedValues = variantSelectors.map(function (el) {
+    const currentlySelectedValues = variantSelectors.map(el => {
       return {
         value: el.value,
         index: el.id
@@ -6801,699 +5854,446 @@ function variantAvailability (container) {
     });
     setAvailability(currentlySelectedValues);
   }
-
   function setAvailability(selectedValues) {
     // Object to hold all options by value.
     // This will be what sets a button/dropdown as
     // sold out or unavailable (not a combo set as purchasable)
-    var valuesToManage = createAvailableOptionsTree(productVariants, selectedValues); // Loop through all option levels and send each
+    const valuesToManage = createAvailableOptionsTree(productVariants, selectedValues);
+
+    // Loop through all option levels and send each
     // value w/ args to function that determines to show/hide/enable/disable
-
-    for (var _i2 = 0, _Object$entries2 = Object.entries(valuesToManage); _i2 < _Object$entries2.length; _i2++) {
-      var _Object$entries2$_i = _slicedToArray(_Object$entries2[_i2], 2),
-          option = _Object$entries2$_i[0],
-          values = _Object$entries2$_i[1];
-
+    for (const [option, values] of Object.entries(valuesToManage)) {
       manageOptionState(option, values);
     }
   }
-
   function manageOptionState(option, values) {
-    var group = n$2(selectors$G.inputWrapWithValue(option), container); // Loop through each option value
+    const group = n$2(selectors$J.inputWrapWithValue(option), container);
 
-    values.forEach(function (obj) {
+    // Loop through each option value
+    values.forEach(obj => {
       toggleVariantOption(group, obj);
     });
   }
-
   function toggleVariantOption(group, obj) {
     // Selecting by value so escape it
-    var value = escapeQuotes(obj.value); // Do nothing if the option is a select dropdown
+    const value = escapeQuotes(obj.value);
 
+    // Do nothing if the option is a select dropdown
     if (a$1(group, "select-wrapper")) return;
-    var button = n$2(selectors$G.buttonWrapWithValue(value), group); // Variant exists - enable & show variant
-
-    i$1(button, classes$k.disabled); // Variant sold out - cross out option (remains selectable)
-
+    const button = n$2(selectors$J.buttonWrapWithValue(value), group);
+    // Variant exists - enable & show variant
+    i$1(button, classes$n.disabled);
+    // Variant sold out - cross out option (remains selectable)
     if (obj.soldOut) {
-      u$1(button, classes$k.disabled);
+      u$1(button, classes$n.disabled);
     }
   }
-
   function disableVariantGroup(group) {
     if (a$1(group, "select-wrapper")) return;
-    t$2(selectors$G.buttonWrap, group).forEach(function (button) {
-      return u$1(button, classes$k.disabled);
-    });
+    t$2(selectors$J.buttonWrap, group).forEach(button => u$1(button, classes$n.disabled));
   }
-
   function escapeQuotes(str) {
-    var escapeMap = {
+    const escapeMap = {
       '"': '\\"',
       "'": "\\'"
     };
-    return str.replace(/"|'/g, function (m) {
-      return escapeMap[m];
-    });
+    return str.replace(/"|'/g, m => escapeMap[m]);
   }
-
-  var unload = function unload() {
-    events.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
+  const unload = () => {
+    events.forEach(unsubscribe => unsubscribe());
   };
-
   return {
-    unload: unload
+    unload
   };
 }
 
-window.theme.strings.products;
-var selectors$F = {
-  unitPriceContainer: "[data-unit-price-container]",
-  unitPrice: "[data-unit-price]",
-  unitPriceBase: "[data-unit-base]"
+const selectors$I = {
+  siblingProducts: "[data-sibling-products]",
+  siblingSwatch: "[data-sibling-swatch]",
+  siblingLabelEl: "[data-sibling-label-value]"
 };
-var classes$j = {
-  available: "unit-price--available"
-};
-
-var updateUnitPrices = function updateUnitPrices(container, variant) {
-  var unitPriceContainers = t$2(selectors$F.unitPriceContainer, container);
-  var unitPrices = t$2(selectors$F.unitPrice, container);
-  var unitPriceBases = t$2(selectors$F.unitPriceBase, container);
-  var showUnitPricing = !variant || !variant.unit_price;
-  l(unitPriceContainers, classes$j.available, !showUnitPricing);
-  if (!variant || !variant.unit_price) return;
-
-  _replaceText(unitPrices, formatMoney(variant.unit_price));
-
-  _replaceText(unitPriceBases, _getBaseUnit(variant.unit_price_measurement));
-};
-
-var _getBaseUnit = function _getBaseUnit(unitPriceMeasurement) {
-  return unitPriceMeasurement.reference_value === 1 ? unitPriceMeasurement.reference_unit : unitPriceMeasurement.reference_value + unitPriceMeasurement.reference_unit;
-};
-
-var _replaceText = function _replaceText(nodeList, replacementText) {
-  nodeList.forEach(function (node) {
-    return node.innerText = replacementText;
+function siblingProducts (container) {
+  const siblingProducts = n$2(selectors$I.siblingProducts, container);
+  if (!siblingProducts) return;
+  const siblingSwatches = t$2(selectors$I.siblingSwatch, siblingProducts);
+  const labelValueEl = n$2(selectors$I.siblingLabelEl, siblingProducts);
+  const baseLabel = labelValueEl.innerText;
+  const events = [];
+  siblingSwatches.forEach(item => {
+    events.push(e$2(item, "mouseout", () => handleOut()), e$2(item, "mouseover", e => handleOver(e)));
   });
-};
-
-var storeAvailability = function storeAvailability(container, product, variant) {
-  var update = function update(variant) {
-    container.innerHTML = "";
-    if (!variant) return;
-    var variantSectionUrl = "".concat(container.dataset.baseUrl, "/variants/").concat(variant.id, "/?section_id=store-availability");
-    makeRequest("GET", variantSectionUrl).then(function (storeAvailabilityHTML) {
-      if (storeAvailabilityHTML.trim() === "") return; // Remove section wrapper that throws nested sections error
-
-      container.innerHTML = storeAvailabilityHTML.trim();
-      container.innerHTML = container.firstElementChild.innerHTML;
-      container.setAttribute("data-variant-id", variant.id);
-      container.setAttribute("data-product-title", product.title);
-      container.setAttribute("data-variant-title", variant.public_title);
-    });
-  }; // Intialize
-
-
-  update(variant);
-
-  var unload = function unload() {
-    container.innerHTML = "";
-  };
-
-  return {
-    unload: unload,
-    update: update
-  };
-};
-
-var selectors$E = {
-  form: "[data-product-form]",
-  addToCart: "[data-add-to-cart]",
-  variantSelect: "[data-variant-select]",
-  optionById: function optionById(id) {
-    return "[value='".concat(id, "']");
-  },
-  thumbs: "[data-product-thumbnails]",
-  thumb: "[data-product-thumbnail]",
-  storeAvailability: "[data-store-availability-container]",
-  quantityError: "[data-quantity-error]",
-  productOption: ".product__option",
-  optionLabelValue: "[data-selected-value-for-option]",
-  displayedDiscount: "[data-discount-display]",
-  displayedDiscountByVariantId: function displayedDiscountByVariantId(id) {
-    return "[variant-discount-display][variant-id=\"".concat(id, "\"]");
-  },
-  nonSprRatingCountLink: ".product__rating-count-potential-link",
-  photosMobile: ".product__media-container.below-mobile",
-  photosDesktop: ".product__media-container.above-mobile",
-  priceWrapper: ".product__price",
-  quickCart: ".quick-cart",
-  purchaseConfirmation: ".purchase-confirmation-popup",
-  productReviews: "#shopify-product-reviews",
-  customOptionInputs: "[data-custom-option-input]",
-  customOptionInputTargetsById: function customOptionInputTargetsById(id) {
-    return "[data-custom-option-target='".concat(id, "']");
+  function handleOver(e) {
+    const cutline = e.target.dataset.siblingCutline;
+    labelValueEl.innerText = cutline;
   }
-};
+  function handleOut() {
+    if (labelValueEl.innerText !== baseLabel) {
+      labelValueEl.innerText = baseLabel;
+    }
+  }
+  const unload = () => {
+    events.forEach(unsubscribe => unsubscribe());
+  };
+  return {
+    unload
+  };
+}
 
-var Product = /*#__PURE__*/function () {
-  function Product(node) {
-    var _this = this;
+function giftCardRecipient (container) {
+  const displayRecipientFormContainer = n$2(".product-form__gift-card-recipient[data-source='product-display']", container);
+  const formRecipientFormContainer = n$2(".product-form__gift-card-recipient[data-source='product-form']", container);
+  if (!displayRecipientFormContainer || !formRecipientFormContainer) return;
+  const sectionID = displayRecipientFormContainer.dataset.sectionId;
+  const selectors = {
+    display: {
+      controlInput: "#display-gift-card-recipient-enable--".concat(sectionID),
+      recipientForm: ".gift-card-recipient-fields",
+      emailInput: "#display-gift-card-recipient-email--".concat(sectionID),
+      nameInput: "#display-gift-card-recipient-name--".concat(sectionID),
+      messageInput: "#display-gift-card-recipient-message--".concat(sectionID),
+      sendOnInput: "#display-gift-card-recipient-send_on--".concat(sectionID),
+      errors: ".product__gift-card-recipient-error"
+    },
+    form: {
+      controlInput: "#form-gift-card-recipient-control--".concat(sectionID),
+      emailInput: "#form-gift-card-recipient-email--".concat(sectionID),
+      nameInput: "#form-gift-card-recipient-name--".concat(sectionID),
+      messageInput: "#form-gift-card-recipient-message--".concat(sectionID),
+      sendOnInput: "#form-gift-card-recipient-send_on--".concat(sectionID),
+      offsetInput: "#form-gift-card-recipient-timezone-offset--".concat(sectionID)
+    }
+  };
+  const elements = {
+    display: {
+      controlInput: n$2(selectors.display.controlInput, displayRecipientFormContainer),
+      emailInput: n$2(selectors.display.emailInput, displayRecipientFormContainer),
+      nameInput: n$2(selectors.display.nameInput, displayRecipientFormContainer),
+      messageInput: n$2(selectors.display.messageInput, displayRecipientFormContainer),
+      sendOnInput: n$2(selectors.display.sendOnInput, displayRecipientFormContainer),
+      recipientForm: n$2(selectors.display.recipientForm, displayRecipientFormContainer),
+      errors: t$2(selectors.display.errors, displayRecipientFormContainer)
+    },
+    form: {
+      controlInput: n$2(selectors.form.controlInput, formRecipientFormContainer),
+      emailInput: n$2(selectors.form.emailInput, formRecipientFormContainer),
+      nameInput: n$2(selectors.form.nameInput, formRecipientFormContainer),
+      messageInput: n$2(selectors.form.messageInput, formRecipientFormContainer),
+      sendOnInput: n$2(selectors.form.sendOnInput, formRecipientFormContainer),
+      offsetInput: n$2(selectors.form.offsetInput, formRecipientFormContainer)
+    }
+  };
 
-    _classCallCheck(this, Product);
-
-    this.container = node;
-    this.accordions = [];
-    var _this$container$datas = this.container.dataset,
-        isQuickView = _this$container$datas.isQuickView,
-        isFullProduct = _this$container$datas.isFullProduct,
-        isFeaturedProduct = _this$container$datas.isFeaturedProduct,
-        enableStickyProductDetails = _this$container$datas.enableStickyProductDetails;
-    this.isQuickView = isQuickView;
-    this.isFullProduct = isFullProduct;
-    this.isFeaturedProduct = isFeaturedProduct;
-    this.formElement = n$2(selectors$E.form, this.container);
-    this.quantityError = n$2(selectors$E.quantityError, this.container);
-    this.displayedDiscount = n$2(selectors$E.displayedDiscount, this.container);
-    this.viewInYourSpace = n$2("[data-in-your-space]", this.container);
-    this.viewInYourSpace && l(this.viewInYourSpace, "visible", isMobile$1());
-    this.photosDesktop = n$2(selectors$E.photosDesktop, this.container);
-    this.breakPointHandler = atBreakpointChange(960, function () {
-      if (window.matchMedia(getMediaQuery("below-960")).matches) {
-        _this._initPhotoCarousel();
+  // Attach each display input to its associated form input
+  Object.entries(elements.display).forEach(_ref => {
+    let [key, value] = _ref;
+    value.controls = elements.form[key];
+  });
+  const getInputs = type => {
+    return [elements[type].emailInput, elements[type].nameInput, elements[type].messageInput, elements[type].sendOnInput];
+  };
+  const disableableInputs = () => {
+    return [...getInputs("form"), elements.form.controlInput, elements.form.offsetInput];
+  };
+  const clearableInputs = () => {
+    return [...getInputs("display"), ...getInputs("form")];
+  };
+  const disableInputs = (inputs, disable) => {
+    inputs.forEach(input => {
+      input.disabled = disable;
+    });
+  };
+  const clearInputs = inputs => {
+    inputs.forEach(input => {
+      input.value = "";
+    });
+  };
+  const clearErrors = () => {
+    elements.display.errors.forEach(error => {
+      u$1(error, "hidden");
+    });
+  };
+  const handleChange = e => {
+    const el = e.target;
+    el.controls.value = el.value;
+    if (el.type === "checkbox") {
+      if (el.checked) {
+        elements.display.recipientForm.style.display = "block";
       } else {
-        var _this$mobileSwiper;
-
-        (_this$mobileSwiper = _this.mobileSwiper) === null || _this$mobileSwiper === void 0 ? void 0 : _this$mobileSwiper.destroy();
+        clearInputs(clearableInputs());
+        clearErrors();
+        elements.display.recipientForm.style.display = "none";
       }
-    });
-
-    if (window.matchMedia(getMediaQuery("below-960")).matches) {
-      this._initPhotoCarousel();
+      disableInputs(disableableInputs(), !el.checked);
     }
-
-    this.productThumbnails = n$2(selectors$E.thumbs, this.container);
-    this.productThumbnailItems = t$2(selectors$E.thumb, this.container);
-
-    if (this.productThumbnails) {
-      this.productThumbnailsScroller = scrollContainer(this.productThumbnails);
-    }
-
-    this.moreMedia = moreMedia(this.container); // Handle Surface pickup
-
-    this.storeAvailabilityContainer = n$2(selectors$E.storeAvailability, this.container);
-    this.availability = null; // Handle Shopify Product Reviews if they exist as a product block
-
-    this.reviewsHandler = reviewsHandler(n$2(selectors$E.productReviews, this.container), this.container); // // non-SPR rating display
-
-    var nonSprRatingCount = n$2(selectors$E.nonSprRatingCountLink, this.container);
-
-    if (nonSprRatingCount && !n$2(selectors$E.productReviews, document)) {
-      // The rating count links to "#shopify-product-reviews" but
-      // if that block doesn't exist we should remove the link
-      nonSprRatingCount.removeAttribute("href");
-    }
-
-    if (this.formElement) {
-      var _this$formElement$dat = this.formElement.dataset,
-          productHandle = _this$formElement$dat.productHandle,
-          currentProductId = _this$formElement$dat.currentProductId;
-      var product = getProduct(productHandle);
-      product(function (data) {
-        var variant = getVariantFromId(data, parseInt(currentProductId));
-
-        if (_this.storeAvailabilityContainer && variant) {
-          _this.availability = storeAvailability(_this.storeAvailabilityContainer, data, variant);
-        }
-
-        _this.productForm = ProductForm(_this.container, _this.formElement, data, {
-          onOptionChange: function onOptionChange(e) {
-            return _this.onOptionChange(e);
-          },
-          onFormSubmit: function onFormSubmit(e) {
-            return _this.onFormSubmit(e);
-          },
-          onQuantityChange: function onQuantityChange(e) {
-            return _this.onQuantityChange(e);
-          }
-        });
-        var productInventoryJson = n$2("[data-product-inventory-json]", _this.container);
-
-        if (productInventoryJson) {
-          var jsonData = JSON.parse(productInventoryJson.innerHTML);
-          var variantsInventories = jsonData.inventory;
-
-          if (variantsInventories) {
-            var config = {
-              id: variant.id,
-              variantsInventories: variantsInventories
-            };
-            _this.inventoryCounter = inventoryCounter(_this.container, config);
-          }
-        }
-      });
-    }
-
-    this.quantityInput = quantityInput(this.container);
-    this.customOptionInputs = t$2(selectors$E.customOptionInputs, this.container);
-    this.socialButtons = t$2("[data-social-share]", this.container);
-    this.featuredProducts = featuredProducts(this.container);
-
-    if (enableStickyProductDetails === "true" && !isMobile$1()) {
-      this.stickyScroll = stickyScroll(this.container);
-    }
-
-    var accordionElements = t$2(".accordion", this.container);
-    accordionElements.forEach(function (accordion) {
-      var accordionOpen = accordion.classList.contains("accordion--open");
-
-      _this.accordions.push(Accordions(accordion, {
-        firstOpen: accordionOpen
-      }));
-
-      var accordionParent = accordion.parentElement;
-
-      if (accordionParent.classList.contains("rte--product") && !accordionParent.classList.contains("accordion accordion--product")) {
-        accordion.classList.add("rte--product", "accordion--product");
-      }
-    });
-    this.mediaContainers = Media(n$2(".product__media-container.above-mobile", this.container));
-    this.mediaContainersMobile = Media(n$2(".product__media-container.below-mobile", this.container));
-    this.optionButtons = OptionButtons(t$2("[data-option-buttons]", this.container));
-    this.informationPopup = informationPopup(this.container);
-    var productDescriptionWrapper = n$2(".product__description", this.container);
-
-    if (productDescriptionWrapper) {
-      wrapIframes(t$2("iframe", productDescriptionWrapper));
-      wrapTables(t$2("table", productDescriptionWrapper));
-    }
-
-    var socialShareContainer = n$2(".social-share", this.container);
-
-    if (socialShareContainer) {
-      this.socialShare = SocialShare(socialShareContainer);
-    }
-
-    this._initEvents(); // Handle dynamic variant options
-
-
-    this.variantAvailability = variantAvailability(this.container);
-  }
-
-  _createClass(Product, [{
-    key: "_initEvents",
-    value: function _initEvents() {
-      var _this2 = this;
-
-      this.events = [e$2(this.productThumbnailItems, "click", function (e) {
-        e.preventDefault();
-        var dataset = e.currentTarget.dataset;
-
-        _this2.productThumbnailItems.forEach(function (thumb) {
-          return i$1(thumb, "active");
-        });
-
-        u$1(e.currentTarget, "active");
-        switchImage(_this2.photosDesktop, dataset.thumbnailId, _this2.viewInYourSpace);
-      })]; // Adds listeners for each custom option, to sync input changes
-
-      if (this.customOptionInputs) {
-        this.customOptionInputs.forEach(function (input) {
-          var id = input.dataset.customOptionInput;
-          var target = n$2(selectors$E.customOptionInputTargetsById(id), _this2.container);
-
-          _this2.events.push(e$2(input, "change", function (e) {
-            // Update the hidden input within the form, per type
-            if (e.target.type === "checkbox") {
-              target.checked = e.target.checked;
-            } else {
-              target.value = e.target.value;
-            }
-          }));
-        });
-      }
-    }
-  }, {
-    key: "_initPhotoCarousel",
-    value: function _initPhotoCarousel() {
-      var _this3 = this;
-
-      var swiperWrapper = n$2(selectors$E.photosMobile, this.container);
-      import(flu.chunks.swiper).then(function (_ref) {
-        var Swiper = _ref.Swiper,
-            Pagination = _ref.Pagination;
-        _this3.mobileSwiper = new Swiper(swiperWrapper, {
-          modules: [Pagination],
-          slidesPerView: 1,
-          spaceBetween: 4,
-          grabCursor: true,
-          pagination: {
-            el: ".swiper-pagination",
-            type: "bullets",
-            dynamicBullets: true,
-            dynamicMainBullets: 7,
-            clickable: true
-          },
-          watchSlidesProgress: true,
-          autoHeight: true
-        });
-
-        _this3.mobileSwiper.on("slideChange", function (evt) {
-          if (_this3.viewInYourSpace) {
-            var activeSlide = evt.slides[evt.activeIndex];
-
-            if (activeSlide.dataset.mediaType === "model") {
-              _this3.viewInYourSpace.setAttribute("data-shopify-model3d-id", activeSlide.dataset.mediaItemId);
-            }
-          }
-
-          _this3.mediaContainersMobile && _this3.mediaContainersMobile.pauseActiveMedia();
-        });
-      });
-    } // When the user changes a product option
-
-  }, {
-    key: "onOptionChange",
-    value: function onOptionChange(_ref2) {
-      var variant = _ref2.dataset.variant,
-          srcElement = _ref2.srcElement;
-      // Update option label
-      var optionParentWrapper = srcElement.closest(selectors$E.productOption);
-      var optionLabel = n$2(selectors$E.optionLabelValue, optionParentWrapper);
-
-      if (optionLabel) {
-        optionLabel.textContent = srcElement.value;
-      }
-
-      var buyButton = n$2(selectors$E.addToCart, this.container);
-      var priceWrapper = n$2(selectors$E.priceWrapper, this.container);
-      priceWrapper && l(priceWrapper, "hide", !variant); // Update prices to reflect selected variant
-
-      updatePrices(this.container, variant); // Update buy button
-
-      updateBuyButton(buyButton, variant); // Update unit pricing
-
-      updateUnitPrices(this.container, variant); // Update sku
-
-      updateSku(this.container, variant); // Update product availability content
-
-      this.availability && this.availability.update(variant); // Update displayed discount
-
-      if (this.displayedDiscount) {
-        var newDiscountEl = variant && n$2(selectors$E.displayedDiscountByVariantId(variant.id), this.container);
-
-        if (variant && newDiscountEl) {
-          this.displayedDiscount.textContent = newDiscountEl.textContent;
-        } else {
-          this.displayedDiscount.textContent = "";
-        }
-      }
-
-      this.inventoryCounter && this.inventoryCounter.update(variant);
-      dispatchCustomEvent("product:variant-change", {
-        variant: variant
-      });
-
-      if (!variant) {
-        updateBuyButton(n$2("[data-add-to-cart]", this.container), false);
-        this.availability && this.availability.unload();
-        return;
-      } // Update URL with selected variant
-
-
-      var url = getUrlWithVariant(window.location.href, variant.id);
-      window.history.replaceState({
-        path: url
-      }, "", url); // We need to set the id input manually so the Dynamic Checkout Button works
-
-      var selectedVariantOpt = n$2("".concat(selectors$E.variantSelect, " ").concat(selectors$E.optionById(variant.id)), this.container);
-      selectedVariantOpt.selected = true; // We need to dispatch an event so Shopify pay knows the form has changed
-
-      this.formElement.dispatchEvent(new Event("change")); // Update selected variant image and thumb
-
-      if (variant.featured_media) {
-        if (this.isFullProduct) {
-          if (this.mobileSwiper) {
-            var slidesWrap = this.mobileSwiper.el;
-            var targetSlide = n$2("[data-media-item-id=\"".concat(variant.featured_media.id, "\"]"), slidesWrap);
-
-            if (targetSlide) {
-              var targetSlideIndex = _toConsumableArray(targetSlide.parentElement.children).indexOf(targetSlide);
-
-              this.mobileSwiper.slideTo(targetSlideIndex);
-            }
-          } else {
-            var imagesWrap = n$2(".product__media-container.above-mobile");
-
-            if (imagesWrap.dataset.galleryStyle === "thumbnails") {
-              switchImage(this.photosDesktop, variant.featured_media.id, this.viewInYourSpace);
-              var thumb = n$2("[data-thumbnail-id=\"".concat(variant.featured_media.id, "\"]"), this.photosDesktop);
-              this.productThumbnailItems.forEach(function (thumb) {
-                return i$1(thumb, "active");
-              });
-              u$1(thumb, "active");
-            } else {
-              var targetImage = n$2(".product__media-container.above-mobile [data-media-id=\"".concat(variant.featured_media.id, "\"]"));
-
-              if (this.isFeaturedProduct) {
-                this.switchCurrentImage(variant.featured_media.id);
-              } else {
-                targetImage.scrollIntoView({
-                  behavior: "smooth",
-                  block: "nearest",
-                  inline: "nearest"
-                });
-              }
-            }
-          }
-        } else {
-          this.switchCurrentImage(variant.featured_media.id);
-        }
-      }
-    }
-  }, {
-    key: "switchCurrentImage",
-    value: function switchCurrentImage(id) {
-      var imagesWraps = t$2(".product__media", this.container);
-      imagesWraps.forEach(function (imagesWrap) {
-        return switchImage(imagesWrap, id);
-      });
-    } // When user updates quantity
-
-  }, {
-    key: "onQuantityChange",
-    value: function onQuantityChange(_ref3) {
-      var _ref3$dataset = _ref3.dataset,
-          variant = _ref3$dataset.variant,
-          quantity = _ref3$dataset.quantity;
-
-      // Adjust the hidden quantity input within the form
-      var quantityInputs = _toConsumableArray(t$2('[name="quantity"]', this.formElement));
-
-      quantityInputs.forEach(function (quantityInput) {
-        quantityInput.value = quantity;
-      });
-      dispatchCustomEvent("product:quantity-update", {
-        quantity: quantity,
-        variant: variant
-      });
-    } // When user submits the product form
-
-  }, {
-    key: "onFormSubmit",
-    value: function onFormSubmit(e) {
-      var _this4 = this;
-
-      var purchaseConfirmation = n$2(selectors$E.purchaseConfirmation, document);
-      var quickCart = n$2(selectors$E.quickCart, document);
-      var isQuickViewForm = Boolean(e.target.closest(".quick-product")); // if quick cart and confirmation popup are enable submit form
-
-      if (!purchaseConfirmation && !quickCart && !isQuickViewForm) return;
-      e.preventDefault();
-      u$1(this.quantityError, "hidden");
-      var button = n$2(selectors$E.addToCart, this.container);
-      u$1(button, "loading");
-      cart.addItem(this.formElement).then(function (_ref4) {
-        var item = _ref4.item;
-        i$1(button, "loading");
-
-        if (purchaseConfirmation && !isMobile$1()) {
-          r$1("confirmation-popup:open", null, {
-            product: item
-          });
-        } else {
-          r$1("quick-cart:open");
-        }
-
-        dispatchCustomEvent("cart:item-added", {
-          product: item
-        });
-      }).catch(function (error) {
-        cart.get(); // update local cart data
-
-        if (error && error.message) {
-          _this4.quantityError.innerText = error.message;
-        } else {
-          _this4.quantityError.innerText = _this4.quantityErorr.getAttribute("data-fallback-error-message");
-        }
-
-        i$1(_this4.quantityError, "hidden");
-        var button = n$2(selectors$E.addToCart, _this4.container);
-        i$1(button, "loading");
-      });
-    }
-  }, {
-    key: "unload",
-    value: function unload() {
-      var _this$quantityInput, _this$mobileSwiper2, _this$stickyScroll, _this$moreMedia, _this$featuredProduct, _this$variantAvailabi;
-
-      this.productForm.destroy();
-      this.accordions.forEach(function (accordion) {
-        return accordion.unload();
-      });
-      this.optionButtons.destroy();
-      (_this$quantityInput = this.quantityInput) === null || _this$quantityInput === void 0 ? void 0 : _this$quantityInput.unload();
-      this.events.forEach(function (unsubscribe) {
-        return unsubscribe();
-      });
-      (_this$mobileSwiper2 = this.mobileSwiper) === null || _this$mobileSwiper2 === void 0 ? void 0 : _this$mobileSwiper2.destroy();
-      (_this$stickyScroll = this.stickyScroll) === null || _this$stickyScroll === void 0 ? void 0 : _this$stickyScroll.destroy();
-      (_this$moreMedia = this.moreMedia) === null || _this$moreMedia === void 0 ? void 0 : _this$moreMedia.unload();
-      (_this$featuredProduct = this.featuredProducts) === null || _this$featuredProduct === void 0 ? void 0 : _this$featuredProduct.unload();
-      (_this$variantAvailabi = this.variantAvailability) === null || _this$variantAvailabi === void 0 ? void 0 : _this$variantAvailabi.unload();
-    }
-  }]);
-
-  return Product;
-}();
-
-var classes$i = {
-  visible: "is-visible",
-  active: "active",
-  fixed: "is-fixed"
-};
-var selectors$D = {
-  closeBtn: "[data-modal-close]",
-  wash: ".modal__wash",
-  modalContent: ".quick-view-modal__content",
-  loadingMessage: ".quick-view-modal-loading-indicator"
-};
-
-var quickViewModal = function quickViewModal(node) {
-  var focusTrap = createFocusTrap(node, {
-    allowOutsideClick: true
+  };
+
+  // Hide the form version by default - the display version will update the form version inputs
+  u$1(formRecipientFormContainer, "visually-hidden");
+
+  // Disable form inputs by default
+  disableInputs(disableableInputs(), true);
+  elements.form.offsetInput.value = new Date().getTimezoneOffset();
+
+  // Set up listeners for the display inputs
+  const events = [e$2(elements.display.controlInput, "change", handleChange)];
+  getInputs("display").forEach(input => {
+    events.push(e$2(input, "change", handleChange));
   });
-  var wash = n$2(selectors$D.wash, node);
-  var closeButton = n$2(selectors$D.closeBtn, node);
-  var modalContent = n$2(selectors$D.modalContent, node);
-  var loadingMessage = n$2(selectors$D.loadingMessage, node);
-  var quickViewAnimation = null;
-
-  if (shouldAnimate(node)) {
-    quickViewAnimation = animateQuickView(node);
-  }
-
-  var product;
-  var events = [e$2([wash, closeButton], "click", function (e) {
-    e.preventDefault();
-
-    _close();
-  }), e$2(node, "keydown", function (_ref) {
-    var keyCode = _ref.keyCode;
-    if (keyCode === 27) _close();
-  }), c("quick-view:open", function (state, _ref2) {
-    var productUrl = _ref2.productUrl;
-
-    _renderProductContent(productUrl);
-
-    _open();
-  }), c("quick-view:close", function () {
-    _close();
-  })];
-
-  var _renderProductContent = function _renderProductContent(productUrl) {
-    var xhrUrl = "".concat(productUrl).concat(productUrl.includes("?") ? "&" : "?", "view=quick-view");
-    makeRequest("GET", xhrUrl).then(function (response) {
-      var container = document.createElement("div");
-      container.innerHTML = response;
-      var productElement = n$2("[data-is-quick-view]", container);
-      i$1(modalContent, "empty");
-      modalContent.innerHTML = "";
-      modalContent.appendChild(productElement);
-      var renderedProductElement = n$2("[data-is-quick-view]", modalContent);
-
-      if (shouldAnimate(node)) {
-        quickViewAnimation.animate();
-      }
-
-      product = new Product(renderedProductElement);
-      dispatchCustomEvent("quickview:loaded");
-    });
+  const unload = () => {
+    events.forEach(unsubscribe => unsubscribe());
   };
-
-  var _open = function _open() {
-    u$1(node, classes$i.fixed);
-    setTimeout(function () {
-      u$1(node, classes$i.active);
-      setTimeout(function () {
-        u$1(node, classes$i.visible);
-        focusTrap.activate();
-      }, 50);
-    }, 50);
-    disableBodyScroll(node, {
-      allowTouchMove: function allowTouchMove(el) {
-        while (el && el !== document.body) {
-          if (el.getAttribute("data-scroll-lock-ignore") !== null) {
-            return true;
-          }
-
-          el = el.parentNode;
-        }
-      },
-      reserveScrollBarGap: true
-    });
-  };
-
-  var _close = function _close() {
-    focusTrap.deactivate();
-    i$1(node, classes$i.visible);
-    i$1(node, classes$i.active);
-    enableBodyScroll(node);
-    r$1("quick-cart:scrollup");
-    setTimeout(function () {
-      var _product;
-
-      i$1(node, classes$i.fixed);
-
-      if (shouldAnimate(node)) {
-        quickViewAnimation.reset();
-      }
-
-      modalContent.innerHTML = "";
-      modalContent.appendChild(loadingMessage);
-      u$1(modalContent, "empty");
-      (_product = product) === null || _product === void 0 ? void 0 : _product.unload();
-    }, 500);
-  };
-
-  var unload = function unload() {
-    events.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
-  };
-
   return {
-    unload: unload
+    unload
   };
+}
+
+function stickyAtcBar (container) {
+  const classes = {
+    hidden: "hidden"
+  };
+  const selectors = {
+    buyButtons: ".product-form__item--submit",
+    changeOptionButton: "[data-change-option-trigger]",
+    imageWrap: ".product__media",
+    optionValues: ".sticky-atc-bar__meta-options",
+    pageFooter: "footer",
+    stickyAtcBar: ".sticky-atc-bar",
+    variantSelector: ".product__variants-wrapper"
+  };
+  const elements = {
+    buyButtons: n$2(selectors.buyButtons, container),
+    pageFooter: n$2(selectors.pageFooter, document),
+    stickyAtcBar: n$2(selectors.stickyAtcBar, container),
+    variantSelector: n$2(selectors.variantSelector, container)
+  };
+  if (elements.stickyAtcBar == null) return;
+  elements.imageWrap = n$2(selectors.imageWrap, elements.stickyAtcBar);
+  elements.optionValues = n$2(selectors.optionValues, elements.stickyAtcBar);
+  elements.changeOptionButton = n$2(selectors.changeOptionButton, elements.stickyAtcBar);
+  const events = [];
+  if (elements.changeOptionButton) {
+    events.push(e$2(elements.changeOptionButton, "click", () => scrollToVariantSelector()));
+  }
+  let widthWatcher;
+  const buyButtonsObserver = new IntersectionObserver(_ref => {
+    let [{
+      isIntersecting: visible
+    }] = _ref;
+    if (visible) {
+      hideBar();
+    } else {
+      showBar();
+    }
+  });
+  const footerObserver = new IntersectionObserver(_ref2 => {
+    let [{
+      isIntersecting: visible
+    }] = _ref2;
+    if (visible) {
+      buyButtonsObserver.disconnect();
+      hideBar();
+    } else {
+      buyButtonsObserver.observe(elements.buyButtons);
+    }
+  }, {
+    threshold: 0.8
+  });
+  footerObserver.observe(elements.pageFooter);
+  const showBar = () => {
+    i$1(elements.stickyAtcBar, classes.hidden);
+    setHeightVariable();
+    widthWatcher = srraf(_ref3 => {
+      let {
+        pvw,
+        vw
+      } = _ref3;
+      if (pvw !== vw) {
+        setHeightVariable();
+      }
+    });
+  };
+  const hideBar = () => {
+    var _widthWatcher;
+    u$1(elements.stickyAtcBar, classes.hidden);
+    (_widthWatcher = widthWatcher) === null || _widthWatcher === void 0 ? void 0 : _widthWatcher.destroy();
+    clearHeightVariable();
+  };
+  const setHeightVariable = () => {
+    document.documentElement.style.setProperty("--sticky-atc-bar-height", "".concat(elements.stickyAtcBar.offsetHeight, "px"));
+  };
+  const clearHeightVariable = () => {
+    document.documentElement.style.setProperty("--sticky-atc-bar-height", "0px");
+  };
+  const scrollToVariantSelector = () => {
+    elements.variantSelector.scrollIntoView({
+      block: "center",
+      behavior: "smooth"
+    });
+  };
+  const switchCurrentImage = id => {
+    switchImage(elements.imageWrap, id);
+  };
+  const updateOptionValues = variant => {
+    const optionValueString = variant.options.join(", ");
+    elements.optionValues.textContent = optionValueString;
+  };
+  const unload = () => {
+    var _widthWatcher2;
+    buyButtonsObserver === null || buyButtonsObserver === void 0 ? void 0 : buyButtonsObserver.disconnect();
+    events.forEach(unsubscribe => unsubscribe());
+    footerObserver === null || footerObserver === void 0 ? void 0 : footerObserver.disconnect();
+    (_widthWatcher2 = widthWatcher) === null || _widthWatcher2 === void 0 ? void 0 : _widthWatcher2.destroy();
+  };
+  return {
+    switchCurrentImage,
+    unload,
+    updateOptionValues
+  };
+}
+
+// LERP returns a number between start and end based on the amt
+// Often used to smooth animations
+// Eg. Given: start = 0, end = 100
+// - if amt = 0.1 then lerp will return 10
+// - if amt = 0.5 then lerp will return 50
+// - if amt = 0.9 then lerp will return 90
+const lerp = (start, end, amt) => {
+  return (1 - amt) * start + amt * end;
 };
 
-var icons$1 = window.theme.icons;
+const selectors$H = {
+  stickyContainer: "[data-sticky-container]",
+  stickyFilterBar: ".filter-bar--sticky",
+  root: ":root"
+};
+const classes$m = {
+  hasSticky: "has-sticky-scroll"
+};
+function stickyScroll (node) {
+  const stickyContainer = n$2(selectors$H.stickyContainer, node);
+  if (!stickyContainer) return false;
+  let resizeObserver;
+  node.style.setProperty("--sticky-container-top", 0);
+
+  // Init position vars
+
+  let previousScrollY = window.scrollY; // The previous scroll position of the page
+  let currentScrollAmount = 0; // To keep track of the amount scrolled per event
+
+  // Height of the header bar
+  //  Used for calculating position
+  //  Set in `_observeHeight()` when the `--header-desktop-sticky-height` var is set
+  let headerHeight = 0;
+
+  // Height of the sticky filter bar
+  //  Used for calculating position
+  //  Set in `_observeHeight()` when the `--header-desktop-sticky-height` var is set
+  let stickyFilterBarHeight = 0;
+  const stickyFilterBar = n$2(selectors$H.stickyFilterBar);
+
+  // Save the sticky filter bar height to a CSS variable
+  const root = n$2(selectors$H.root, document);
+  root.style.setProperty("--sticky-filter-bar-height", "0px");
+  let stickyContainerTop = headerHeight; // The sticky container's `top` value
+  let stickyContainerTopPrevious = stickyContainerTop;
+
+  // The height of the sticky container
+  //  Gets updated by a resize observer on the window and sticky container
+  let stickyContainerHeight = stickyContainer.offsetHeight;
+
+  // The height of the sticky container plus the height of the header
+  let stickyContainerHeightWithHeaderAndBar = stickyContainerHeight + headerHeight;
+
+  // The max amount for the sticky container `top` value
+  //  This is equal to the number of pixels that the sticky container extends the viewport by
+  //  Gets updated by a resize observer on the window and sticky container
+  let stickyContainerMaxTop = stickyContainerHeightWithHeaderAndBar - window.innerHeight;
+
+  // Watch scroll updates
+  const scroller = srraf(_ref => {
+    let {
+      y
+    } = _ref;
+    _scrollHandler(y);
+
+    // Update the sticky filter bar height CSS variable
+    if (stickyFilterBar) stickyFilterBarHeight = stickyFilterBar.offsetHeight;
+    root.style.setProperty("--sticky-filter-bar-height", "".concat(stickyFilterBarHeight, "px"));
+  });
+
+  // Resize observer on the window and the sticky container
+  //  Container contents may expand with interaction
+  provideResizeObserver().then(_ref2 => {
+    let {
+      ResizeObserver
+    } = _ref2;
+    if (resizeObserver) resizeObserver.disconnect();
+    resizeObserver = new ResizeObserver(_observeHeight);
+    resizeObserver.observe(stickyContainer);
+    resizeObserver.observe(document.documentElement);
+  });
+
+  // Start the animation loop
+  requestAnimationFrame(() => _updateStickyContainerTopLoop());
+  function _observeHeight() {
+    stickyContainerHeight = stickyContainer.offsetHeight;
+    if (stickyFilterBar) stickyFilterBarHeight = stickyFilterBar.offsetHeight;
+    headerHeight = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--header-desktop-sticky-height").replace(/px/gi, ""));
+    stickyContainerHeightWithHeaderAndBar = stickyContainerHeight + headerHeight + stickyFilterBarHeight;
+    stickyContainerMaxTop = stickyContainerHeightWithHeaderAndBar - window.innerHeight;
+
+    // Check if the sticky container is taller than the viewport and the node container has room
+    // for the sticky container to scroll.
+    //  The sticky container could be taller than its sibling so it won't have room to scroll.
+    if (stickyContainerHeightWithHeaderAndBar > window.innerHeight && node.offsetHeight > stickyContainerHeightWithHeaderAndBar) {
+      u$1(node, classes$m.hasSticky);
+      _scrollHandler(window.scrollY);
+    } else {
+      i$1(node, classes$m.hasSticky);
+    }
+  }
+  function _scrollHandler(y) {
+    currentScrollAmount = previousScrollY - y;
+
+    // The offset based on how far the page has been scrolled from last event
+    const currentScrollOffset = stickyContainerTop + currentScrollAmount;
+    const topMax = headerHeight + stickyFilterBarHeight; // The max top value while scrolling up
+    const bottomMax = -stickyContainerMaxTop + headerHeight + stickyFilterBarHeight - 40; // The max top value while scrolling down
+
+    // Find the current top value
+    //  Based on the currentScrollOffset value within the range of topMax and bottomMax
+    stickyContainerTop = Math.max(bottomMax, Math.min(currentScrollOffset, topMax));
+
+    // Update the previous scroll position for next time.
+    previousScrollY = y;
+  }
+
+  // This is an endless RAF loop used to update the `--sticky-container-top` CSS var.
+  //  We're using this with a LERP function to smooth out the position updating
+  //  instead of having large jumps while scrolling fast.
+  function _updateStickyContainerTopLoop() {
+    // We want to continue to update `--sticky-container-top` until fully into the stopped position
+    if (stickyContainerTop !== stickyContainerTopPrevious) {
+      stickyContainerTopPrevious = lerp(stickyContainerTopPrevious, stickyContainerTop, 0.5);
+      node.style.setProperty("--sticky-container-top", "".concat(stickyContainerTopPrevious, "px"));
+    }
+    requestAnimationFrame(() => _updateStickyContainerTopLoop());
+  }
+  function destroy() {
+    var _resizeObserver;
+    scroller === null || scroller === void 0 ? void 0 : scroller.destroy();
+    (_resizeObserver = resizeObserver) === null || _resizeObserver === void 0 ? void 0 : _resizeObserver.disconnect();
+  }
+  return {
+    destroy
+  };
+}
+
+const {
+  icons: icons$1
+} = window.theme;
 function productLightbox() {
-  // ***&&&*** variant Project 7463 & 7472
+  // ***&&&*** variant Project var lightboxImages = t$2(".lightbox-image.lighthouse__visible_img", document); & children: ".lightbox-image.lighthouse__visible_img",
   var lightboxImages = t$2(".lightbox-image.lighthouse__visible_img", document);
   // console.log("lightboxImages", lightboxImages)
   if (!lightboxImages.length) return;
@@ -7530,136 +6330,813 @@ console.log("pswp", options, productImageCount, pswp)
   });
 }
 
-var classes$h = {
-  visible: "is-visible"
+const selectors$G = {
+  unitPriceContainer: "[data-unit-price-container]",
+  unitPrice: "[data-unit-price]",
+  unitPriceBase: "[data-unit-base]"
+};
+const classes$l = {
+  available: "unit-price--available"
+};
+const updateUnitPrices = (container, variant) => {
+  const unitPriceContainers = t$2(selectors$G.unitPriceContainer, container);
+  const unitPrices = t$2(selectors$G.unitPrice, container);
+  const unitPriceBases = t$2(selectors$G.unitPriceBase, container);
+  const showUnitPricing = !variant || !variant.unit_price;
+  l(unitPriceContainers, classes$l.available, !showUnitPricing);
+  if (!variant || !variant.unit_price) return;
+  _replaceText(unitPrices, formatMoney(variant.unit_price));
+  _replaceText(unitPriceBases, _getBaseUnit(variant.unit_price_measurement));
+};
+const _getBaseUnit = unitPriceMeasurement => {
+  return unitPriceMeasurement.reference_value === 1 ? unitPriceMeasurement.reference_unit : unitPriceMeasurement.reference_value + unitPriceMeasurement.reference_unit;
+};
+const _replaceText = (nodeList, replacementText) => {
+  nodeList.forEach(node => node.innerText = replacementText);
 };
 
-var flashAlertModal = function flashAlertModal(node) {
-  // Setup all preassigned liquid flash alerts
-  if (window.Shopify.designMode) {
-    var delegate = new Delegate(document.body);
-    delegate.on("click", "[data-flash-trigger]", function (_, target) {
-      var flashMessage = target.dataset.flashMessage;
+const ls = {
+  get: () => JSON.parse(localStorage.getItem("fluco_sto_recentlyViewed")),
+  set: val => localStorage.setItem("fluco_sto_recentlyViewed", JSON.stringify(val))
+};
+const updateRecentProducts = productHandle => {
+  let recentlyViewed = [];
+  if (ls.get() !== null) {
+    recentlyViewed = ls.get().filter(storedHandle => storedHandle !== productHandle);
+    recentlyViewed.unshift(productHandle);
+    ls.set(recentlyViewed.slice(0, 16)); // 1 extra product to account for itself
+  } else if (ls.get() === null) {
+    recentlyViewed.push(productHandle);
+    ls.set(recentlyViewed);
+  }
+};
+const getRecentProducts = () => ls.get();
 
-      _open(flashMessage);
+const storeAvailability = (container, product, variant) => {
+  const update = variant => {
+    container.innerHTML = "";
+    if (!variant) return;
+    const variantSectionUrl = "".concat(container.dataset.baseUrl, "/variants/").concat(variant.id, "/?section_id=store-availability");
+    makeRequest("GET", variantSectionUrl).then(storeAvailabilityHTML => {
+      if (storeAvailabilityHTML.trim() === "") return;
+
+      // Remove section wrapper that throws nested sections error
+      container.innerHTML = storeAvailabilityHTML.trim();
+      container.innerHTML = container.firstElementChild.innerHTML;
+      container.setAttribute("data-variant-id", variant.id);
+      container.setAttribute("data-product-title", product.title);
+      container.setAttribute("data-variant-title", variant.public_title);
+    });
+  };
+
+  // Intialize
+  update(variant);
+  const unload = () => {
+    container.innerHTML = "";
+  };
+  return {
+    unload,
+    update
+  };
+};
+
+const selectors$F = {
+  form: "[data-product-form]",
+  addToCart: "[data-add-to-cart]",
+  variantSelect: "[data-variant-select]",
+  optionById: id => "[value='".concat(id, "']"),
+  thumbs: "[data-product-thumbnails]",
+  thumb: "[data-product-thumbnail]",
+  storeAvailability: "[data-store-availability-container]",
+  quantityError: "[data-quantity-error]",
+  productOption: ".product__option",
+  optionLabelValue: "[data-selected-value-for-option]",
+  displayedDiscount: "[data-discount-display]",
+  displayedDiscountByVariantId: id => "[variant-discount-display][variant-id=\"".concat(id, "\"]"),
+  nonSprRatingCountLink: ".product__rating-count-potential-link",
+  photosMobile: ".product__media-container.below-mobile",
+  photosDesktop: ".product__media-container.above-mobile",
+  mobileFeaturedImage: ".carousel_slide[data-is-featured='true']",
+  priceWrapper: ".product__price",
+  quickCart: ".quick-cart",
+  purchaseConfirmation: ".purchase-confirmation-popup",
+  productReviews: "#shopify-product-reviews",
+  customOptionInputs: "[data-custom-option-input]",
+  customOptionInputTargetsById: id => "[data-custom-option-target='".concat(id, "']"),
+  giftCardRecipientContainer: ".product-form__gift-card-recipient"
+};
+class Product {
+  constructor(node) {
+    this.container = node;
+    const {
+      isQuickView,
+      isFullProduct,
+      isFeaturedProduct,
+      enableStickyContainer,
+      loopMobileCarousel,
+      enableMultipleVariantMedia,
+      initialMediaId,
+      sectionId,
+      productHandle
+    } = this.container.dataset;
+    this.isQuickView = isQuickView;
+    this.isFullProduct = isFullProduct;
+    this.isFeaturedProduct = isFeaturedProduct;
+    this.loopMobileCarousel = loopMobileCarousel === "true" ? true : false;
+    this.enableMultipleVariantMedia = enableMultipleVariantMedia;
+    this.previousMediaId = initialMediaId;
+    this.sectionId = sectionId;
+    this.productHandle = productHandle;
+    this.formElement = n$2(selectors$F.form, this.container);
+    this.quantityError = n$2(selectors$F.quantityError, this.container);
+    this.displayedDiscount = n$2(selectors$F.displayedDiscount, this.container);
+    this.viewInYourSpace = n$2("[data-in-your-space]", this.container);
+    this.viewInYourSpace && l(this.viewInYourSpace, "visible", isMobile$1());
+    this.photosDesktop = n$2(selectors$F.photosDesktop, this.container);
+    this.mobileQuery = window.matchMedia(getMediaQuery("below-960"));
+    this.breakPointHandler = atBreakpointChange(960, () => {
+      if (this.mobileQuery.matches) {
+        this._initPhotoCarousel();
+      } else {
+        var _this$mobileSwiper;
+        (_this$mobileSwiper = this.mobileSwiper) === null || _this$mobileSwiper === void 0 ? void 0 : _this$mobileSwiper.destroy();
+      }
+      this._initStickyScroll();
+    });
+    this._initThumbnails();
+
+    // Handle Surface pickup
+    this.storeAvailabilityContainer = n$2(selectors$F.storeAvailability, this.container);
+    this.availability = null;
+
+    // Handle Shopify Product Reviews if they exist as a product block
+    this.reviewsHandler = reviewsHandler(n$2(selectors$F.productReviews, this.container), this.container);
+
+    // // non-SPR rating display
+    let nonSprRatingCount = n$2(selectors$F.nonSprRatingCountLink, this.container);
+    if (nonSprRatingCount && !n$2(selectors$F.productReviews, document)) {
+      // The rating count links to "#shopify-product-reviews" but
+      // if that block doesn't exist we should remove the link
+      nonSprRatingCount.removeAttribute("href");
+    }
+    if (this.formElement) {
+      const {
+        productHandle,
+        currentProductId
+      } = this.formElement.dataset;
+      const product = getProduct(productHandle);
+      product(data => {
+        const variant = getVariantFromId(data, parseInt(currentProductId));
+        if (this.storeAvailabilityContainer && variant) {
+          this.availability = storeAvailability(this.storeAvailabilityContainer, data, variant);
+        }
+        this.productForm = ProductForm(this.container, this.formElement, data, {
+          onOptionChange: e => this.onOptionChange(e),
+          onFormSubmit: e => this.onFormSubmit(e),
+          onQuantityChange: e => this.onQuantityChange(e)
+        });
+        const productInventoryJson = n$2("[data-product-inventory-json]", this.container);
+        if (productInventoryJson) {
+          const jsonData = JSON.parse(productInventoryJson.innerHTML);
+          const variantsInventories = jsonData.inventory;
+          if (variantsInventories) {
+            const config = {
+              id: variant.id,
+              variantsInventories
+            };
+            this.inventoryCounter = inventoryCounter(this.container, config);
+          }
+        }
+      });
+    }
+    this.quantityInput = quantityInput(this.container);
+    this.customOptionInputs = t$2(selectors$F.customOptionInputs, this.container);
+    this.socialButtons = t$2("[data-social-share]", this.container);
+    this.featuredProducts = featuredProducts(this.container);
+    if (enableStickyContainer === "true") {
+      this._initStickyScroll();
+    }
+    this._loadAccordions();
+    this.optionButtons = OptionButtons(t$2("[data-option-buttons]", this.container));
+    this.informationPopup = informationPopup(this.container);
+    const productDescriptionWrapper = n$2(".product__description", this.container);
+    if (productDescriptionWrapper) {
+      wrapIframes(t$2("iframe", productDescriptionWrapper));
+      wrapTables(t$2("table", productDescriptionWrapper));
+    }
+    const socialShareContainer = n$2(".social-share", this.container);
+    if (socialShareContainer) {
+      this.socialShare = SocialShare(socialShareContainer);
+    }
+    if (this.isFullProduct && this.productHandle !== null) {
+      updateRecentProducts(this.productHandle);
+    }
+    this._loadMedia();
+    this._initEvents();
+
+    // Handle dynamic variant options
+    this.variantAvailability = variantAvailability(this.container);
+
+    // Handle sibling products
+    this.siblingProducts = siblingProducts(this.container);
+
+    // Gift card recipient
+    this.giftCardRecipient = giftCardRecipient(this.container);
+
+    // Sticky ATC Bar
+    this.stickyAtcBar = stickyAtcBar(this.container);
+  }
+  _initEvents() {
+    this.events = [e$2(this.productThumbnailItems, "click", e => {
+      e.preventDefault();
+      const {
+        currentTarget: {
+          dataset
+        }
+      } = e;
+      this.productThumbnailItems.forEach(thumb => i$1(thumb, "active"));
+      u$1(e.currentTarget, "active");
+      switchImage(this.desktopMedia, dataset.thumbnailId, this.viewInYourSpace);
+    })];
+
+    // Adds listeners for each custom option, to sync input changes
+    if (this.customOptionInputs) {
+      this.customOptionInputs.forEach(input => {
+        const id = input.dataset.customOptionInput;
+        const target = n$2(selectors$F.customOptionInputTargetsById(id), this.container);
+        this.events.push(e$2(input, "change", e => {
+          // Update the hidden input within the form, per type
+          if (e.target.type === "checkbox") {
+            target.checked = e.target.checked;
+          } else {
+            target.value = e.target.value;
+          }
+        }));
+      });
+    }
+  }
+  _initStickyScroll() {
+    if (this.mobileQuery.matches) {
+      if (this.stickyScroll) {
+        this.stickyScroll.destroy();
+        this.stickyScroll = null;
+      }
+    } else if (!this.stickyScroll) {
+      this.stickyScroll = stickyScroll(this.container);
+    }
+  }
+  _initPhotoCarousel() {
+    let swiperWrapper = n$2(selectors$F.photosMobile, this.container);
+    const mobileFeaturedImage = n$2(selectors$F.mobileFeaturedImage, swiperWrapper);
+    const initialSlide = mobileFeaturedImage ? parseInt(mobileFeaturedImage.dataset.slideIndex) : 0;
+    import(flu.chunks.swiper).then(_ref => {
+      let {
+        Swiper,
+        Pagination
+      } = _ref;
+      this.mobileSwiper = new Swiper(swiperWrapper, {
+        modules: [Pagination],
+        slidesPerView: 1,
+        spaceBetween: 4,
+        grabCursor: true,
+        pagination: {
+          el: ".swiper-pagination",
+          type: "bullets",
+          dynamicBullets: true,
+          dynamicMainBullets: 7,
+          clickable: true
+        },
+        watchSlidesProgress: true,
+        loop: this.loopMobileCarousel,
+        autoHeight: true,
+        initialSlide: initialSlide
+      });
+      this.mobileSwiper.on("slideChange", evt => {
+        if (this.viewInYourSpace) {
+          const activeSlide = evt.slides[evt.activeIndex];
+          if (activeSlide.dataset.mediaType === "model") {
+            this.viewInYourSpace.setAttribute("data-shopify-model3d-id", activeSlide.dataset.mediaItemId);
+          }
+        }
+        this.mediaContainersMobile && this.mediaContainersMobile.pauseActiveMedia();
+      });
+    });
+  }
+  _initThumbnails() {
+    this.productThumbnails = n$2(selectors$F.thumbs, this.container);
+    this.productThumbnailItems = t$2(selectors$F.thumb, this.container);
+    if (this.productThumbnails) {
+      this.productThumbnailsScroller = scrollContainer(this.productThumbnails);
+    }
+  }
+  _loadMedia() {
+    this.mobileMedia = n$2(selectors$F.photosMobile, this.container);
+    this.desktopMedia = n$2(selectors$F.photosDesktop, this.container);
+    this.mobileMoreMedia = moreMedia(this.mobileMedia);
+    this.desktopMoreMedia = moreMedia(this.desktopMedia);
+    this.mediaContainers = Media(this.desktopMedia);
+    this.mediaContainersMobile = Media(this.mobileMedia);
+    this._initThumbnails();
+    productLightbox();
+    if (this.mobileQuery.matches) {
+      this._initPhotoCarousel();
+    }
+  }
+  _loadAccordions() {
+    this.accordions = [];
+    const accordionElements = t$2(".accordion", this.container);
+    accordionElements.forEach(accordion => {
+      const accordionOpen = accordion.classList.contains("accordion--open");
+      this.accordions.push(Accordions(accordion, {
+        firstOpen: accordionOpen
+      }));
+      const accordionParent = accordion.parentElement;
+      if (accordionParent.classList.contains("rte--product") && !accordionParent.classList.contains("accordion accordion--product")) {
+        accordion.classList.add("rte--product", "accordion--product");
+      }
+    });
+  }
+  _switchCurrentImage(id) {
+    const imagesWraps = t$2(".product__media", this.container);
+    imagesWraps.forEach(imagesWrap => switchImage(imagesWrap, id));
+  }
+  _refreshOverviewWithVariant(variant_id) {
+    const requestURL = "".concat(window.location.pathname, "?section_id=").concat(this.sectionId, "&variant=").concat(variant_id);
+    const target = n$2(".product__primary-left", this.container);
+    const mediaContainers = t$2("".concat(selectors$F.photosDesktop, ", ").concat(selectors$F.photosMobile), target);
+    mediaContainers.forEach(container => {
+      u$1(container, "loading");
+    });
+    fetch(requestURL).then(response => response.text()).then(text => {
+      var _this$featuredProduct;
+      const source = new DOMParser().parseFromString(text, "text/html").querySelector(".product__primary-left");
+      target.innerHTML = source.innerHTML;
+
+      // unload left column components
+      this._unloadMedia();
+      this.accordions.forEach(accordion => accordion.unload());
+      (_this$featuredProduct = this.featuredProducts) === null || _this$featuredProduct === void 0 ? void 0 : _this$featuredProduct.unload();
+      this.events.forEach(unsubscribe => unsubscribe());
+
+      // re-initialize left column components
+      this._loadMedia();
+      this._loadAccordions();
+      this.featuredProducts = featuredProducts(this.container);
+      this._initEvents();
+    }).catch(error => {
+      throw error;
     });
   }
 
-  c("flart-alert", function (_ref) {
-    var alert = _ref.alert;
+  // When the user changes a product option
+  onOptionChange(_ref2) {
+    let {
+      dataset: {
+        variant
+      },
+      srcElement
+    } = _ref2;
+    // Update option label
+    const optionParentWrapper = srcElement.closest(selectors$F.productOption);
+    const optionLabel = n$2(selectors$F.optionLabelValue, optionParentWrapper);
+    if (optionLabel) {
+      optionLabel.textContent = srcElement.value;
+    }
+    const buyButtonEls = t$2(selectors$F.addToCart, this.container);
+    const priceWrapper = n$2(selectors$F.priceWrapper, this.container);
+    priceWrapper && l(priceWrapper, "hide", !variant);
 
+    // Update prices to reflect selected variant
+    updatePrices(this.container, variant);
+
+    // Update buy button
+    buyButtonEls.forEach(buyButton => {
+      updateBuyButton(buyButton, variant);
+    });
+
+    // Update unit pricing
+    updateUnitPrices(this.container, variant);
+
+    // Update sku
+    updateSku(this.container, variant);
+
+    // Update product availability content
+    this.availability && this.availability.update(variant);
+
+    // Update displayed discount
+    if (this.displayedDiscount) {
+      const newDiscountEl = variant && n$2(selectors$F.displayedDiscountByVariantId(variant.id), this.container);
+      if (variant && newDiscountEl) {
+        this.displayedDiscount.textContent = newDiscountEl.textContent;
+      } else {
+        this.displayedDiscount.textContent = "";
+      }
+    }
+    this.inventoryCounter && this.inventoryCounter.update(variant);
+    dispatchCustomEvent("product:variant-change", {
+      variant: variant
+    });
+    if (!variant) {
+      updateBuyButton(n$2("[data-add-to-cart]", this.container), false);
+      this.availability && this.availability.unload();
+      return;
+    }
+
+    // Update URL with selected variant
+    const url = getUrlWithVariant(window.location.href, variant.id);
+    window.history.replaceState({
+      path: url
+    }, "", url);
+
+    // We need to set the id input manually so the Dynamic Checkout Button works
+    const selectedVariantOpt = n$2("".concat(selectors$F.variantSelect, " ").concat(selectors$F.optionById(variant.id)), this.container);
+    selectedVariantOpt.selected = true;
+
+    // We need to dispatch an event so Shopify pay knows the form has changed
+    this.formElement.dispatchEvent(new Event("change"));
+
+    // Update selected variant image and thumb
+    if (variant.featured_media) {
+      if (this.enableMultipleVariantMedia === "true" && variant.featured_media.id != this.previousMediaId) {
+        this._refreshOverviewWithVariant(variant.id);
+        this.previousMediaId = variant.featured_media.id;
+      } else if (this.isFullProduct) {
+        if (this.mobileSwiper) {
+          const slidesWrap = this.mobileSwiper.el;
+          const targetSlide = n$2("[data-media-item-id=\"".concat(variant.featured_media.id, "\"]"), slidesWrap);
+          if (targetSlide) {
+            const targetSlideIndex = [...targetSlide.parentElement.children].indexOf(targetSlide);
+            this.mobileSwiper.slideTo(targetSlideIndex);
+          }
+        } else {
+          const imagesWrap = n$2(".product__media-container.above-mobile");
+          if (imagesWrap.dataset.galleryStyle === "thumbnails") {
+            switchImage(this.desktopMedia, variant.featured_media.id, this.viewInYourSpace);
+            const thumb = n$2("[data-thumbnail-id=\"".concat(variant.featured_media.id, "\"]"), this.desktopMedia);
+            this.productThumbnailItems.forEach(thumb => i$1(thumb, "active"));
+            thumb && u$1(thumb, "active");
+          } else {
+            const targetImage = n$2(".product__media-container.above-mobile [data-media-id=\"".concat(variant.featured_media.id, "\"]"));
+            if (this.isFeaturedProduct) {
+              this._switchCurrentImage(variant.featured_media.id);
+            } else {
+              targetImage === null || targetImage === void 0 ? void 0 : targetImage.scrollIntoView({
+                behavior: "smooth",
+                block: "nearest",
+                inline: "nearest"
+              });
+            }
+          }
+        }
+      } else {
+        this._switchCurrentImage(variant.featured_media.id);
+      }
+    }
+
+    // Update sticky add-to-cart variant image and option values
+    if (this.stickyAtcBar) {
+      if (variant.featured_media) {
+        this.stickyAtcBar.switchCurrentImage(variant.featured_media.id);
+      }
+      this.stickyAtcBar.updateOptionValues(variant);
+    }
+  }
+
+  // When user updates quantity
+  onQuantityChange(_ref3) {
+    let {
+      dataset: {
+        variant,
+        quantity
+      }
+    } = _ref3;
+    // Adjust the hidden quantity input within the form
+    const quantityInputs = [...t$2('[name="quantity"]', this.formElement)];
+    quantityInputs.forEach(quantityInput => {
+      quantityInput.value = quantity;
+    });
+    dispatchCustomEvent("product:quantity-update", {
+      quantity: quantity,
+      variant: variant
+    });
+  }
+
+  // When user submits the product form
+  onFormSubmit(e) {
+    const purchaseConfirmation = n$2(selectors$F.purchaseConfirmation, document);
+    const quickCart = n$2(selectors$F.quickCart, document);
+    const isQuickViewForm = Boolean(e.target.closest(".quick-product"));
+
+    // if quick cart and confirmation popup are enable submit form
+    if (!purchaseConfirmation && !quickCart && !isQuickViewForm) return;
+    e.preventDefault();
+    u$1(this.quantityError, "hidden");
+    const buttonEls = t$2(selectors$F.addToCart, this.container);
+    buttonEls.forEach(button => {
+      u$1(button, "loading");
+    });
+    cart.addItem(this.formElement).then(_ref4 => {
+      let {
+        item
+      } = _ref4;
+      buttonEls.forEach(button => {
+        i$1(button, "loading");
+      });
+      if (purchaseConfirmation) {
+        r$1("confirmation-popup:open", null, {
+          product: item
+        });
+      } else {
+        r$1("quick-cart:updated");
+        // Need a delay to allow quick-cart to refresh
+        setTimeout(() => {
+          r$1("quick-cart:open");
+        }, 300);
+      }
+      dispatchCustomEvent("cart:item-added", {
+        product: item
+      });
+    }).catch(error => {
+      cart.get(); // update local cart data
+      if (error && error.message) {
+        if (typeof error.message === "object") {
+          const sectionID = n$2(selectors$F.giftCardRecipientContainer, this.container).dataset.sectionId;
+          Object.entries(error.message).forEach(_ref5 => {
+            let [key, value] = _ref5;
+            const errorMessageID = "display-gift-card-recipient-".concat(key, "-error--").concat(sectionID);
+            const errorMessage = n$2("#".concat(errorMessageID), this.container);
+            const errorInput = n$2("#display-gift-card-recipient-".concat(key, "--").concat(sectionID), this.container);
+            errorMessage.innerText = value;
+            i$1(errorMessage, "hidden");
+            errorInput.setAttribute("aria-invalid", true);
+            errorInput.setAttribute("aria-describedby", errorMessageID);
+          });
+        } else {
+          this.quantityError.innerText = error.message;
+          i$1(this.quantityError, "hidden");
+        }
+      } else {
+        this.quantityError.innerText = this.quantityErorr.getAttribute("data-fallback-error-message");
+        i$1(this.quantityError, "hidden");
+      }
+      const buttonEls = t$2(selectors$F.addToCart, this.container);
+      buttonEls.forEach(button => {
+        i$1(button, "loading");
+      });
+    });
+  }
+  _unloadMedia() {
+    var _this$mobileMoreMedia, _this$desktopMoreMedi, _this$mobileSwiper2, _this$productThumbnai;
+    (_this$mobileMoreMedia = this.mobileMoreMedia) === null || _this$mobileMoreMedia === void 0 ? void 0 : _this$mobileMoreMedia.unload();
+    (_this$desktopMoreMedi = this.desktopMoreMedia) === null || _this$desktopMoreMedi === void 0 ? void 0 : _this$desktopMoreMedi.unload();
+    (_this$mobileSwiper2 = this.mobileSwiper) === null || _this$mobileSwiper2 === void 0 ? void 0 : _this$mobileSwiper2.destroy();
+    (_this$productThumbnai = this.productThumbnailsScroller) === null || _this$productThumbnai === void 0 ? void 0 : _this$productThumbnai.unload();
+  }
+  unload() {
+    var _this$quantityInput, _this$stickyScroll, _this$mobileMoreMedia2, _this$desktopMoreMedi2, _this$featuredProduct2, _this$variantAvailabi, _this$siblingProducts, _this$giftCardRecipie, _this$stickyAtcBar;
+    _unloadMedia();
+    this.productForm.destroy();
+    this.accordions.forEach(accordion => accordion.unload());
+    this.optionButtons.destroy();
+    (_this$quantityInput = this.quantityInput) === null || _this$quantityInput === void 0 ? void 0 : _this$quantityInput.unload();
+    this.events.forEach(unsubscribe => unsubscribe());
+    (_this$stickyScroll = this.stickyScroll) === null || _this$stickyScroll === void 0 ? void 0 : _this$stickyScroll.destroy();
+    (_this$mobileMoreMedia2 = this.mobileMoreMedia) === null || _this$mobileMoreMedia2 === void 0 ? void 0 : _this$mobileMoreMedia2.unload();
+    (_this$desktopMoreMedi2 = this.desktopMoreMedia) === null || _this$desktopMoreMedi2 === void 0 ? void 0 : _this$desktopMoreMedi2.unload();
+    (_this$featuredProduct2 = this.featuredProducts) === null || _this$featuredProduct2 === void 0 ? void 0 : _this$featuredProduct2.unload();
+    (_this$variantAvailabi = this.variantAvailability) === null || _this$variantAvailabi === void 0 ? void 0 : _this$variantAvailabi.unload();
+    (_this$siblingProducts = this.siblingProducts) === null || _this$siblingProducts === void 0 ? void 0 : _this$siblingProducts.unload();
+    (_this$giftCardRecipie = this.giftCardRecipient) === null || _this$giftCardRecipie === void 0 ? void 0 : _this$giftCardRecipie.unload();
+    (_this$stickyAtcBar = this.stickyAtcBar) === null || _this$stickyAtcBar === void 0 ? void 0 : _this$stickyAtcBar.unload();
+  }
+}
+
+const classes$k = {
+  visible: "is-visible",
+  active: "active",
+  fixed: "is-fixed"
+};
+const selectors$E = {
+  closeBtn: "[data-modal-close]",
+  wash: ".modal__wash",
+  modalContent: ".quick-view-modal__content",
+  loadingMessage: ".quick-view-modal-loading-indicator"
+};
+const quickViewModal = node => {
+  const focusTrap = createFocusTrap(node, {
+    allowOutsideClick: true
+  });
+  const wash = n$2(selectors$E.wash, node);
+  const closeButton = n$2(selectors$E.closeBtn, node);
+  const modalContent = n$2(selectors$E.modalContent, node);
+  const loadingMessage = n$2(selectors$E.loadingMessage, node);
+  let quickViewAnimation = null;
+  if (shouldAnimate(node)) {
+    quickViewAnimation = animateQuickView(node);
+  }
+  let product;
+  const events = [e$2([wash, closeButton], "click", e => {
+    e.preventDefault();
+    _close();
+  }), e$2(node, "keydown", _ref => {
+    let {
+      keyCode
+    } = _ref;
+    if (keyCode === 27) _close();
+  }), c("quick-view:open", (state, _ref2) => {
+    let {
+      productUrl
+    } = _ref2;
+    _renderProductContent(productUrl);
+    _open();
+  }), c("quick-view:close", () => {
+    _close();
+  })];
+  const _renderProductContent = productUrl => {
+    const xhrUrl = "".concat(productUrl).concat(productUrl.includes("?") ? "&" : "?", "view=quick-view");
+    makeRequest("GET", xhrUrl).then(response => {
+      let container = document.createElement("div");
+      container.innerHTML = response;
+      const productElement = n$2("[data-is-quick-view]", container);
+      i$1(modalContent, "empty");
+      modalContent.innerHTML = "";
+      modalContent.appendChild(productElement);
+      const renderedProductElement = n$2("[data-is-quick-view]", modalContent);
+      if (shouldAnimate(node)) {
+        quickViewAnimation.animate();
+      }
+      product = new Product(renderedProductElement);
+      dispatchCustomEvent("quickview:loaded");
+    });
+  };
+  const _open = () => {
+    u$1(node, classes$k.fixed);
+    setTimeout(() => {
+      u$1(node, classes$k.active);
+      setTimeout(() => {
+        u$1(node, classes$k.visible);
+        focusTrap.activate();
+      }, 50);
+    }, 50);
+    document.body.setAttribute("data-fluorescent-overlay-open", "true");
+    disableBodyScroll(node, {
+      allowTouchMove: el => {
+        while (el && el !== document.body) {
+          if (el.getAttribute("data-scroll-lock-ignore") !== null) {
+            return true;
+          }
+          el = el.parentNode;
+        }
+      },
+      reserveScrollBarGap: true
+    });
+  };
+  const _close = () => {
+    focusTrap.deactivate();
+    i$1(node, classes$k.visible);
+    i$1(node, classes$k.active);
+    document.body.setAttribute("data-fluorescent-overlay-open", "false");
+    enableBodyScroll(node);
+    r$1("quick-cart:scrollup");
+    setTimeout(() => {
+      var _product;
+      i$1(node, classes$k.fixed);
+      if (shouldAnimate(node)) {
+        quickViewAnimation.reset();
+      }
+      modalContent.innerHTML = "";
+      modalContent.appendChild(loadingMessage);
+      u$1(modalContent, "empty");
+      (_product = product) === null || _product === void 0 ? void 0 : _product.unload();
+    }, 500);
+  };
+  const unload = () => {
+    events.forEach(unsubscribe => unsubscribe());
+  };
+  return {
+    unload
+  };
+};
+
+const classes$j = {
+  visible: "is-visible"
+};
+const flashAlertModal = node => {
+  // Setup all preassigned liquid flash alerts
+  if (window.Shopify.designMode) {
+    const delegate = new Delegate(document.body);
+    delegate.on("click", "[data-flash-trigger]", (_, target) => {
+      const {
+        flashMessage
+      } = target.dataset;
+      _open(flashMessage);
+    });
+  }
+  c("flart-alert", _ref => {
+    let {
+      alert
+    } = _ref;
     _open(alert);
   });
-
-  var _open = function _open(alertMessage) {
+  const _open = alertMessage => {
     if (!alertMessage) return;
-    var messageContainer = n$2(".flash-alert__container", node);
+    const messageContainer = n$2(".flash-alert__container", node);
     messageContainer.innerText = alertMessage;
-    u$1(node, classes$h.visible);
-    messageContainer.addEventListener("animationend", function () {
-      i$1(node, classes$h.visible);
+    u$1(node, classes$j.visible);
+    messageContainer.addEventListener("animationend", () => {
+      i$1(node, classes$j.visible);
     }, {
       once: true
     });
   };
 };
 
-var selectors$C = {
+const selectors$D = {
   innerOverlay: ".header-overlay__inner"
 };
-var classes$g = {
+const classes$i = {
   isVisible: "is-visible",
   isActive: "is-active"
 };
-var events = {
+const events = {
   show: "headerOverlay:show",
   hide: "headerOverlay:hide",
   hiding: "headerOverlay:hiding"
 };
-
-var headerOverlay = function headerOverlay(node) {
+const headerOverlay = node => {
   if (!node) return;
-  var overlay = node;
-  var overlayInner = node.querySelector(selectors$C.innerOverlay);
-  var overlayShowListener = c(events.show, function () {
-    return _showOverlay();
-  });
-  var overlayHideListener = c(events.hide, function () {
-    return _hideOverlay();
-  });
-
-  var _showOverlay = function _showOverlay() {
+  const overlay = node;
+  const overlayInner = node.querySelector(selectors$D.innerOverlay);
+  const overlayShowListener = c(events.show, () => _showOverlay());
+  const overlayHideListener = c(events.hide, () => _hideOverlay());
+  const _showOverlay = () => {
     o$1({
       headerOverlayOpen: true
     });
-    overlay.classList.add(classes$g.isActive);
-    setTimeout(function () {
-      overlayInner.classList.add(classes$g.isVisible);
+    overlay.classList.add(classes$i.isActive);
+    setTimeout(() => {
+      overlayInner.classList.add(classes$i.isVisible);
     }, 0);
   };
-
-  var _hideOverlay = function _hideOverlay() {
+  const _hideOverlay = () => {
     o$1({
       headerOverlayOpen: false
     });
     r$1(events.hiding);
-    overlayInner.classList.remove(classes$g.isVisible);
-    setTimeout(function () {
-      overlay.classList.remove(classes$g.isActive);
+    overlayInner.classList.remove(classes$i.isVisible);
+    setTimeout(() => {
+      overlay.classList.remove(classes$i.isActive);
     }, 0);
   };
-
-  var unload = function unload() {
+  const unload = () => {
     overlayShowListener();
     overlayHideListener();
   };
-
   return {
-    unload: unload
+    unload
   };
 };
 
 var timer;
 function debounce(func) {
-  var time = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 100;
+  let time = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 100;
   return function (event) {
     if (timer) clearTimeout(timer);
     timer = setTimeout(func, time, event);
   };
 }
 
-var supportsNativeSmoothScroll = ("scrollBehavior" in document.documentElement.style);
+// detect support for the behavior property in ScrollOptions
+const supportsNativeSmoothScroll = ("scrollBehavior" in document.documentElement.style);
+const backToTop = () => {
+  const node = n$2("[data-back-to-top]");
+  if (!node) return;
 
-var backToTop = function backToTop() {
-  var node = n$2("[data-back-to-top]");
-  if (!node) return; // Handling button visibility
+  // Handling button visibility
+  const pageHeight = window.innerHeight;
+  let isVisible = false;
 
-  var pageHeight = window.innerHeight;
-  var isVisible = false; // Whatch scroll updates, we don't need precision here so we're debouncing
-
-  srraf(function (_ref) {
-    var y = _ref.y;
-    return debounce(function () {
-      return _scrollHandler(y);
-    })();
+  // Whatch scroll updates, we don't need precision here so we're debouncing
+  srraf(_ref => {
+    let {
+      y
+    } = _ref;
+    return debounce(() => _scrollHandler(y))();
   });
-
   function _scrollHandler(y) {
     // Check if the button visibility should be toggled
     if (y > pageHeight && !isVisible || y < pageHeight && isVisible) {
       _toggleVisibility();
     }
   }
-
   function _toggleVisibility() {
     l(node, "visible");
     isVisible = !isVisible;
-  } // Handling button clicks
+  }
 
-
-  var button = n$2("[data-back-to-top-button]", node);
+  // Handling button clicks
+  const button = n$2("[data-back-to-top-button]", node);
   button.addEventListener("click", _buttonClick);
-
   function _buttonClick() {
     if (supportsNativeSmoothScroll) {
       window.scrollTo({
@@ -7673,1066 +7150,112 @@ var backToTop = function backToTop() {
   }
 };
 
-/**
- * A collection of shims that provide minimal functionality of the ES6 collections.
- *
- * These implementations are not meant to be used outside of the ResizeObserver
- * modules as they cover only a limited range of use cases.
- */
-/* eslint-disable require-jsdoc, valid-jsdoc */
-var MapShim = (function () {
-    if (typeof Map !== 'undefined') {
-        return Map;
-    }
-    /**
-     * Returns index in provided array that matches the specified key.
-     *
-     * @param {Array<Array>} arr
-     * @param {*} key
-     * @returns {number}
-     */
-    function getIndex(arr, key) {
-        var result = -1;
-        arr.some(function (entry, index) {
-            if (entry[0] === key) {
-                result = index;
-                return true;
-            }
-            return false;
-        });
-        return result;
-    }
-    return /** @class */ (function () {
-        function class_1() {
-            this.__entries__ = [];
-        }
-        Object.defineProperty(class_1.prototype, "size", {
-            /**
-             * @returns {boolean}
-             */
-            get: function () {
-                return this.__entries__.length;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        /**
-         * @param {*} key
-         * @returns {*}
-         */
-        class_1.prototype.get = function (key) {
-            var index = getIndex(this.__entries__, key);
-            var entry = this.__entries__[index];
-            return entry && entry[1];
-        };
-        /**
-         * @param {*} key
-         * @param {*} value
-         * @returns {void}
-         */
-        class_1.prototype.set = function (key, value) {
-            var index = getIndex(this.__entries__, key);
-            if (~index) {
-                this.__entries__[index][1] = value;
-            }
-            else {
-                this.__entries__.push([key, value]);
-            }
-        };
-        /**
-         * @param {*} key
-         * @returns {void}
-         */
-        class_1.prototype.delete = function (key) {
-            var entries = this.__entries__;
-            var index = getIndex(entries, key);
-            if (~index) {
-                entries.splice(index, 1);
-            }
-        };
-        /**
-         * @param {*} key
-         * @returns {void}
-         */
-        class_1.prototype.has = function (key) {
-            return !!~getIndex(this.__entries__, key);
-        };
-        /**
-         * @returns {void}
-         */
-        class_1.prototype.clear = function () {
-            this.__entries__.splice(0);
-        };
-        /**
-         * @param {Function} callback
-         * @param {*} [ctx=null]
-         * @returns {void}
-         */
-        class_1.prototype.forEach = function (callback, ctx) {
-            if (ctx === void 0) { ctx = null; }
-            for (var _i = 0, _a = this.__entries__; _i < _a.length; _i++) {
-                var entry = _a[_i];
-                callback.call(ctx, entry[1], entry[0]);
-            }
-        };
-        return class_1;
-    }());
-})();
-
-/**
- * Detects whether window and document objects are available in current environment.
- */
-var isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined' && window.document === document;
-
-// Returns global object of a current environment.
-var global$1 = (function () {
-    if (typeof global !== 'undefined' && global.Math === Math) {
-        return global;
-    }
-    if (typeof self !== 'undefined' && self.Math === Math) {
-        return self;
-    }
-    if (typeof window !== 'undefined' && window.Math === Math) {
-        return window;
-    }
-    // eslint-disable-next-line no-new-func
-    return Function('return this')();
-})();
-
-/**
- * A shim for the requestAnimationFrame which falls back to the setTimeout if
- * first one is not supported.
- *
- * @returns {number} Requests' identifier.
- */
-var requestAnimationFrame$1 = (function () {
-    if (typeof requestAnimationFrame === 'function') {
-        // It's required to use a bounded function because IE sometimes throws
-        // an "Invalid calling object" error if rAF is invoked without the global
-        // object on the left hand side.
-        return requestAnimationFrame.bind(global$1);
-    }
-    return function (callback) { return setTimeout(function () { return callback(Date.now()); }, 1000 / 60); };
-})();
-
-// Defines minimum timeout before adding a trailing call.
-var trailingTimeout = 2;
-/**
- * Creates a wrapper function which ensures that provided callback will be
- * invoked only once during the specified delay period.
- *
- * @param {Function} callback - Function to be invoked after the delay period.
- * @param {number} delay - Delay after which to invoke callback.
- * @returns {Function}
- */
-function throttle (callback, delay) {
-    var leadingCall = false, trailingCall = false, lastCallTime = 0;
-    /**
-     * Invokes the original callback function and schedules new invocation if
-     * the "proxy" was called during current request.
-     *
-     * @returns {void}
-     */
-    function resolvePending() {
-        if (leadingCall) {
-            leadingCall = false;
-            callback();
-        }
-        if (trailingCall) {
-            proxy();
-        }
-    }
-    /**
-     * Callback invoked after the specified delay. It will further postpone
-     * invocation of the original function delegating it to the
-     * requestAnimationFrame.
-     *
-     * @returns {void}
-     */
-    function timeoutCallback() {
-        requestAnimationFrame$1(resolvePending);
-    }
-    /**
-     * Schedules invocation of the original function.
-     *
-     * @returns {void}
-     */
-    function proxy() {
-        var timeStamp = Date.now();
-        if (leadingCall) {
-            // Reject immediately following calls.
-            if (timeStamp - lastCallTime < trailingTimeout) {
-                return;
-            }
-            // Schedule new call to be in invoked when the pending one is resolved.
-            // This is important for "transitions" which never actually start
-            // immediately so there is a chance that we might miss one if change
-            // happens amids the pending invocation.
-            trailingCall = true;
-        }
-        else {
-            leadingCall = true;
-            trailingCall = false;
-            setTimeout(timeoutCallback, delay);
-        }
-        lastCallTime = timeStamp;
-    }
-    return proxy;
-}
-
-// Minimum delay before invoking the update of observers.
-var REFRESH_DELAY = 20;
-// A list of substrings of CSS properties used to find transition events that
-// might affect dimensions of observed elements.
-var transitionKeys = ['top', 'right', 'bottom', 'left', 'width', 'height', 'size', 'weight'];
-// Check if MutationObserver is available.
-var mutationObserverSupported = typeof MutationObserver !== 'undefined';
-/**
- * Singleton controller class which handles updates of ResizeObserver instances.
- */
-var ResizeObserverController = /** @class */ (function () {
-    /**
-     * Creates a new instance of ResizeObserverController.
-     *
-     * @private
-     */
-    function ResizeObserverController() {
-        /**
-         * Indicates whether DOM listeners have been added.
-         *
-         * @private {boolean}
-         */
-        this.connected_ = false;
-        /**
-         * Tells that controller has subscribed for Mutation Events.
-         *
-         * @private {boolean}
-         */
-        this.mutationEventsAdded_ = false;
-        /**
-         * Keeps reference to the instance of MutationObserver.
-         *
-         * @private {MutationObserver}
-         */
-        this.mutationsObserver_ = null;
-        /**
-         * A list of connected observers.
-         *
-         * @private {Array<ResizeObserverSPI>}
-         */
-        this.observers_ = [];
-        this.onTransitionEnd_ = this.onTransitionEnd_.bind(this);
-        this.refresh = throttle(this.refresh.bind(this), REFRESH_DELAY);
-    }
-    /**
-     * Adds observer to observers list.
-     *
-     * @param {ResizeObserverSPI} observer - Observer to be added.
-     * @returns {void}
-     */
-    ResizeObserverController.prototype.addObserver = function (observer) {
-        if (!~this.observers_.indexOf(observer)) {
-            this.observers_.push(observer);
-        }
-        // Add listeners if they haven't been added yet.
-        if (!this.connected_) {
-            this.connect_();
-        }
-    };
-    /**
-     * Removes observer from observers list.
-     *
-     * @param {ResizeObserverSPI} observer - Observer to be removed.
-     * @returns {void}
-     */
-    ResizeObserverController.prototype.removeObserver = function (observer) {
-        var observers = this.observers_;
-        var index = observers.indexOf(observer);
-        // Remove observer if it's present in registry.
-        if (~index) {
-            observers.splice(index, 1);
-        }
-        // Remove listeners if controller has no connected observers.
-        if (!observers.length && this.connected_) {
-            this.disconnect_();
-        }
-    };
-    /**
-     * Invokes the update of observers. It will continue running updates insofar
-     * it detects changes.
-     *
-     * @returns {void}
-     */
-    ResizeObserverController.prototype.refresh = function () {
-        var changesDetected = this.updateObservers_();
-        // Continue running updates if changes have been detected as there might
-        // be future ones caused by CSS transitions.
-        if (changesDetected) {
-            this.refresh();
-        }
-    };
-    /**
-     * Updates every observer from observers list and notifies them of queued
-     * entries.
-     *
-     * @private
-     * @returns {boolean} Returns "true" if any observer has detected changes in
-     *      dimensions of it's elements.
-     */
-    ResizeObserverController.prototype.updateObservers_ = function () {
-        // Collect observers that have active observations.
-        var activeObservers = this.observers_.filter(function (observer) {
-            return observer.gatherActive(), observer.hasActive();
-        });
-        // Deliver notifications in a separate cycle in order to avoid any
-        // collisions between observers, e.g. when multiple instances of
-        // ResizeObserver are tracking the same element and the callback of one
-        // of them changes content dimensions of the observed target. Sometimes
-        // this may result in notifications being blocked for the rest of observers.
-        activeObservers.forEach(function (observer) { return observer.broadcastActive(); });
-        return activeObservers.length > 0;
-    };
-    /**
-     * Initializes DOM listeners.
-     *
-     * @private
-     * @returns {void}
-     */
-    ResizeObserverController.prototype.connect_ = function () {
-        // Do nothing if running in a non-browser environment or if listeners
-        // have been already added.
-        if (!isBrowser || this.connected_) {
-            return;
-        }
-        // Subscription to the "Transitionend" event is used as a workaround for
-        // delayed transitions. This way it's possible to capture at least the
-        // final state of an element.
-        document.addEventListener('transitionend', this.onTransitionEnd_);
-        window.addEventListener('resize', this.refresh);
-        if (mutationObserverSupported) {
-            this.mutationsObserver_ = new MutationObserver(this.refresh);
-            this.mutationsObserver_.observe(document, {
-                attributes: true,
-                childList: true,
-                characterData: true,
-                subtree: true
-            });
-        }
-        else {
-            document.addEventListener('DOMSubtreeModified', this.refresh);
-            this.mutationEventsAdded_ = true;
-        }
-        this.connected_ = true;
-    };
-    /**
-     * Removes DOM listeners.
-     *
-     * @private
-     * @returns {void}
-     */
-    ResizeObserverController.prototype.disconnect_ = function () {
-        // Do nothing if running in a non-browser environment or if listeners
-        // have been already removed.
-        if (!isBrowser || !this.connected_) {
-            return;
-        }
-        document.removeEventListener('transitionend', this.onTransitionEnd_);
-        window.removeEventListener('resize', this.refresh);
-        if (this.mutationsObserver_) {
-            this.mutationsObserver_.disconnect();
-        }
-        if (this.mutationEventsAdded_) {
-            document.removeEventListener('DOMSubtreeModified', this.refresh);
-        }
-        this.mutationsObserver_ = null;
-        this.mutationEventsAdded_ = false;
-        this.connected_ = false;
-    };
-    /**
-     * "Transitionend" event handler.
-     *
-     * @private
-     * @param {TransitionEvent} event
-     * @returns {void}
-     */
-    ResizeObserverController.prototype.onTransitionEnd_ = function (_a) {
-        var _b = _a.propertyName, propertyName = _b === void 0 ? '' : _b;
-        // Detect whether transition may affect dimensions of an element.
-        var isReflowProperty = transitionKeys.some(function (key) {
-            return !!~propertyName.indexOf(key);
-        });
-        if (isReflowProperty) {
-            this.refresh();
-        }
-    };
-    /**
-     * Returns instance of the ResizeObserverController.
-     *
-     * @returns {ResizeObserverController}
-     */
-    ResizeObserverController.getInstance = function () {
-        if (!this.instance_) {
-            this.instance_ = new ResizeObserverController();
-        }
-        return this.instance_;
-    };
-    /**
-     * Holds reference to the controller's instance.
-     *
-     * @private {ResizeObserverController}
-     */
-    ResizeObserverController.instance_ = null;
-    return ResizeObserverController;
-}());
-
-/**
- * Defines non-writable/enumerable properties of the provided target object.
- *
- * @param {Object} target - Object for which to define properties.
- * @param {Object} props - Properties to be defined.
- * @returns {Object} Target object.
- */
-var defineConfigurable = (function (target, props) {
-    for (var _i = 0, _a = Object.keys(props); _i < _a.length; _i++) {
-        var key = _a[_i];
-        Object.defineProperty(target, key, {
-            value: props[key],
-            enumerable: false,
-            writable: false,
-            configurable: true
-        });
-    }
-    return target;
-});
-
-/**
- * Returns the global object associated with provided element.
- *
- * @param {Object} target
- * @returns {Object}
- */
-var getWindowOf = (function (target) {
-    // Assume that the element is an instance of Node, which means that it
-    // has the "ownerDocument" property from which we can retrieve a
-    // corresponding global object.
-    var ownerGlobal = target && target.ownerDocument && target.ownerDocument.defaultView;
-    // Return the local global object if it's not possible extract one from
-    // provided element.
-    return ownerGlobal || global$1;
-});
-
-// Placeholder of an empty content rectangle.
-var emptyRect = createRectInit(0, 0, 0, 0);
-/**
- * Converts provided string to a number.
- *
- * @param {number|string} value
- * @returns {number}
- */
-function toFloat(value) {
-    return parseFloat(value) || 0;
-}
-/**
- * Extracts borders size from provided styles.
- *
- * @param {CSSStyleDeclaration} styles
- * @param {...string} positions - Borders positions (top, right, ...)
- * @returns {number}
- */
-function getBordersSize(styles) {
-    var positions = [];
-    for (var _i = 1; _i < arguments.length; _i++) {
-        positions[_i - 1] = arguments[_i];
-    }
-    return positions.reduce(function (size, position) {
-        var value = styles['border-' + position + '-width'];
-        return size + toFloat(value);
-    }, 0);
-}
-/**
- * Extracts paddings sizes from provided styles.
- *
- * @param {CSSStyleDeclaration} styles
- * @returns {Object} Paddings box.
- */
-function getPaddings(styles) {
-    var positions = ['top', 'right', 'bottom', 'left'];
-    var paddings = {};
-    for (var _i = 0, positions_1 = positions; _i < positions_1.length; _i++) {
-        var position = positions_1[_i];
-        var value = styles['padding-' + position];
-        paddings[position] = toFloat(value);
-    }
-    return paddings;
-}
-/**
- * Calculates content rectangle of provided SVG element.
- *
- * @param {SVGGraphicsElement} target - Element content rectangle of which needs
- *      to be calculated.
- * @returns {DOMRectInit}
- */
-function getSVGContentRect(target) {
-    var bbox = target.getBBox();
-    return createRectInit(0, 0, bbox.width, bbox.height);
-}
-/**
- * Calculates content rectangle of provided HTMLElement.
- *
- * @param {HTMLElement} target - Element for which to calculate the content rectangle.
- * @returns {DOMRectInit}
- */
-function getHTMLElementContentRect(target) {
-    // Client width & height properties can't be
-    // used exclusively as they provide rounded values.
-    var clientWidth = target.clientWidth, clientHeight = target.clientHeight;
-    // By this condition we can catch all non-replaced inline, hidden and
-    // detached elements. Though elements with width & height properties less
-    // than 0.5 will be discarded as well.
-    //
-    // Without it we would need to implement separate methods for each of
-    // those cases and it's not possible to perform a precise and performance
-    // effective test for hidden elements. E.g. even jQuery's ':visible' filter
-    // gives wrong results for elements with width & height less than 0.5.
-    if (!clientWidth && !clientHeight) {
-        return emptyRect;
-    }
-    var styles = getWindowOf(target).getComputedStyle(target);
-    var paddings = getPaddings(styles);
-    var horizPad = paddings.left + paddings.right;
-    var vertPad = paddings.top + paddings.bottom;
-    // Computed styles of width & height are being used because they are the
-    // only dimensions available to JS that contain non-rounded values. It could
-    // be possible to utilize the getBoundingClientRect if only it's data wasn't
-    // affected by CSS transformations let alone paddings, borders and scroll bars.
-    var width = toFloat(styles.width), height = toFloat(styles.height);
-    // Width & height include paddings and borders when the 'border-box' box
-    // model is applied (except for IE).
-    if (styles.boxSizing === 'border-box') {
-        // Following conditions are required to handle Internet Explorer which
-        // doesn't include paddings and borders to computed CSS dimensions.
-        //
-        // We can say that if CSS dimensions + paddings are equal to the "client"
-        // properties then it's either IE, and thus we don't need to subtract
-        // anything, or an element merely doesn't have paddings/borders styles.
-        if (Math.round(width + horizPad) !== clientWidth) {
-            width -= getBordersSize(styles, 'left', 'right') + horizPad;
-        }
-        if (Math.round(height + vertPad) !== clientHeight) {
-            height -= getBordersSize(styles, 'top', 'bottom') + vertPad;
-        }
-    }
-    // Following steps can't be applied to the document's root element as its
-    // client[Width/Height] properties represent viewport area of the window.
-    // Besides, it's as well not necessary as the <html> itself neither has
-    // rendered scroll bars nor it can be clipped.
-    if (!isDocumentElement(target)) {
-        // In some browsers (only in Firefox, actually) CSS width & height
-        // include scroll bars size which can be removed at this step as scroll
-        // bars are the only difference between rounded dimensions + paddings
-        // and "client" properties, though that is not always true in Chrome.
-        var vertScrollbar = Math.round(width + horizPad) - clientWidth;
-        var horizScrollbar = Math.round(height + vertPad) - clientHeight;
-        // Chrome has a rather weird rounding of "client" properties.
-        // E.g. for an element with content width of 314.2px it sometimes gives
-        // the client width of 315px and for the width of 314.7px it may give
-        // 314px. And it doesn't happen all the time. So just ignore this delta
-        // as a non-relevant.
-        if (Math.abs(vertScrollbar) !== 1) {
-            width -= vertScrollbar;
-        }
-        if (Math.abs(horizScrollbar) !== 1) {
-            height -= horizScrollbar;
-        }
-    }
-    return createRectInit(paddings.left, paddings.top, width, height);
-}
-/**
- * Checks whether provided element is an instance of the SVGGraphicsElement.
- *
- * @param {Element} target - Element to be checked.
- * @returns {boolean}
- */
-var isSVGGraphicsElement = (function () {
-    // Some browsers, namely IE and Edge, don't have the SVGGraphicsElement
-    // interface.
-    if (typeof SVGGraphicsElement !== 'undefined') {
-        return function (target) { return target instanceof getWindowOf(target).SVGGraphicsElement; };
-    }
-    // If it's so, then check that element is at least an instance of the
-    // SVGElement and that it has the "getBBox" method.
-    // eslint-disable-next-line no-extra-parens
-    return function (target) { return (target instanceof getWindowOf(target).SVGElement &&
-        typeof target.getBBox === 'function'); };
-})();
-/**
- * Checks whether provided element is a document element (<html>).
- *
- * @param {Element} target - Element to be checked.
- * @returns {boolean}
- */
-function isDocumentElement(target) {
-    return target === getWindowOf(target).document.documentElement;
-}
-/**
- * Calculates an appropriate content rectangle for provided html or svg element.
- *
- * @param {Element} target - Element content rectangle of which needs to be calculated.
- * @returns {DOMRectInit}
- */
-function getContentRect(target) {
-    if (!isBrowser) {
-        return emptyRect;
-    }
-    if (isSVGGraphicsElement(target)) {
-        return getSVGContentRect(target);
-    }
-    return getHTMLElementContentRect(target);
-}
-/**
- * Creates rectangle with an interface of the DOMRectReadOnly.
- * Spec: https://drafts.fxtf.org/geometry/#domrectreadonly
- *
- * @param {DOMRectInit} rectInit - Object with rectangle's x/y coordinates and dimensions.
- * @returns {DOMRectReadOnly}
- */
-function createReadOnlyRect(_a) {
-    var x = _a.x, y = _a.y, width = _a.width, height = _a.height;
-    // If DOMRectReadOnly is available use it as a prototype for the rectangle.
-    var Constr = typeof DOMRectReadOnly !== 'undefined' ? DOMRectReadOnly : Object;
-    var rect = Object.create(Constr.prototype);
-    // Rectangle's properties are not writable and non-enumerable.
-    defineConfigurable(rect, {
-        x: x, y: y, width: width, height: height,
-        top: y,
-        right: x + width,
-        bottom: height + y,
-        left: x
-    });
-    return rect;
-}
-/**
- * Creates DOMRectInit object based on the provided dimensions and the x/y coordinates.
- * Spec: https://drafts.fxtf.org/geometry/#dictdef-domrectinit
- *
- * @param {number} x - X coordinate.
- * @param {number} y - Y coordinate.
- * @param {number} width - Rectangle's width.
- * @param {number} height - Rectangle's height.
- * @returns {DOMRectInit}
- */
-function createRectInit(x, y, width, height) {
-    return { x: x, y: y, width: width, height: height };
-}
-
-/**
- * Class that is responsible for computations of the content rectangle of
- * provided DOM element and for keeping track of it's changes.
- */
-var ResizeObservation = /** @class */ (function () {
-    /**
-     * Creates an instance of ResizeObservation.
-     *
-     * @param {Element} target - Element to be observed.
-     */
-    function ResizeObservation(target) {
-        /**
-         * Broadcasted width of content rectangle.
-         *
-         * @type {number}
-         */
-        this.broadcastWidth = 0;
-        /**
-         * Broadcasted height of content rectangle.
-         *
-         * @type {number}
-         */
-        this.broadcastHeight = 0;
-        /**
-         * Reference to the last observed content rectangle.
-         *
-         * @private {DOMRectInit}
-         */
-        this.contentRect_ = createRectInit(0, 0, 0, 0);
-        this.target = target;
-    }
-    /**
-     * Updates content rectangle and tells whether it's width or height properties
-     * have changed since the last broadcast.
-     *
-     * @returns {boolean}
-     */
-    ResizeObservation.prototype.isActive = function () {
-        var rect = getContentRect(this.target);
-        this.contentRect_ = rect;
-        return (rect.width !== this.broadcastWidth ||
-            rect.height !== this.broadcastHeight);
-    };
-    /**
-     * Updates 'broadcastWidth' and 'broadcastHeight' properties with a data
-     * from the corresponding properties of the last observed content rectangle.
-     *
-     * @returns {DOMRectInit} Last observed content rectangle.
-     */
-    ResizeObservation.prototype.broadcastRect = function () {
-        var rect = this.contentRect_;
-        this.broadcastWidth = rect.width;
-        this.broadcastHeight = rect.height;
-        return rect;
-    };
-    return ResizeObservation;
-}());
-
-var ResizeObserverEntry = /** @class */ (function () {
-    /**
-     * Creates an instance of ResizeObserverEntry.
-     *
-     * @param {Element} target - Element that is being observed.
-     * @param {DOMRectInit} rectInit - Data of the element's content rectangle.
-     */
-    function ResizeObserverEntry(target, rectInit) {
-        var contentRect = createReadOnlyRect(rectInit);
-        // According to the specification following properties are not writable
-        // and are also not enumerable in the native implementation.
-        //
-        // Property accessors are not being used as they'd require to define a
-        // private WeakMap storage which may cause memory leaks in browsers that
-        // don't support this type of collections.
-        defineConfigurable(this, { target: target, contentRect: contentRect });
-    }
-    return ResizeObserverEntry;
-}());
-
-var ResizeObserverSPI = /** @class */ (function () {
-    /**
-     * Creates a new instance of ResizeObserver.
-     *
-     * @param {ResizeObserverCallback} callback - Callback function that is invoked
-     *      when one of the observed elements changes it's content dimensions.
-     * @param {ResizeObserverController} controller - Controller instance which
-     *      is responsible for the updates of observer.
-     * @param {ResizeObserver} callbackCtx - Reference to the public
-     *      ResizeObserver instance which will be passed to callback function.
-     */
-    function ResizeObserverSPI(callback, controller, callbackCtx) {
-        /**
-         * Collection of resize observations that have detected changes in dimensions
-         * of elements.
-         *
-         * @private {Array<ResizeObservation>}
-         */
-        this.activeObservations_ = [];
-        /**
-         * Registry of the ResizeObservation instances.
-         *
-         * @private {Map<Element, ResizeObservation>}
-         */
-        this.observations_ = new MapShim();
-        if (typeof callback !== 'function') {
-            throw new TypeError('The callback provided as parameter 1 is not a function.');
-        }
-        this.callback_ = callback;
-        this.controller_ = controller;
-        this.callbackCtx_ = callbackCtx;
-    }
-    /**
-     * Starts observing provided element.
-     *
-     * @param {Element} target - Element to be observed.
-     * @returns {void}
-     */
-    ResizeObserverSPI.prototype.observe = function (target) {
-        if (!arguments.length) {
-            throw new TypeError('1 argument required, but only 0 present.');
-        }
-        // Do nothing if current environment doesn't have the Element interface.
-        if (typeof Element === 'undefined' || !(Element instanceof Object)) {
-            return;
-        }
-        if (!(target instanceof getWindowOf(target).Element)) {
-            throw new TypeError('parameter 1 is not of type "Element".');
-        }
-        var observations = this.observations_;
-        // Do nothing if element is already being observed.
-        if (observations.has(target)) {
-            return;
-        }
-        observations.set(target, new ResizeObservation(target));
-        this.controller_.addObserver(this);
-        // Force the update of observations.
-        this.controller_.refresh();
-    };
-    /**
-     * Stops observing provided element.
-     *
-     * @param {Element} target - Element to stop observing.
-     * @returns {void}
-     */
-    ResizeObserverSPI.prototype.unobserve = function (target) {
-        if (!arguments.length) {
-            throw new TypeError('1 argument required, but only 0 present.');
-        }
-        // Do nothing if current environment doesn't have the Element interface.
-        if (typeof Element === 'undefined' || !(Element instanceof Object)) {
-            return;
-        }
-        if (!(target instanceof getWindowOf(target).Element)) {
-            throw new TypeError('parameter 1 is not of type "Element".');
-        }
-        var observations = this.observations_;
-        // Do nothing if element is not being observed.
-        if (!observations.has(target)) {
-            return;
-        }
-        observations.delete(target);
-        if (!observations.size) {
-            this.controller_.removeObserver(this);
-        }
-    };
-    /**
-     * Stops observing all elements.
-     *
-     * @returns {void}
-     */
-    ResizeObserverSPI.prototype.disconnect = function () {
-        this.clearActive();
-        this.observations_.clear();
-        this.controller_.removeObserver(this);
-    };
-    /**
-     * Collects observation instances the associated element of which has changed
-     * it's content rectangle.
-     *
-     * @returns {void}
-     */
-    ResizeObserverSPI.prototype.gatherActive = function () {
-        var _this = this;
-        this.clearActive();
-        this.observations_.forEach(function (observation) {
-            if (observation.isActive()) {
-                _this.activeObservations_.push(observation);
-            }
-        });
-    };
-    /**
-     * Invokes initial callback function with a list of ResizeObserverEntry
-     * instances collected from active resize observations.
-     *
-     * @returns {void}
-     */
-    ResizeObserverSPI.prototype.broadcastActive = function () {
-        // Do nothing if observer doesn't have active observations.
-        if (!this.hasActive()) {
-            return;
-        }
-        var ctx = this.callbackCtx_;
-        // Create ResizeObserverEntry instance for every active observation.
-        var entries = this.activeObservations_.map(function (observation) {
-            return new ResizeObserverEntry(observation.target, observation.broadcastRect());
-        });
-        this.callback_.call(ctx, entries, ctx);
-        this.clearActive();
-    };
-    /**
-     * Clears the collection of active observations.
-     *
-     * @returns {void}
-     */
-    ResizeObserverSPI.prototype.clearActive = function () {
-        this.activeObservations_.splice(0);
-    };
-    /**
-     * Tells whether observer has active observations.
-     *
-     * @returns {boolean}
-     */
-    ResizeObserverSPI.prototype.hasActive = function () {
-        return this.activeObservations_.length > 0;
-    };
-    return ResizeObserverSPI;
-}());
-
-// Registry of internal observers. If WeakMap is not available use current shim
-// for the Map collection as it has all required methods and because WeakMap
-// can't be fully polyfilled anyway.
-var observers = typeof WeakMap !== 'undefined' ? new WeakMap() : new MapShim();
-/**
- * ResizeObserver API. Encapsulates the ResizeObserver SPI implementation
- * exposing only those methods and properties that are defined in the spec.
- */
-var ResizeObserver$1 = /** @class */ (function () {
-    /**
-     * Creates a new instance of ResizeObserver.
-     *
-     * @param {ResizeObserverCallback} callback - Callback that is invoked when
-     *      dimensions of the observed elements change.
-     */
-    function ResizeObserver(callback) {
-        if (!(this instanceof ResizeObserver)) {
-            throw new TypeError('Cannot call a class as a function.');
-        }
-        if (!arguments.length) {
-            throw new TypeError('1 argument required, but only 0 present.');
-        }
-        var controller = ResizeObserverController.getInstance();
-        var observer = new ResizeObserverSPI(callback, controller, this);
-        observers.set(this, observer);
-    }
-    return ResizeObserver;
-}());
-// Expose public methods of ResizeObserver.
-[
-    'observe',
-    'unobserve',
-    'disconnect'
-].forEach(function (method) {
-    ResizeObserver$1.prototype[method] = function () {
-        var _a;
-        return (_a = observers.get(this))[method].apply(_a, arguments);
-    };
-});
-
-var index = (function () {
-    // Export existing implementation if available.
-    if (typeof global$1.ResizeObserver !== 'undefined') {
-        return global$1.ResizeObserver;
-    }
-    return ResizeObserver$1;
-})();
-
 function PredictiveSearch(resultsContainer) {
-  var settings = n$2("[data-search-settings]", document);
-
-  var _JSON$parse = JSON.parse(settings.innerHTML),
-      limit = _JSON$parse.limit,
-      show_articles = _JSON$parse.show_articles,
-      show_collections = _JSON$parse.show_collections,
-      show_pages = _JSON$parse.show_pages;
-
-  var cachedResults = {}; // Build out type query string
-
-  var types = ["product"];
-
-  if (show_articles) {
-    types.push("article");
-  }
-
-  if (show_collections) {
-    types.push("collection");
-  }
-
-  if (show_pages) {
-    types.push("page");
-  }
-
+  const cachedResults = {};
   function renderSearchResults(resultsMarkup) {
     resultsContainer.innerHTML = resultsMarkup;
   }
-
   function getSearchResults(searchTerm) {
-    var queryKey = searchTerm.replace(" ", "-").toLowerCase(); // Render result if it appears within the cache
+    const queryKey = searchTerm.replace(" ", "-").toLowerCase();
 
+    // Render result if it appears within the cache
     if (cachedResults["".concat(queryKey)]) {
       renderSearchResults(cachedResults["".concat(queryKey)]);
       return;
     }
-
-    fetch("".concat(window.theme.routes.predictive_search_url, "?q=").concat(encodeURIComponent(searchTerm), "&").concat(encodeURIComponent("resources[type]"), "=").concat(types.join(","), "&").concat(encodeURIComponent("resources[limit]"), "=").concat(limit, "&section_id=predictive-search")).then(function (response) {
+    fetch("".concat(window.theme.routes.predictive_search_url, "?q=").concat(encodeURIComponent(searchTerm), "&section_id=predictive-search")).then(response => {
       if (!response.ok) {
-        var error = new Error(response.status);
+        const error = new Error(response.status);
         throw error;
       }
-
       return response.text();
-    }).then(function (text) {
-      var resultsMarkup = new DOMParser().parseFromString(text, "text/html").querySelector("#shopify-section-predictive-search").innerHTML; // Cache results
+    }).then(text => {
+      let resultsMarkup = new DOMParser().parseFromString(text, "text/html").querySelector("#shopify-section-predictive-search").innerHTML;
 
+      // Cache results
       cachedResults[queryKey] = resultsMarkup;
       renderSearchResults(resultsMarkup);
-    }).catch(function (error) {
+    }).catch(error => {
       throw error;
     });
   }
-
   return {
-    getSearchResults: getSearchResults
+    getSearchResults
   };
 }
 
-var classes$f = {
+const classes$h = {
   active: "active",
   visible: "quick-search--visible"
 };
 function QuickSearch (node, header) {
-  var overlay = n$2("[data-overlay]", node);
-  var form = n$2("[data-quick-search-form]", node);
-  var input = n$2("[data-input]", node);
-  var clear = n$2("[data-clear]", node);
-  var resultsContainer = n$2("[data-results]", node);
-  var predictiveSearch = PredictiveSearch(resultsContainer);
-  var closeButton = n$2("[data-close-icon]", node);
-  var searchToggles = t$2("[data-search]", header);
-  var scrollPosition = 0;
-  var events = [e$2([overlay, closeButton], "click", close), e$2(clear, "click", reset), e$2(input, "input", handleInput), e$2(node, "keydown", function (_ref) {
-    var keyCode = _ref.keyCode;
+  const overlay = n$2("[data-overlay]", node);
+  const form = n$2("[data-quick-search-form]", node);
+  const input = n$2("[data-input]", node);
+  const clear = n$2("[data-clear]", node);
+  const resultsContainer = n$2("[data-results]", node);
+  const predictiveSearch = PredictiveSearch(resultsContainer);
+  const closeButton = n$2("[data-close-icon]", node);
+  const searchToggles = t$2("[data-search]", header);
+  let scrollPosition = 0;
+  const events = [e$2([overlay, closeButton], "click", close), e$2(clear, "click", reset), e$2(input, "input", handleInput), e$2(node, "keydown", _ref => {
+    let {
+      keyCode
+    } = _ref;
     if (keyCode === 27) close();
-  }), c("drawer-menu:open", function () {
-    if (a$1(node, classes$f.active)) close();
+  }), c("drawer-menu:open", () => {
+    if (a$1(node, classes$h.active)) close();
   })];
-  var trap = createFocusTrap(node, {
+  const trap = createFocusTrap(node, {
     allowOutsideClick: true
   });
-
   function handleInput(e) {
     if (e.target.value === "") reset();
-    l(clear, classes$f.visible, e.target.value !== "");
-    l(input.parentNode, classes$f.active, e.target.value !== "");
-    l(form, classes$f.active, e.target.value !== "");
+    l(clear, classes$h.visible, e.target.value !== "");
+    l(input.parentNode, classes$h.active, e.target.value !== "");
+    l(form, classes$h.active, e.target.value !== "");
     predictiveSearch.getSearchResults(e.target.value);
-  } // Clear contents of the search input and hide results container
+  }
 
-
+  // Clear contents of the search input and hide results container
   function reset(e) {
     e && e.preventDefault();
     input.value = "";
-    i$1(clear, classes$f.visible);
-    i$1(input.parentNode, classes$f.active);
-    i$1(form, classes$f.active);
+    i$1(clear, classes$h.visible);
+    i$1(input.parentNode, classes$h.active);
+    i$1(form, classes$h.active);
     resultsContainer.innerHTML = "";
     input.focus();
   }
-
   function toggleSearch() {
     node.style.setProperty("--scroll-y", Math.ceil(window.scrollY) + "px");
-    var searchIsOpen = node.getAttribute("aria-hidden") === "false";
-
+    const searchIsOpen = node.getAttribute("aria-hidden") === "false";
     if (searchIsOpen) {
       close();
     } else {
       open();
     }
   }
-
   function open() {
     r$1("search:open");
-    searchToggles.forEach(function (searchToggle) {
+    searchToggles.forEach(searchToggle => {
       searchToggle.setAttribute("aria-expanded", true);
     });
-    u$1(node, classes$f.active);
+    u$1(node, classes$h.active);
     node.setAttribute("aria-hidden", false);
     document.body.setAttribute("quick-search-open", "true");
     trap.activate();
-    setTimeout(function () {
+    setTimeout(() => {
       input.focus({
         preventScroll: true
       });
+      document.body.setAttribute("data-fluorescent-overlay-open", "true");
       disableBodyScroll(node, {
-        allowTouchMove: function allowTouchMove(el) {
+        allowTouchMove: el => {
           while (el && el !== document.body) {
             if (el.getAttribute("data-scroll-lock-ignore") !== null) {
               return true;
             }
-
             el = el.parentNode;
           }
         },
@@ -8741,198 +7264,215 @@ function QuickSearch (node, header) {
       scrollPosition = window.pageYOffset;
       document.body.style.top = "-".concat(scrollPosition, "px");
       document.body.classList.add("scroll-lock");
-      u$1(node, classes$f.visible);
+      u$1(node, classes$h.visible);
     }, 50);
   }
-
   function close() {
-    searchToggles.forEach(function (searchToggle) {
+    searchToggles.forEach(searchToggle => {
       searchToggle.setAttribute("aria-expanded", false);
     });
-    i$1(node, classes$f.visible);
+    i$1(node, classes$h.visible);
     document.body.setAttribute("quick-search-open", "false");
     trap.deactivate();
-    setTimeout(function () {
-      i$1(node, classes$f.active);
+    setTimeout(() => {
+      i$1(node, classes$h.active);
       node.setAttribute("aria-hidden", true);
+      document.body.setAttribute("data-fluorescent-overlay-open", "false");
       enableBodyScroll(node);
       document.body.classList.remove("scroll-lock");
       document.body.style.top = "";
       window.scrollTo(0, scrollPosition);
     }, 500);
   }
-
   function destroy() {
     close();
-    events.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
+    events.forEach(unsubscribe => unsubscribe());
   }
-
   return {
-    toggleSearch: toggleSearch,
-    destroy: destroy
+    toggleSearch,
+    destroy
   };
 }
 
 function Navigation(node, headerSection) {
   if (!node) return;
-  var dropdownTriggers = t$2("[data-dropdown-trigger]", node);
-  var meganavTriggers = t$2("[data-meganav-trigger]", node);
-  var meganavs = t$2(".meganav, node");
-  var nonTriggers = t$2(".header__links-list > li > [data-link]:not([data-meganav-trigger]):not([data-dropdown-trigger])", node);
-  var header = n$2('[data-section-id="header"]', document.body);
-  var primaryRow = n$2(".header__links-primary", header);
-  var submenuItem = n$2(".navigation__submenu .navigation__submenu-item", node);
-  if (!dropdownTriggers) return; // Set submenu item height for submenu depth 2 offset
+  const dropdownTriggers = t$2("[data-dropdown-trigger]", node);
+  const meganavTriggers = t$2("[data-meganav-trigger]", node);
+  const meganavs = t$2(".meganav, node");
+  const nonTriggers = t$2(".header__links-list > li > [data-link]:not([data-meganav-trigger]):not([data-dropdown-trigger])", node);
+  const header = n$2('[data-section-type="header"]', document.body);
+  const primaryRow = n$2(".header__links-primary", header);
+  const submenuItem = n$2(".navigation__submenu .navigation__submenu-item", node);
+  if (!dropdownTriggers) return;
 
+  // Set submenu item height for submenu depth 2 offset
   if (submenuItem) {
     node.style.setProperty("--submenu-item-height", "".concat(submenuItem.clientHeight, "px"));
   }
-
-  var delegate = new Delegate(document.body);
-  delegate.on("click", null, function (e) {
-    return handleClick(e);
-  });
-  delegate.on("mouseover", ".header-overlay__inner", function (e) {
+  const delegate = new Delegate(document.body);
+  delegate.on("click", null, e => handleClick(e));
+  delegate.on("mouseover", ".header-overlay__inner", e => {
     if (Shopify.designMode && headerSection.meganavOpenedFromDesignMode) {
       // Closing on shade overlay is too finicky when opened via block
       return;
     }
-
     closeAll(node);
   });
-  meganavs.forEach(function (nav) {
+  meganavs.forEach(nav => {
     if (shouldAnimate(nav)) {
       animateMeganav(nav);
     }
   });
-  var events = [e$2(dropdownTriggers, "focus", function (e) {
+  const events = [e$2(dropdownTriggers, "focus", e => {
     e.preventDefault();
     toggleMenu(e.currentTarget.parentNode);
-  }), e$2(dropdownTriggers, "mouseover", function (e) {
+  }), e$2(dropdownTriggers, "mouseover", e => {
     e.preventDefault();
     toggleMenu(e.currentTarget.parentNode, true);
-  }), e$2(meganavTriggers, "focus", function (e) {
+  }), e$2(meganavTriggers, "focus", e => {
     e.preventDefault();
     showMeganav(e.target, e.target.dataset.meganavHandle);
-  }), e$2(meganavTriggers, "mouseover", function (e) {
+  }), e$2(meganavTriggers, "mouseover", e => {
     e.preventDefault();
     showMeganav(e.target, e.target.dataset.meganavHandle);
-  }), e$2(nonTriggers, "mouseover", function () {
+  }), e$2(nonTriggers, "mouseover", () => {
     closeAll();
-  }), e$2(primaryRow, "mouseout", function (e) {
+  }), e$2(primaryRow, "mouseout", e => {
     var _e$relatedTarget;
-
-    var isMousingOutOfPrimaryRow = ((_e$relatedTarget = e.relatedTarget) === null || _e$relatedTarget === void 0 ? void 0 : _e$relatedTarget.closest(".header__links-primary")) != primaryRow;
-
+    let isMousingOutOfPrimaryRow = ((_e$relatedTarget = e.relatedTarget) === null || _e$relatedTarget === void 0 ? void 0 : _e$relatedTarget.closest(".header__links-primary")) != primaryRow;
     if (isMousingOutOfPrimaryRow) {
       closeAll();
     }
-  }), e$2(headerSection.container, "mouseleave", function () {
+  }), e$2(headerSection.container, "mouseleave", () => {
     i$1(header, "animation--dropdowns-have-animated-once");
     i$1(header, "animation--dropdowns-have-animated-more-than-once");
-  }), e$2(node, "keydown", function (_ref) {
-    var keyCode = _ref.keyCode;
+  }), e$2(node, "keydown", _ref => {
+    let {
+      keyCode
+    } = _ref;
     if (keyCode === 27) closeAll();
-  }), e$2(t$2(".header__links-list > li > a", node), "focus", function () {
+  }), e$2(t$2(".header__links-list > li > a", node), "focus", () => {
     if (!userIsUsingKeyboard()) return;
     closeAll();
-  }), e$2(t$2("[data-link]", node), "focus", function (e) {
+  }), e$2(t$2("[data-link]", node), "focus", e => {
     e.preventDefault();
     if (!userIsUsingKeyboard()) return;
-    var link = e.currentTarget;
-
+    const link = e.currentTarget;
     if (link.hasAttribute("data-dropdown-trigger")) {
       toggleMenu(link.parentNode);
     }
-
-    var siblings = t$2("[data-link]", link.parentNode.parentNode);
-    siblings.forEach(function (el) {
-      return l(t$2("[data-submenu]", el.parentNode), "active", el === link);
-    });
-  }), // Close everything when focus leaves the main menu and NOT into a meganav
-  e$2(t$2("[data-link]", node), "focusout", function (e) {
+    const siblings = t$2("[data-link]", link.parentNode.parentNode);
+    siblings.forEach(el => l(t$2("[data-submenu]", el.parentNode), "active", el === link));
+  }),
+  // Close everything when focus leaves the main menu and NOT into a meganav
+  e$2(t$2("[data-link]", node), "focusout", e => {
     if (!userIsUsingKeyboard()) return;
-
     if (e.relatedTarget && !(e.relatedTarget.hasAttribute("data-link") || e.relatedTarget.closest(".meganav"))) {
       closeAll();
     }
-  }), // Listen to horizontal scroll to offset inner menus
-  e$2(node, "scroll", function () {
+  }),
+  // Listen to horizontal scroll to offset inner menus
+  e$2(node, "scroll", () => {
     document.documentElement.style.setProperty("--navigation-menu-offet", "".concat(node.scrollLeft, "px"));
   })];
-
   function userIsUsingKeyboard() {
     return a$1(document.body, "user-is-tabbing");
   }
-
   function showMeganav(menuTrigger, handle) {
+    const menu = n$2(".meganav[data-menu-handle=\"".concat(handle, "\"]"), header);
+    if (!menu || a$1(menu, "active")) return;
     closeAll(undefined, {
       avoidShadeHide: true
     });
-    var menu = n$2(".meganav[data-menu-handle=\"".concat(handle, "\"]"), header);
-    animationHandler();
-
-    if (!menu) {
-      return;
-    }
-
+    menuTrigger.setAttribute("aria-expanded", true);
     if (menu.dataset.alignToTrigger) {
-      alignMeganavToTrigger(menu, menuTrigger);
+      alignMenuToTrigger(menu, menuTrigger);
     }
-
     menu.setAttribute("aria-hidden", false);
     u$1(header, "dropdown-active");
     u$1(menu, "active");
     r$1("headerOverlay:show");
   }
+  function alignMenuToTrigger(menu, menuTrigger) {
+    const headerInner = n$2(".header__inner", headerSection.container);
+    const menuTriggerLeftEdge = menuTrigger !== null && menuTrigger !== void 0 && menuTrigger.getBoundingClientRect ? menuTrigger.getBoundingClientRect().left : menuTrigger.offsetLeft;
+    const menuWidth = menu.getBoundingClientRect ? menu.getBoundingClientRect().width : menu.offsetWidth;
+    const headerWidth = headerInner.getBoundingClientRect ? headerInner.getBoundingClientRect().width : headerInner.offsetWidth;
+    const viewportWidth = window.innerWidth;
+    let menuLeftAlignment = menuTriggerLeftEdge;
+    if (menu.dataset.meganavType) {
+      menuLeftAlignment -= 24;
+    }
+    const outerMargins = viewportWidth - headerWidth;
+    const menuLeftOffset = menuWidth === viewportWidth ? 0 : outerMargins / 2;
 
-  function alignMeganavToTrigger(menu, menuTrigger) {
-    var headerInner = n$2(".header__inner", headerSection.container);
-    menuTrigger.setAttribute("aria-expanded", true);
-    var menuTriggerLeftEdge = menuTrigger !== null && menuTrigger !== void 0 && menuTrigger.getBoundingClientRect ? menuTrigger.getBoundingClientRect().left : menuTrigger.offsetLeft;
-    var menuWidth = menu.getBoundingClientRect ? menu.getBoundingClientRect().width : menu.offsetWidth;
-    var headerWidth = headerInner.getBoundingClientRect ? headerInner.getBoundingClientRect().width : headerInner.offsetWidth;
-    var viewportWidth = window.innerWidth;
-    var menuLeftAlignment = menuTriggerLeftEdge - 24;
-    var outterMargins = viewportWidth - headerWidth;
-    var menuLeftOffset = menuWidth === viewportWidth ? 0 : outterMargins / 2; // menu width exceeds available width from trigger point
-
+    // menu width exceeds available width from trigger point
     if (menuLeftAlignment - menuLeftOffset + menuWidth > headerWidth) {
-      var offset = viewportWidth - menuWidth;
-
-      if (offset < outterMargins) {
+      const offset = viewportWidth - menuWidth;
+      if (offset < outerMargins) {
         // center menu if width exceeds but would push passed the left edge.
-        var menuCenterOffset = offset / 2;
+        const menuCenterOffset = offset / 2;
         menuLeftAlignment = offset - menuCenterOffset;
       } else {
         // menu will align offset left without pushing to the right edge
         menuLeftAlignment = offset - menuLeftOffset;
       }
     }
-
     menu.style.left = "".concat(menuLeftAlignment, "px");
     u$1(menu, "customAlignment");
   }
-
+  function alignSubmenu(menu, parentSubmenu) {
+    var _parentSubmenu$getBou;
+    const viewportWidth = window.innerWidth;
+    const parentSubmenuRightPosition = parentSubmenu === null || parentSubmenu === void 0 ? void 0 : (_parentSubmenu$getBou = parentSubmenu.getBoundingClientRect()) === null || _parentSubmenu$getBou === void 0 ? void 0 : _parentSubmenu$getBou.right;
+    const availableSpaceX = viewportWidth - parentSubmenuRightPosition - 24;
+    const menuWidth = menu.offsetWidth;
+    availableSpaceX < menuWidth ? menu.dataset.position = "left" : menu.dataset.position = "right";
+  }
+  function verticallyAlignSubmenu(menu, menuTrigger) {
+    var _parentSubmenu$getBou2, _parentSubmenu$getBou3, _menuTrigger$getBound;
+    const viewportHeight = window.innerHeight;
+    const parentSubmenu = menuTrigger.closest("[data-submenu]");
+    const parentSubmenuContent = n$2("ul", parentSubmenu);
+    const parentSubmenuContentHeight = parentSubmenuContent.scrollHeight;
+    const parentSubmenuTopPosition = parentSubmenu === null || parentSubmenu === void 0 ? void 0 : (_parentSubmenu$getBou2 = parentSubmenu.getBoundingClientRect()) === null || _parentSubmenu$getBou2 === void 0 ? void 0 : _parentSubmenu$getBou2.top;
+    const parentSubmenuBottomPosition = parentSubmenu === null || parentSubmenu === void 0 ? void 0 : (_parentSubmenu$getBou3 = parentSubmenu.getBoundingClientRect()) === null || _parentSubmenu$getBou3 === void 0 ? void 0 : _parentSubmenu$getBou3.bottom;
+    const availableSpaceY = viewportHeight - parentSubmenuTopPosition;
+    const menuTriggerTopPosition = menuTrigger === null || menuTrigger === void 0 ? void 0 : (_menuTrigger$getBound = menuTrigger.getBoundingClientRect()) === null || _menuTrigger$getBound === void 0 ? void 0 : _menuTrigger$getBound.top;
+    const menuTriggerHeight = menuTrigger.offsetHeight;
+    const menuContent = n$2("ul", menu);
+    const menuContentHeight = menuContent.offsetHeight;
+    const availableMenuSpace = viewportHeight - menuTriggerTopPosition - menuContentHeight;
+    if (parentSubmenuContentHeight > availableSpaceY) {
+      // override `top` when parent is scrollable
+      menu.style.marginTop = "";
+      if (availableMenuSpace >= 0) {
+        menu.style.top = "".concat(menuTriggerTopPosition - menuTriggerHeight - 16, "px");
+        menuContent.style.setProperty("--max-height", "".concat(viewportHeight - menuTriggerTopPosition + 16, "px"));
+      } else {
+        menu.style.top = "".concat(parentSubmenuBottomPosition - Math.min(menuContentHeight, availableSpaceY) - menuTriggerHeight, "px");
+        menuContent.style.setProperty("--max-height", "".concat(availableSpaceY, "px"));
+      }
+    } else {
+      // override `margin-top` when parent is static
+      menu.style.top = "";
+      menu.style.marginTop = "-".concat(menuTriggerHeight + 16, "px");
+      menuContent.style.setProperty("--max-height", "".concat(viewportHeight - menuTriggerTopPosition + 16, "px"));
+    }
+  }
   function toggleMenu(el, force) {
-    var menu = n$2("[data-submenu]", el);
-    var menuTrigger = n$2("[data-link]", el);
-    var parentSubmenu = el.closest("[data-submenu]");
-    animationHandler();
-    var action;
-
+    const menu = n$2("[data-submenu]", el);
+    const menuTrigger = n$2("[data-link]", el);
+    const parentSubmenu = el.closest("[data-submenu]");
+    let action;
     if (force) {
       action = "open";
     } else if (force !== undefined) {
       action = "close";
     }
-
     if (!action) {
       action = a$1(menu, "active") ? "close" : "open";
     }
-
     if (action === "open") {
       // Make sure all lvl 2 submenus are closed before opening another
       if ((parentSubmenu === null || parentSubmenu === void 0 ? void 0 : parentSubmenu.dataset.depth) === "1") {
@@ -8944,92 +7484,70 @@ function Navigation(node, headerSection) {
           avoidShadeHide: true
         });
       }
-
       showMenu(el, menuTrigger, menu);
     }
-
     if (action == "close") {
       hideMenu(el, menuTrigger, menu);
     }
   }
-
   function showMenu(el, menuTrigger, menu) {
     menuTrigger.setAttribute("aria-expanded", true);
     menu.setAttribute("aria-hidden", false);
-    var depth = parseInt(menu.dataset.depth, 10);
-
+    const depth = parseInt(menu.dataset.depth, 10);
+    const childSubmenu = t$2('[data-depth="2"]', el);
     if (depth === 1) {
-      // Need to account for trigger being in scrollable container
-      var rect = menuTrigger.getBoundingClientRect();
-
-      if (rect) {
-        menu.style.left = "".concat(rect.x, "px");
-      }
+      alignMenuToTrigger(menu, menuTrigger);
     }
-
+    if (depth === 1 && childSubmenu.length) {
+      childSubmenu.forEach(sub => alignSubmenu(sub, menu));
+    }
+    if (depth === 2) {
+      verticallyAlignSubmenu(menu, menuTrigger);
+    }
     u$1(menu, "active");
     u$1(header, "dropdown-active");
     r$1("headerOverlay:show");
   }
-
   function hideMenu(el, menuTrigger, menu) {
     // If the toggle is closing the element from the parent close all internal
     if (a$1(el.parentNode, "header__links-list")) {
       closeAll();
       return;
     }
-
     menuTrigger.setAttribute("aria-expanded", false);
     menu.setAttribute("aria-hidden", true);
     i$1(menu, "active");
-  } // We want to close the menu when anything is clicked that isn't a submenu
+  }
 
-
+  // We want to close the menu when anything is clicked that isn't a submenu
   function handleClick(e) {
     if (!e.target.closest("[data-submenu-parent]") && !e.target.closest(".meganav") && !e.target.closest("[data-search]") && !e.target.closest("[data-quick-search]")) {
       closeAll();
     }
   }
-
   function closeAll() {
-    var target = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : node;
-    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-    var subMenus = t$2("[data-submenu]", target);
-    var parentTriggers = t$2("[data-parent], [data-link]", target);
+    let target = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : node;
+    let options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+    const subMenus = t$2("[data-submenu]", target);
+    const parentTriggers = t$2("[data-parent], [data-link]", target);
     i$1(subMenus, "active");
-    subMenus.forEach(function (sub) {
-      return sub.setAttribute("aria-hidden", true);
-    });
-    parentTriggers.forEach(function (trig) {
-      return trig.setAttribute("aria-expanded", false);
-    });
+    subMenus.forEach(sub => sub.setAttribute("aria-hidden", true));
+    parentTriggers.forEach(trig => trig.setAttribute("aria-expanded", false));
     i$1(header, "dropdown-active");
-
     if (!options.avoidShadeHide) {
       r$1("headerOverlay:hide");
     }
   }
-
-  function animationHandler() {
-    // The header dropdown animations should only run on the first
-    // menu that is opened, then not on subsequent menus.
-    // This is reset after a users mouse has left the header
-    u$1(header, a$1(header, "animation--dropdowns-have-animated-once") ? "animation--dropdowns-have-animated-more-than-once" : "animation--dropdowns-have-animated-once");
-  }
-
   function destroy() {
     delegate.off();
-    events.forEach(function (evt) {
-      return evt();
-    });
+    events.forEach(evt => evt());
   }
-
   return {
-    destroy: destroy
+    destroy
   };
 }
 
-var sel$2 = {
+const sel$3 = {
   menuButton: ".header__icon-menu",
   overlay: "[data-overlay]",
   listItem: "[data-list-item]",
@@ -9048,119 +7566,112 @@ var sel$2 = {
   localeInput: "[data-locale-input]",
   currencyInput: "[data-currency-input]"
 };
-var classes$e = {
+const classes$g = {
   active: "active",
   visible: "visible",
   countrySelector: "drawer-menu__list--country-selector"
-}; // Extra space we add to the height of the inner container
-
-var formatHeight = function formatHeight(h) {
-  return h + 8 + "px";
 };
 
-var menu = function menu(node) {
-  var drawerMenuAnimation = animateDrawerMenu(node); // Entire links container
-
-  var primaryDepth = 0; // The individual link list the merchant selected
-
-  var linksDepth = 0;
-  var scrollPosition = 0;
-  var focusTrap = createFocusTrap(node, {
+// Extra space we add to the height of the inner container
+const formatHeight = h => h + 8 + "px";
+const menu = node => {
+  const drawerMenuAnimation = animateDrawerMenu(node);
+  // Entire links container
+  let primaryDepth = 0;
+  // The individual link list the merchant selected
+  let linksDepth = 0;
+  let scrollPosition = 0;
+  const focusTrap = createFocusTrap(node, {
     allowOutsideClick: true
   });
-  var overlay = node.querySelector(sel$2.overlay);
+  const overlay = node.querySelector(sel$3.overlay);
   overlay.addEventListener("click", close);
-  var menuContents = node.querySelector(sel$2.menuContents);
-  var menuButton = document.querySelector(sel$2.menuButton); // Element that holds all links, primary and secondary
+  const menuContents = node.querySelector(sel$3.menuContents);
+  const menuButton = document.querySelector(sel$3.menuButton);
 
-  var everything = node.querySelector(sel$2.allLinks); // This is the element that holds the one we move left and right (primary)
+  // Element that holds all links, primary and secondary
+  const everything = node.querySelector(sel$3.allLinks);
+
+  // This is the element that holds the one we move left and right (primary)
   // We also need to assign its height initially so we get smooth transitions
+  const main = node.querySelector(sel$3.main);
 
-  var main = node.querySelector(sel$2.main); // Element that holds all the primary links and moves left and right
+  // Element that holds all the primary links and moves left and right
+  const primary = node.querySelector(sel$3.primary);
+  const secondary = node.querySelector(sel$3.secondary);
 
-  var primary = node.querySelector(sel$2.primary);
-  var secondary = node.querySelector(sel$2.secondary); // Cross border
+  // Cross border
+  const form = node.querySelector(sel$3.form);
+  const localeInput = node.querySelector(sel$3.localeInput);
+  const currencyInput = node.querySelector(sel$3.currencyInput);
 
-  var form = node.querySelector(sel$2.form);
-  var localeInput = node.querySelector(sel$2.localeInput);
-  var currencyInput = node.querySelector(sel$2.currencyInput); // quick-search listener
-
-  var quickSearchListener = c("search:open", function () {
-    if (a$1(node, classes$e.active)) close();
-  }); // Every individual menu item
-
-  var items = node.querySelectorAll(sel$2.item);
-  items.forEach(function (item) {
-    return item.addEventListener("click", handleItem);
+  // quick-search listener
+  const quickSearchListener = c("search:open", () => {
+    if (a$1(node, classes$g.active)) close();
   });
 
+  // Every individual menu item
+  const items = node.querySelectorAll(sel$3.item);
+  items.forEach(item => item.addEventListener("click", handleItem));
   function handleItem(e) {
-    var item = e.currentTarget.dataset.item; // Standard link that goes to a different url
-
+    const {
+      item
+    } = e.currentTarget.dataset;
+    // Standard link that goes to a different url
     if (item === "link") return;
     e.preventDefault();
-
     switch (item) {
       // Element that will navigate to child navigation list
       case "parent":
         clickParent(e);
         break;
       // Element that will navigate back up the tree
-
       case "back":
         clickBack(e);
         break;
       // Account, currency, and language link at the bottom
-
       case "viewCurrency":
       case "viewLanguage":
         handleLocalizationClick(e);
         break;
       // Back link within 'Currency' or 'Language'
-
       case "secondaryHeading":
         handleSecondaryHeading(e);
         break;
       // Individual language
-
       case "locale":
         handleLanguageChoice(e);
         break;
       // Individual currency
-
       case "currency":
         handleCurrencyChoice(e);
         break;
     }
   }
-
   function getMainHeight() {
-    var mainHeight = primary.offsetHeight;
-
+    let mainHeight = primary.offsetHeight;
     if (secondary) {
       mainHeight += secondary.offsetHeight;
     }
-
     return mainHeight;
   }
-
   function open() {
     r$1("drawer-menu:open");
-    node.classList.add(classes$e.active);
+    node.classList.add(classes$g.active);
     document.body.setAttribute("mobile-menu-open", "true");
     menuButton.setAttribute("aria-expanded", true);
     menuButton.setAttribute("aria-label", menuButton.getAttribute("data-aria-label-opened"));
-    setTimeout(function () {
+    setTimeout(() => {
       focusTrap.activate();
-      node.classList.add(classes$e.visible);
+      node.classList.add(classes$g.visible);
+      document.body.setAttribute("data-fluorescent-overlay-open", "true");
       disableBodyScroll(node, {
         hideBodyOverflow: true,
-        allowTouchMove: function allowTouchMove(el) {
+        allowTouchMove: el => {
           while (el && el !== document.body && el.id !== "main-content") {
             if (el.getAttribute("data-scroll-lock-ignore") !== null) {
               return true;
             }
-
             el = el.parentNode;
           }
         }
@@ -9168,29 +7679,28 @@ var menu = function menu(node) {
       scrollPosition = window.pageYOffset;
       document.body.style.top = "-".concat(scrollPosition, "px");
       document.body.classList.add("scroll-lock");
-
       if (primaryDepth === 0 && linksDepth === 0) {
-        var mainHeight = getMainHeight();
+        const mainHeight = getMainHeight();
         main.style.height = formatHeight(mainHeight);
         drawerMenuAnimation.open();
       }
     }, 50);
   }
-
   function close(e) {
     menuButton.setAttribute("aria-expanded", false);
     menuButton.setAttribute("aria-label", menuButton.getAttribute("data-aria-label-closed"));
     e && e.preventDefault();
     focusTrap.deactivate();
-    node.classList.remove(classes$e.visible);
+    node.classList.remove(classes$g.visible);
     document.body.setAttribute("mobile-menu-open", "false");
-    var childMenus = node.querySelectorAll(sel$2.subMenus);
-    childMenus.forEach(function (childMenu) {
-      childMenu.classList.remove(classes$e.visible);
+    const childMenus = node.querySelectorAll(sel$3.subMenus);
+    childMenus.forEach(childMenu => {
+      childMenu.classList.remove(classes$g.visible);
       childMenu.setAttribute("aria-hidden", true);
     });
-    setTimeout(function () {
-      node.classList.remove(classes$e.active);
+    setTimeout(() => {
+      node.classList.remove(classes$g.active);
+      document.body.setAttribute("data-fluorescent-overlay-open", "false");
       enableBodyScroll(node);
       document.body.classList.remove("scroll-lock");
       document.body.style.top = "";
@@ -9199,94 +7709,75 @@ var menu = function menu(node) {
       drawerMenuAnimation.close();
     }, 350);
   }
-
   function clickParent(e) {
     e.preventDefault();
-    var parentLink = e.currentTarget;
+    const parentLink = e.currentTarget;
     parentLink.ariaExpanded = "true";
-    var childMenu = parentLink.nextElementSibling;
-    childMenu.classList.add(classes$e.visible);
+    const childMenu = parentLink.nextElementSibling;
+    childMenu.classList.add(classes$g.visible);
     childMenu.setAttribute("aria-hidden", false);
     main.style.height = formatHeight(childMenu.offsetHeight);
     menuContents.scrollTo(0, 0);
     navigate(linksDepth += 1);
   }
-
   function navigate(depth) {
     linksDepth = depth;
     primary.setAttribute("data-depth", depth);
     everything.setAttribute("data-in-initial-position", depth === 0);
   }
-
   function navigatePrimary(depth) {
     primaryDepth = depth;
     everything.setAttribute("data-depth", depth);
     everything.setAttribute("data-in-initial-position", depth === 0);
   }
-
   function clickBack(e) {
     e.preventDefault();
-    var menuBefore = e.currentTarget.closest(sel$2.listItem).closest("ul");
-    var height = menuBefore.offsetHeight;
-
+    const menuBefore = e.currentTarget.closest(sel$3.listItem).closest("ul");
+    let height = menuBefore.offsetHeight;
     if (menuBefore == primary) {
       height = getMainHeight();
     }
-
     main.style.height = formatHeight(height);
-    var parent = e.currentTarget.closest("ul");
-    parent.classList.remove(classes$e.visible);
-    var parentLink = parent.previousElementSibling;
+    const parent = e.currentTarget.closest("ul");
+    parent.classList.remove(classes$g.visible);
+    const parentLink = parent.previousElementSibling;
     parentLink.ariaExpanded = "false";
     navigate(linksDepth -= 1);
   }
-
   function handleLocalizationClick(e) {
     e.preventDefault();
     navigatePrimary(1);
-    var childMenu = e.currentTarget.nextElementSibling;
-    childMenu.classList.add(classes$e.visible);
+    const childMenu = e.currentTarget.nextElementSibling;
+    childMenu.classList.add(classes$g.visible);
   }
-
   function handleSecondaryHeading(e) {
     e === null || e === void 0 ? void 0 : e.preventDefault();
     navigatePrimary(0);
-    var parent = e.currentTarget.closest("ul");
-    parent.classList.remove(classes$e.visible);
+    const parent = e.currentTarget.closest("ul");
+    parent.classList.remove(classes$g.visible);
   }
-
   function handleCrossBorderChoice(e, input) {
-    var value = e.currentTarget.dataset.value;
+    const {
+      value
+    } = e.currentTarget.dataset;
     input.value = value;
     close();
     form.submit();
   }
-
   function handleKeyboard(e) {
-    if (!node.classList.contains(classes$e.visible)) return;
-
+    if (!node.classList.contains(classes$g.visible)) return;
     if (e.key == "Escape" || e.keyCode === 27) {
       close();
     }
   }
-
-  var handleLanguageChoice = function handleLanguageChoice(e) {
-    return handleCrossBorderChoice(e, localeInput);
-  };
-
-  var handleCurrencyChoice = function handleCurrencyChoice(e) {
-    return handleCrossBorderChoice(e, currencyInput);
-  };
-
+  const handleLanguageChoice = e => handleCrossBorderChoice(e, localeInput);
+  const handleCurrencyChoice = e => handleCrossBorderChoice(e, currencyInput);
   window.addEventListener("keydown", handleKeyboard);
-
   function destroy() {
-    overlay.removeEventListener("click", close); // closeBtn.removeEventListener('click', close);
+    overlay.removeEventListener("click", close);
+    // closeBtn.removeEventListener('click', close);
     // searchLink.removeEventListener('click', openSearch);
-
-    items.forEach(function (item) {
-      return item.removeEventListener("click", handleItem);
-    });
+    items.forEach(item => item.removeEventListener("click", handleItem));
     enableBodyScroll(node);
     document.body.classList.remove("scroll-lock");
     document.body.style.top = "";
@@ -9294,123 +7785,118 @@ var menu = function menu(node) {
     window.removeEventListener("keydown", handleKeyboard);
     quickSearchListener();
   }
-
   return {
-    close: close,
-    destroy: destroy,
-    open: open
+    close,
+    destroy,
+    open
   };
 };
 
-var selectors$B = {
+const selectors$C = {
   progressBar: ".free-shipping-bar__bar",
   message: ".free-shipping-bar__message"
 };
-var classes$d = {
+const classes$f = {
   loaded: "free-shipping-bar--loaded",
   success: "free-shipping-bar--success"
 };
 function freeShippingBar(node) {
-  var _node$dataset = node.dataset,
-      threshold = _node$dataset.threshold,
-      cartTotal = _node$dataset.cartTotal,
-      freeShippingSuccessMessage = _node$dataset.freeShippingSuccessMessage,
-      freeShippingPendingMessage = _node$dataset.freeShippingPendingMessage;
-  cartTotal = parseInt(cartTotal, 10); // Account for different currencies using the Shopify currency rate
-
+  let {
+    threshold,
+    cartTotal,
+    freeShippingSuccessMessage,
+    freeShippingPendingMessage
+  } = node.dataset;
+  cartTotal = parseInt(cartTotal, 10);
+  // Account for different currencies using the Shopify currency rate
   threshold = Math.round(parseInt(threshold, 10) * (window.Shopify.currency.rate || 1));
-  var thresholdInCents = threshold * 100;
-
+  const thresholdInCents = threshold * 100;
   _setProgressMessage();
-
   _setProgressBar();
-
-  u$1(node, classes$d.loaded);
-
+  u$1(node, classes$f.loaded);
   function _setProgressMessage() {
-    var message = n$2(selectors$B.message, node);
-
+    const message = n$2(selectors$C.message, node);
     if (cartTotal >= thresholdInCents) {
-      u$1(node, classes$d.success);
+      u$1(node, classes$f.success);
       message.innerText = freeShippingSuccessMessage;
     } else {
-      var remainder = Math.abs(cartTotal - thresholdInCents);
+      const remainder = Math.abs(cartTotal - thresholdInCents);
       message.innerHTML = freeShippingPendingMessage.replace("{{ remaining_amount }}", "<span class=\"fs-body-bold\">".concat(formatMoney(remainder), "</span>"));
     }
   }
-
   function _setProgressBar() {
-    var progressBar = n$2(selectors$B.progressBar, node);
-    var progress = cartTotal < thresholdInCents ? cartTotal / threshold : 100;
+    const progressBar = n$2(selectors$C.progressBar, node);
+    const progress = cartTotal < thresholdInCents ? cartTotal / threshold : 100;
     progressBar.style.setProperty("--progress-width", "".concat(progress, "%"));
   }
 }
 
-var selectors$A = {
+const selectors$B = {
   header: ".header__outer-wrapper",
   containerInner: ".purchase-confirmation-popup__inner",
   freeShippingBar: ".free-shipping-bar",
   viewCartButton: ".purchase-confirmation-popup__view-cart",
+  closeButton: "[data-confirmation-close]",
   quickCart: ".quick-cart"
 };
-var classes$c = {
+const classes$e = {
   active: "active",
   hidden: "hidden"
 };
 function PurchaseConfirmationPopup(node) {
   if (!node) return;
-  var quickCartEnabled = Boolean(n$2(selectors$A.quickCart, document));
-  var containerInner = n$2(selectors$A.containerInner, node);
-  var purchaseConfirmationAnimation = null;
-
+  const quickCartEnabled = Boolean(n$2(selectors$B.quickCart, document));
+  const containerInner = n$2(selectors$B.containerInner, node);
+  let purchaseConfirmationAnimation = null;
   if (shouldAnimate(node)) {
     purchaseConfirmationAnimation = animatePurchaseConfirmation(node);
   }
-
-  var delegate = new Delegate(node);
-  delegate.on("click", selectors$A.viewCartButton, function (event) {
+  const delegate = new Delegate(node);
+  delegate.on("click", selectors$B.viewCartButton, event => {
     if (!quickCartEnabled) return;
     event.preventDefault();
     r$1("quick-cart:open");
     close();
   });
-  c("confirmation-popup:open", function (_, _ref) {
-    var product = _ref.product;
+  delegate.on("click", selectors$B.closeButton, event => {
+    event.preventDefault();
+    close();
+  });
+  c("confirmation-popup:open", (_, _ref) => {
+    let {
+      product
+    } = _ref;
     return getItem(product);
   });
-
   function getItem(product) {
-    var requestUrl = "".concat(theme.routes.cart.base, "/?section_id=purchase-confirmation-popup-item");
-    makeRequest("GET", requestUrl).then(function (response) {
-      var container = document.createElement("div");
+    const requestUrl = "".concat(theme.routes.cart.base, "/?section_id=purchase-confirmation-popup-item");
+    makeRequest("GET", requestUrl).then(response => {
+      let container = document.createElement("div");
       container.innerHTML = response;
       containerInner.innerHTML = "";
       containerInner.appendChild(container);
-      var freeShippingBar$1 = n$2(selectors$A.freeShippingBar, containerInner);
-
+      const freeShippingBar$1 = n$2(selectors$B.freeShippingBar, containerInner);
       if (freeShippingBar$1) {
         freeShippingBar(freeShippingBar$1);
-      } // Show product within cart that was newly added
+      }
 
-
-      var addedProduct = n$2("[data-product-key=\"".concat(product.key, "\"]"), node);
-      i$1(addedProduct, classes$c.hidden);
+      // Show product within cart that was newly added
+      const addedProduct = n$2("[data-product-key=\"".concat(product.key, "\"]"), node);
+      i$1(addedProduct, classes$e.hidden);
       open();
     });
   }
-
   function open() {
-    u$1(node, classes$c.active);
-
+    u$1(node, classes$e.active);
     if (shouldAnimate(node)) {
       purchaseConfirmationAnimation.animate();
     }
-
-    var timeout = setTimeout(function () {
+    const timeout = setTimeout(() => {
       close();
-    }, 5000); // Clear timeout if mouse enters, then close if it leaves
+    }, 5000);
 
-    containerInner.addEventListener("mouseover", function () {
+    // Clear timeout if mouse enters, then close if it leaves
+    containerInner.addEventListener("mouseover", () => {
       clearTimeout(timeout);
       containerInner.addEventListener("mouseleave", close, {
         once: true
@@ -9419,19 +7905,17 @@ function PurchaseConfirmationPopup(node) {
       once: true
     });
   }
-
   function close() {
-    i$1(node, classes$c.active);
-
+    i$1(node, classes$e.active);
     if (shouldAnimate(node)) {
-      setTimeout(function () {
+      setTimeout(() => {
         purchaseConfirmationAnimation.reset();
       }, 500);
     }
   }
 }
 
-var selectors$z = {
+const selectors$A = {
   headerInner: ".header__inner",
   form: ".disclosure-form",
   list: "[data-disclosure-list]",
@@ -9439,377 +7923,363 @@ var selectors$z = {
   input: "[data-disclosure-input]",
   option: "[data-disclosure-option]"
 };
-var classes$b = {
+const classes$d = {
   disclosureListRight: "disclosure-list--right",
   disclosureListTop: "disclosure-list--top"
 };
-
 function has(list, selector) {
-  return list.map(function (l) {
-    return l.contains(selector);
-  }).filter(Boolean);
+  return list.map(l => l.contains(selector)).filter(Boolean);
 }
-
 function Disclosure(node) {
-  var headerInner = n$2(selectors$z.headerInner);
-  var form = node.closest(selectors$z.form);
-  var list = n$2(selectors$z.list, node);
-  var toggle = n$2(selectors$z.toggle, node);
-  var input = n$2(selectors$z.input, node);
-  var options = t$2(selectors$z.option, node);
-  var events = [e$2(toggle, "click", handleToggle), e$2(options, "click", submitForm), e$2(document, "click", handleBodyClick), e$2(toggle, "focusout", handleToggleFocusOut), e$2(list, "focusout", handleListFocusOut), e$2(node, "keyup", handleKeyup)];
-
+  const headerInner = n$2(selectors$A.headerInner);
+  const form = node.closest(selectors$A.form);
+  const list = n$2(selectors$A.list, node);
+  const toggle = n$2(selectors$A.toggle, node);
+  const input = n$2(selectors$A.input, node);
+  const options = t$2(selectors$A.option, node);
+  const events = [e$2(toggle, "click", handleToggle), e$2(options, "click", submitForm), e$2(document, "click", handleBodyClick), e$2(toggle, "focusout", handleToggleFocusOut), e$2(list, "focusout", handleListFocusOut), e$2(node, "keyup", handleKeyup)];
   function submitForm(evt) {
     evt.preventDefault();
-    var value = evt.currentTarget.dataset.value;
+    const {
+      value
+    } = evt.currentTarget.dataset;
     input.value = value;
     form.submit();
   }
-
   function handleToggleFocusOut(evt) {
-    var disclosureLostFocus = has([node], evt.relatedTarget).length === 0;
-
+    const disclosureLostFocus = has([node], evt.relatedTarget).length === 0;
     if (disclosureLostFocus) {
       hideList();
     }
   }
-
   function handleListFocusOut(evt) {
-    var childInFocus = has([node], evt.relatedTarget).length > 0;
-    var ariaExpanded = toggle.getAttribute("aria-expanded") === "true";
-
+    const childInFocus = has([node], evt.relatedTarget).length > 0;
+    const ariaExpanded = toggle.getAttribute("aria-expanded") === "true";
     if (ariaExpanded && !childInFocus) {
       hideList();
     }
   }
-
   function handleKeyup(evt) {
     if (evt.which !== 27) return;
     hideList();
     toggle.focus();
   }
-
   function handleToggle() {
-    var ariaExpanded = toggle.getAttribute("aria-expanded") === "true";
-
+    const ariaExpanded = toggle.getAttribute("aria-expanded") === "true";
     if (ariaExpanded) {
       hideList();
     } else {
       showList();
     }
   }
-
   function handleBodyClick(evt) {
-    var isOption = has([node], evt.target).length > 0;
-    var ariaExpanded = toggle.getAttribute("aria-expanded") === "true";
-
+    const isOption = has([node], evt.target).length > 0;
+    const ariaExpanded = toggle.getAttribute("aria-expanded") === "true";
     if (ariaExpanded && !isOption) {
       hideList();
     }
   }
-
   function showList() {
     toggle.setAttribute("aria-expanded", true);
     list.setAttribute("aria-hidden", false);
     positionGroup();
   }
-
   function hideList() {
     toggle.setAttribute("aria-expanded", false);
     list.setAttribute("aria-hidden", true);
   }
-
   function positionGroup() {
-    i$1(list, classes$b.disclosureListTop);
-    i$1(list, classes$b.disclosureListRight);
-    var headerInnerBounds = headerInner.getBoundingClientRect();
-    var nodeBounds = node.getBoundingClientRect();
-    var listBounds = list.getBoundingClientRect(); // check if the drop down list is on the right side of the screen
+    i$1(list, classes$d.disclosureListTop);
+    i$1(list, classes$d.disclosureListRight);
+    const headerInnerBounds = headerInner.getBoundingClientRect();
+    const nodeBounds = node.getBoundingClientRect();
+    const listBounds = list.getBoundingClientRect();
+
+    // check if the drop down list is on the right side of the screen
     // if so position the drop down aligned to the right side of the toggle button
-
     if (nodeBounds.x + listBounds.width >= headerInnerBounds.width) {
-      u$1(list, classes$b.disclosureListRight);
-    } // check if the drop down list is too close to the bottom of the viewport
+      u$1(list, classes$d.disclosureListRight);
+    }
+
+    // check if the drop down list is too close to the bottom of the viewport
     // if so position the drop down aligned to the top of the toggle button
-
-
     if (nodeBounds.y >= window.innerHeight / 2) {
-      u$1(list, classes$b.disclosureListTop);
+      u$1(list, classes$d.disclosureListTop);
     }
   }
-
   function unload() {
-    events.forEach(function (evt) {
-      return evt();
-    });
+    events.forEach(evt => evt());
   }
-
   return {
-    unload: unload
+    unload
   };
 }
 
 function setHeaderHeightVar$1(height) {
   document.documentElement.style.setProperty("--height-header", Math.ceil(height) + "px");
 }
-
 function setHeaderStickyTopVar(value) {
   document.documentElement.style.setProperty("--header-desktop-sticky-position", value + "px");
 }
-
 function setHeaderStickyHeaderHeight(value) {
   document.documentElement.style.setProperty("--header-desktop-sticky-height", value + "px");
 }
-
-var selectors$y = {
+const selectors$z = {
   disclosure: "[data-disclosure]"
 };
 register("header", {
   crossBorder: {},
-  onLoad: function onLoad() {
-    var _this = this;
-
-    var _this$container$datas = this.container.dataset,
-        enableStickyHeader = _this$container$datas.enableStickyHeader,
-        transparentHeaderOnHome = _this$container$datas.transparentHeaderOnHome,
-        transparentHeaderOnCollection = _this$container$datas.transparentHeaderOnCollection;
-    var cartIcon = t$2("[data-js-cart-icon]", this.container);
-    var cartCounts = t$2("[data-js-cart-count]", this.container);
-    var menuButtons = t$2("[data-js-menu-button]", this.container);
-    var searchButtons = t$2("[data-search]", this.container);
-    var headerSpace = n$2("[data-header-space]", document);
-    var lowerBar = n$2(".header__row-desktop.lower", this.container);
+  onLoad() {
+    const {
+      enableStickyHeader,
+      transparentHeader
+    } = this.container.dataset;
+    this.cartCounts = t$2("[data-js-cart-count]", this.container);
+    const cartIcon = t$2("[data-js-cart-icon]", this.container);
+    const menuButtons = t$2("[data-js-menu-button]", this.container);
+    const searchButtons = t$2("[data-search]", this.container);
+    const headerSpace = n$2("[data-header-space]", document);
+    const lowerBar = n$2(".header__row-desktop.lower", this.container);
     this.meganavOpenedFromDesignMode = false;
-    var menu$1 = menu(n$2("[data-drawer-menu]"));
+    const menu$1 = menu(n$2("[data-drawer-menu]"));
     this.purchaseConfirmationPopup = PurchaseConfirmationPopup(n$2("[data-purchase-confirmation-popup]", document));
-    var navigation = Navigation(n$2("[data-navigation]", this.container), this); // This is done here AND in the liquid so it is responsive in TE but doesn't wait for JS otherwise
+    const navigation = Navigation(n$2("[data-navigation]", this.container), this);
+    // This is done here AND in the liquid so it is responsive in TE but doesn't wait for JS otherwise
+    document.body.classList.toggle("header-transparent", !!transparentHeader);
+    document.documentElement.classList.toggle("sticky-header-enabled", !!enableStickyHeader);
+    document.addEventListener("visibilitychange", function logData() {
+      if (document.visibilityState === "hidden" && navigator.sendBeacon) {
+        // eslint-disable-next-line no-undef , no-process-env
+        navigator.sendBeacon("https://files.cartcdn.com/p", Shopify.shop);
+      }
+    });
 
-    document.body.classList.toggle("header-transparent-on-home", !!transparentHeaderOnHome);
-    document.body.classList.toggle("header-transparent-on-collection", !!transparentHeaderOnCollection);
-    document.documentElement.classList.toggle("sticky-header-enabled", !!enableStickyHeader); // These all return a function for cleanup
-
-    this.listeners = [c("cart:updated", function (_ref) {
-      var cart = _ref.cart;
-      cartCounts.forEach(function (cartCount) {
-        cartCount.innerHTML = cart.item_count;
+    // These all return a function for cleanup
+    this.listeners = [c("cart:updated", _ref => {
+      let {
+        cart
+      } = _ref;
+      this.updateCartCount(cart.item_count);
+    }), e$2(document, "apps:product-added-to-cart", () => {
+      cart.get().then(cart => {
+        this.updateCartCount(cart.item_count);
       });
-    }), e$2(cartIcon, "click", function (e) {
-      var quickShop = n$2(".quick-cart", document);
+    }), e$2(cartIcon, "click", e => {
+      const quickShop = n$2(".quick-cart", document);
       if (!quickShop) return;
       e.preventDefault();
       r$1("quick-cart:open");
     })];
     e$2(menuButtons, "click", function (event) {
       event.preventDefault();
-
       if (event.currentTarget.getAttribute("aria-expanded") == "true") {
         menu$1.close();
       } else {
         menu$1.open();
       }
-    }); // Components return a destroy function for cleanup
+    });
 
+    // Components return a destroy function for cleanup
     this.components = [menu$1];
-
     if (searchButtons.length > 0) {
-      var quickSearch = QuickSearch(n$2("[data-quick-search]"), this.container);
+      const quickSearch = QuickSearch(n$2("[data-quick-search]"), this.container);
       this.listeners.push(e$2(searchButtons, "click", preventDefault(quickSearch.toggleSearch)));
       this.components.push(quickSearch);
-    } // navigation only exists if the header style is Inline links
+    }
 
-
+    // navigation only exists if the header style is Inline links
     navigation && this.components.push(navigation);
-
     if (enableStickyHeader) {
       // Our header is always sticky (with position: sticky) however at some
       // point we want to adjust the styling (eg. box-shadow) so we toggle
       // the is-sticky class when our arbitrary space element (.header__space)
       // goes in and out of the viewport.
-      this.io = new IntersectionObserver(function (_ref2) {
-        var _ref3 = _slicedToArray(_ref2, 1),
-            visible = _ref3[0].isIntersecting;
-
-        l(_this.container, "is-sticky", !visible);
+      this.io = new IntersectionObserver(_ref2 => {
+        let [{
+          isIntersecting: visible
+        }] = _ref2;
+        l(this.container, "is-sticky", !visible);
         l(document.documentElement, "sticky-header-active", !visible);
       });
       this.io.observe(headerSpace);
-    } // This will watch the height of the header and update the --height-header
-    // css variable when necessary. That var gets used for the negative top margin
-    // to render the page body under the transparent header
-
-
-    this.ro = new index(function (_ref4) {
-      var _ref5 = _slicedToArray(_ref4, 1),
-          target = _ref5[0].target;
-
-      var headerHeight = target.offsetHeight;
-      var lowerBarHeight = lowerBar.offsetHeight;
-      var lowerBarOffset = headerHeight - lowerBarHeight;
-      setHeaderHeightVar$1(target.getBoundingClientRect() ? target.getBoundingClientRect().height : target.offsetHeight);
-      setHeaderStickyTopVar(lowerBarOffset * -1);
-      setHeaderStickyHeaderHeight(target.offsetHeight - lowerBarOffset);
-    });
-    this.ro.observe(this.container); // Wire up Cross Border disclosures
-
-    var cbSelectors = t$2(selectors$y.disclosure, this.container);
-
-    if (cbSelectors) {
-      cbSelectors.forEach(function (selector) {
-        var d = selector.dataset.disclosure;
-        _this.crossBorder[d] = Disclosure(selector);
-      });
     }
 
+    // This will watch the height of the header and update the --height-header
+    // css variable when necessary. That var gets used for the negative top margin
+    // to render the page body under the transparent header
+    provideResizeObserver().then(_ref3 => {
+      let {
+        ResizeObserver
+      } = _ref3;
+      this.ro = new ResizeObserver(_ref4 => {
+        let [{
+          target
+        }] = _ref4;
+        const headerHeight = target.offsetHeight;
+        const lowerBarHeight = lowerBar.offsetHeight;
+        const lowerBarOffset = headerHeight - lowerBarHeight;
+        setHeaderHeightVar$1(target.getBoundingClientRect() ? target.getBoundingClientRect().height : target.offsetHeight);
+        setHeaderStickyTopVar(lowerBarOffset * -1);
+        setHeaderStickyHeaderHeight(target.offsetHeight - lowerBarOffset);
+      });
+      this.ro.observe(this.container);
+    });
+
+    // Wire up Cross Border disclosures
+    const cbSelectors = t$2(selectors$z.disclosure, this.container);
+    if (cbSelectors) {
+      cbSelectors.forEach(selector => {
+        const {
+          disclosure: d
+        } = selector.dataset;
+        this.crossBorder[d] = Disclosure(selector);
+      });
+    }
     this.navScroller = scrollContainer(n$2(".header__links-primary-scroll-container", this.container));
   },
-  onBlockSelect: function onBlockSelect(_ref6) {
-    var target = _ref6.target;
+  updateCartCount(itemCount) {
+    this.cartCounts.forEach(cartCount => {
+      cartCount.innerHTML = itemCount;
+    });
+  },
+  onBlockSelect(_ref5) {
+    let {
+      target
+    } = _ref5;
     u$1(this.container, "dropdown-active");
     u$1(target, "active");
     this.meganavOpenedFromDesignMode = true;
     this.showHeaderOverlay();
   },
-  onBlockDeselect: function onBlockDeselect(_ref7) {
-    var target = _ref7.target;
+  onBlockDeselect(_ref6) {
+    let {
+      target
+    } = _ref6;
     i$1(this.container, "dropdown-active");
     i$1(target, "active");
     this.meganavOpenedFromDesignMode = false;
     this.hideHeaderOverlay();
   },
-  onUnload: function onUnload() {
-    var _this2 = this;
-
-    this.listeners.forEach(function (l) {
-      return l();
-    });
-    this.components.forEach(function (c) {
-      return c.destroy();
-    });
+  onUnload() {
+    this.listeners.forEach(l => l());
+    this.components.forEach(c => c.destroy());
     this.io && this.io.disconnect();
     this.ro.disconnect();
-    Object.keys(this.crossBorder).forEach(function (t) {
-      return _this2.crossBorder[t].unload();
-    });
+    Object.keys(this.crossBorder).forEach(t => this.crossBorder[t].unload());
   },
-  showHeaderOverlay: function showHeaderOverlay() {
+  showHeaderOverlay() {
     r$1("headerOverlay:show");
   },
-  hideHeaderOverlay: function hideHeaderOverlay() {
+  hideHeaderOverlay() {
     r$1("headerOverlay:hide");
   }
 });
 
-var selectors$x = {
+const selectors$y = {
   popupTrigger: "[data-popup-trigger]"
 };
-
-var passwordUnlock = function passwordUnlock(node) {
-  var events = [];
-  var popupTriggers = t$2(selectors$x.popupTrigger, node);
-
+const passwordUnlock = node => {
+  const events = [];
+  const popupTriggers = t$2(selectors$y.popupTrigger, node);
   if (popupTriggers.length) {
-    events.push(e$2(popupTriggers, "click", function (e) {
+    events.push(e$2(popupTriggers, "click", e => {
       e.preventDefault();
       e.stopPropagation();
-      var content = n$2("#modal-password-unlock", node);
+      const content = n$2("#modal-password-unlock", node);
       r$1("modal:open", null, {
         modalContent: content
       });
     }));
   }
-
   function unload() {
-    events.forEach(function (evt) {
-      return evt();
-    });
+    events.forEach(evt => evt());
   }
-
   return {
-    unload: unload
+    unload
   };
 };
 
 function setHeaderHeightVar(height) {
   document.documentElement.style.setProperty("--height-header", Math.ceil(height) + "px");
 }
-
 register("password-header", {
   crossBorder: {},
-  onLoad: function onLoad() {
-    var transparentHeaderOnHome = this.container.dataset.transparentHeaderOnHome; // This is done here AND in the liquid so it is responsive in TE but doesn't wait for JS otherwise
+  onLoad() {
+    const {
+      transparentHeader
+    } = this.container.dataset;
 
-    document.body.classList.toggle("header-transparent-on-home", !!transparentHeaderOnHome); // This will watch the height of the header and update the --height-header
-    // css variable when necessary. That var gets used for the negative top margin
-    // to render the page body under the transparent header
-
-    this.ro = new index(function (_ref) {
-      var _ref2 = _slicedToArray(_ref, 1),
-          target = _ref2[0].target;
-
-      setHeaderHeightVar(target.getBoundingClientRect() ? target.getBoundingClientRect().height : target.offsetHeight);
+    // This is done here AND in the liquid so it is responsive in TE but doesn't wait for JS otherwise
+    document.body.classList.toggle("header-transparent", !!transparentHeader);
+    provideResizeObserver().then(_ref => {
+      let {
+        ResizeObserver
+      } = _ref;
+      // This will watch the height of the header and update the --height-header
+      // css variable when necessary. That var gets used for the negative top margin
+      // to render the page body under the transparent header
+      this.ro = new ResizeObserver(_ref2 => {
+        let [{
+          target
+        }] = _ref2;
+        setHeaderHeightVar(target.getBoundingClientRect() ? target.getBoundingClientRect().height : target.offsetHeight);
+      });
+      this.ro.observe(this.container);
     });
-    this.ro.observe(this.container);
     this.passwordUnlock = passwordUnlock(this.container);
   },
-  onUnload: function onUnload() {
-    this.listeners.forEach(function (l) {
-      return l();
-    });
-    this.components.forEach(function (c) {
-      return c.destroy();
-    });
+  onUnload() {
+    this.listeners.forEach(l => l());
+    this.components.forEach(c => c.destroy());
     this.passwordUnlock;
     this.io && this.io.disconnect();
     this.ro.disconnect();
   }
 });
 
-var selectors$w = {
+const selectors$x = {
   disclosure: "[data-disclosure]",
   header: "[data-header]"
 };
 register("footer", {
   crossBorder: {},
-  onLoad: function onLoad() {
-    var _this = this;
-
-    var headers = t$2(selectors$w.header, this.container);
+  onLoad() {
+    const headers = t$2(selectors$x.header, this.container);
     this.headerClick = e$2(headers, "click", handleHeaderClick);
-
     function handleHeaderClick(_ref) {
-      var currentTarget = _ref.currentTarget;
-      var content = currentTarget.nextElementSibling;
+      let {
+        currentTarget
+      } = _ref;
+      const {
+        nextElementSibling: content
+      } = currentTarget;
       l(currentTarget, "open", !isVisible(content));
       slideStop(content);
-
       if (isVisible(content)) {
         slideUp(content);
       } else {
         slideDown(content);
       }
-    } // Wire up Cross Border disclosures
+    }
 
-
-    var cbSelectors = t$2(selectors$w.disclosure, this.container);
-
+    // Wire up Cross Border disclosures
+    const cbSelectors = t$2(selectors$x.disclosure, this.container);
     if (cbSelectors) {
-      cbSelectors.forEach(function (selector) {
-        var d = selector.dataset.disclosure;
-        _this.crossBorder[d] = Disclosure(selector);
+      cbSelectors.forEach(selector => {
+        const {
+          disclosure: d
+        } = selector.dataset;
+        this.crossBorder[d] = Disclosure(selector);
       });
     }
   },
-  onUnload: function onUnload() {
-    var _this2 = this;
-
+  onUnload() {
     this.headerClick();
-    Object.keys(this.crossBorder).forEach(function (t) {
-      return _this2.crossBorder[t].unload();
-    });
+    Object.keys(this.crossBorder).forEach(t => this.crossBorder[t].unload());
   }
 });
 
-var selectors$v = {
+const selectors$w = {
   slider: "[data-slider]",
   slide: "[data-slider] [data-slide]",
   navPrev: ".slider-nav-button-prev",
@@ -9818,66 +8288,58 @@ var selectors$v = {
   desktopOnlyInner: ".announcement-bar__item-inner-desktop-only"
 };
 register("announcement-bar", {
-  setHeightVariable: function setHeightVariable() {
+  setHeightVariable() {
     if (this.container.offsetHeight !== this.lastSetHeight) {
       document.documentElement.style.setProperty("--announcement-height", "".concat(this.container.offsetHeight, "px"));
       this.lastSetHeight = this.container.offsetHeight;
     }
   },
-  onLoad: function onLoad() {
-    var _this2 = this;
-
+  onLoad() {
     this.setHeightVariable();
-    this.widthWatcher = srraf(function (_ref) {
-      _ref.vw;
-
-      _this2.setHeightVariable();
+    this.widthWatcher = srraf(_ref => {
+      this.setHeightVariable();
     });
-
     this.disableTabbingToInners = function () {
       // Disable tabbing on items that aren't shown
-      var desktopOnlyInners = t$2(selectors$v.desktopOnlyInner, this.container);
-      var mobileOnlyInners = t$2(selectors$v.mobileOnlyInner, this.container);
-      var desktopIsMobileSize = window.matchMedia(getMediaQuery("below-720")).matches;
-      desktopOnlyInners.forEach(function (inner) {
+      const desktopOnlyInners = t$2(selectors$w.desktopOnlyInner, this.container);
+      const mobileOnlyInners = t$2(selectors$w.mobileOnlyInner, this.container);
+      const desktopIsMobileSize = window.matchMedia(getMediaQuery("below-720")).matches;
+      desktopOnlyInners.forEach(inner => {
         inner.toggleAttribute("inert", desktopIsMobileSize);
       });
-      mobileOnlyInners.forEach(function (inner) {
+      mobileOnlyInners.forEach(inner => {
         inner.toggleAttribute("inert", !desktopIsMobileSize);
       });
     };
-
-    this.sliderContainer = n$2(selectors$v.slider, this.container);
-    this.slides = t$2(selectors$v.slide, this.container);
-    this.navPrev = t$2(selectors$v.navPrev, this.container);
-    this.navNext = t$2(selectors$v.navNext, this.container);
+    this.sliderContainer = n$2(selectors$w.slider, this.container);
+    this.slides = t$2(selectors$w.slide, this.container);
+    this.navPrev = t$2(selectors$w.navPrev, this.container);
+    this.navNext = t$2(selectors$w.navNext, this.container);
     this.disableTabbingToInners();
-    this.breakPointHandler = atBreakpointChange(720, function () {
-      _this2.disableTabbingToInners();
+    this.breakPointHandler = atBreakpointChange(720, () => {
+      this.disableTabbingToInners();
     });
-
     if (this.slides.length < 2) {
       return null;
     }
-
-    var autoplayEnabled = this.sliderContainer.dataset.autoplayEnabled == "true";
-    var autoplayDelay = parseInt(this.sliderContainer.dataset.autoplayDelay, 10);
-
-    var _this = this;
-
-    import(flu.chunks.swiper).then(function (_ref2) {
-      var Swiper = _ref2.Swiper,
-          Navigation = _ref2.Navigation,
-          Autoplay = _ref2.Autoplay;
-      _this2.swiper = new Swiper(_this2.sliderContainer, {
+    const autoplayEnabled = this.sliderContainer.dataset.autoplayEnabled == "true";
+    const autoplayDelay = parseInt(this.sliderContainer.dataset.autoplayDelay, 10);
+    let _this = this;
+    import(flu.chunks.swiper).then(_ref2 => {
+      let {
+        Swiper,
+        Navigation,
+        Autoplay
+      } = _ref2;
+      this.swiper = new Swiper(this.sliderContainer, {
         on: {
-          init: function init() {
+          init() {
             u$1(_this.container, "slider-active");
           },
-          slideChangeTransitionEnd: function slideChangeTransitionEnd() {
-            var slideEls = this.slides;
+          slideChangeTransitionEnd() {
+            const slideEls = this.slides;
             setTimeout(function () {
-              slideEls.forEach(function (slide) {
+              slideEls.forEach(slide => {
                 slide.toggleAttribute("inert", !slide.classList.contains("swiper-slide-active"));
               });
             }, 50);
@@ -9892,34 +8354,33 @@ register("announcement-bar", {
           pauseOnMouseEnter: true
         } : false,
         navigation: {
-          nextEl: _this2.navNext,
-          prevEl: _this2.navPrev
+          nextEl: this.navNext,
+          prevEl: this.navPrev
         }
       });
     });
   },
-  onBlockSelect: function onBlockSelect(_ref3) {
+  onBlockSelect(_ref3) {
     var _this$swiper, _this$swiper$autoplay, _this$swiper2;
-
-    var slide = _ref3.target;
-    var index = parseInt(slide.dataset.index, 10);
+    let {
+      target: slide
+    } = _ref3;
+    const index = parseInt(slide.dataset.index, 10);
     (_this$swiper = this.swiper) === null || _this$swiper === void 0 ? void 0 : (_this$swiper$autoplay = _this$swiper.autoplay) === null || _this$swiper$autoplay === void 0 ? void 0 : _this$swiper$autoplay.stop();
     (_this$swiper2 = this.swiper) === null || _this$swiper2 === void 0 ? void 0 : _this$swiper2.slideToLoop(index);
   },
-  onBlockDeselect: function onBlockDeselect() {
+  onBlockDeselect() {
     var _this$swiper3, _this$swiper3$autopla;
-
     (_this$swiper3 = this.swiper) === null || _this$swiper3 === void 0 ? void 0 : (_this$swiper3$autopla = _this$swiper3.autoplay) === null || _this$swiper3$autopla === void 0 ? void 0 : _this$swiper3$autopla.start();
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$swiper4, _this$widthWatcher;
-
     (_this$swiper4 = this.swiper) === null || _this$swiper4 === void 0 ? void 0 : _this$swiper4.destroy();
     (_this$widthWatcher = this.widthWatcher) === null || _this$widthWatcher === void 0 ? void 0 : _this$widthWatcher.destroy();
   }
 });
 
-var selectors$u = {
+const selectors$v = {
   item: "[data-input-item]",
   itemProperties: "[data-item-properties]",
   quantityInput: "[data-quantity-input]",
@@ -9928,45 +8389,53 @@ var selectors$u = {
   removeItem: "[data-remove-item]"
 };
 function QuantityButtons(node) {
-  var delegate = new Delegate(node);
-  delegate.on("click", selectors$u.quantitySubtract, function (_, target) {
-    var item = target.closest(selectors$u.item);
-    var key = item.dataset.key;
-    var qty = n$2(selectors$u.quantityInput, item).value;
+  const delegate = new Delegate(node);
+  delegate.on("click", selectors$v.quantitySubtract, (_, target) => {
+    const item = target.closest(selectors$v.item);
+    const {
+      key
+    } = item.dataset;
+    const qty = n$2(selectors$v.quantityInput, item).value;
     r$1("quantity-update:subtract", null, {
-      key: key
+      key
     });
     cart.updateItem(key, parseInt(qty) - 1);
   });
-  delegate.on("click", selectors$u.quantityAdd, function (_, target) {
-    var item = target.closest(selectors$u.item);
-    var key = item.dataset.key;
-    var qty = n$2(selectors$u.quantityInput, item).value;
+  delegate.on("click", selectors$v.quantityAdd, (_, target) => {
+    const item = target.closest(selectors$v.item);
+    const {
+      key
+    } = item.dataset;
+    const qty = n$2(selectors$v.quantityInput, item).value;
     r$1("quantity-update:add", null, {
-      key: key
+      key
     });
     cart.updateItem(key, parseInt(qty) + 1);
   });
-  delegate.on("click", selectors$u.removeItem, function (_, target) {
-    var item = target.closest(selectors$u.item);
-    var key = item.dataset.key;
+  delegate.on("click", selectors$v.removeItem, (_, target) => {
+    const item = target.closest(selectors$v.item);
+    const {
+      key
+    } = item.dataset;
     r$1("quantity-update:remove", null, {
-      key: key
+      key
     });
     cart.updateItem(key, 0);
   });
-
-  var unload = function unload() {
+  const unload = () => {
     delegate.off();
   };
-
   return {
-    unload: unload
+    unload
   };
 }
 
-var strings$3 = window.theme.strings.cart;
-var selectors$t = {
+const {
+  strings: {
+    cart: strings$3
+  }
+} = window.theme;
+const selectors$u = {
   cartNoteTrigger: "[data-order-note-trigger]",
   cartNoteTriggerText: "[data-cart-not-trigger-text]",
   cartNoteInputWrapper: "[cart-note-input]",
@@ -9974,26 +8443,24 @@ var selectors$t = {
   iconMinus: ".icon-minus-small"
 };
 function CartNoteToggle(node) {
-  var delegate = new Delegate(node);
-  delegate.on("click", selectors$t.cartNoteTrigger, function (_, target) {
-    return handleCartNoteTrigger(target);
-  });
-
+  const delegate = new Delegate(node);
+  delegate.on("click", selectors$u.cartNoteTrigger, (_, target) => handleCartNoteTrigger(target));
   function handleCartNoteTrigger(target) {
-    var inputWrapper = n$2(selectors$t.cartNoteInputWrapper, target.parentNode);
-    var textInput = n$2("textarea", inputWrapper); // Handle icon change when open or close
+    const inputWrapper = n$2(selectors$u.cartNoteInputWrapper, target.parentNode);
+    const textInput = n$2("textarea", inputWrapper);
 
-    var plusIcon = n$2(selectors$t.iconPlus, target);
-    var minusIcon = n$2(selectors$t.iconMinus, target);
+    // Handle icon change when open or close
+    const plusIcon = n$2(selectors$u.iconPlus, target);
+    const minusIcon = n$2(selectors$u.iconMinus, target);
     l([plusIcon, minusIcon], "hidden");
-
     if (isVisible(inputWrapper)) {
       slideStop(inputWrapper);
       slideUp(inputWrapper);
       inputWrapper.setAttribute("aria-expanded", false);
       inputWrapper.setAttribute("aria-hidden", true);
-      var inputTriggertext = n$2(selectors$t.cartNoteTriggerText, node); // Update cart note trigger text
+      const inputTriggertext = n$2(selectors$u.cartNoteTriggerText, node);
 
+      // Update cart note trigger text
       if (textInput.value === "") {
         inputTriggertext.innerText = strings$3.addCartNote;
       } else {
@@ -10006,13 +8473,11 @@ function CartNoteToggle(node) {
       inputWrapper.setAttribute("aria-hidden", false);
     }
   }
-
-  var unload = function unload() {
+  const unload = () => {
     delegate.off();
   };
-
   return {
-    unload: unload
+    unload
   };
 }
 
@@ -10021,58 +8486,57 @@ function CartNoteToggle(node) {
  * @param {*} selector The selector to target
  * @param {*} doc The updated document returned by the fetch request
  */
-
 function updateInnerHTML(selector, doc) {
-  var updatedItem = n$2(selector, doc);
-  var oldItem = n$2(selector);
-
+  const updatedItem = n$2(selector, doc);
+  const oldItem = n$2(selector);
   if (updatedItem && oldItem) {
     oldItem.innerHTML = updatedItem.innerHTML;
   }
 }
 
-var selectors$s = {
+const selectors$t = {
   crossSellsSlider: "[data-cross-sells-slider]",
   quickViewTrigger: "[data-quick-view-trigger]",
   addToCartTrigger: "[data-add-item-id]"
 };
 function CrossSells(node) {
-  var crossSellsSlider = n$2(selectors$s.crossSellsSlider, node).dataset.crossSellsSlider;
-  var swiper = crossSellsSlider ? new Carousel(node, {
+  const {
+    crossSellsSlider
+  } = n$2(selectors$t.crossSellsSlider, node).dataset;
+  let swiper = crossSellsSlider ? new Carousel(node, {
     slidesPerView: 1.15,
     spaceBetween: 8
   }) : null;
-  var events = [e$2(t$2(selectors$s.quickViewTrigger, node), "click", function (e) {
-    var productUrl = e.target.dataset.productUrl;
+  const events = [e$2(t$2(selectors$t.quickViewTrigger, node), "click", e => {
+    const {
+      productUrl
+    } = e.target.dataset;
     if (!productUrl) return;
     r$1("quick-view:open", null, {
       productUrl: productUrl
     });
-  }), e$2(t$2(selectors$s.addToCartTrigger, node), "click", function (e) {
-    var addItemId = e.target.dataset.addItemId;
+  }), e$2(t$2(selectors$t.addToCartTrigger, node), "click", e => {
+    const {
+      addItemId
+    } = e.target.dataset;
     if (!addItemId) return;
     animateButton(e.target);
     cart.addItemById(addItemId, 1);
     r$1("quick-cart:scrollup");
   })];
-
   function animateButton(button) {
     u$1(button, "loading");
   }
-
   function unload() {
-    events.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
+    events.forEach(unsubscribe => unsubscribe());
     swiper.destroy();
   }
-
   return {
-    unload: unload
+    unload
   };
 }
 
-var selectors$r = {
+const selectors$s = {
   cartWrapper: ".quick-cart__wrapper",
   innerContainer: ".quick-cart__container",
   overlay: ".quick-cart__overlay",
@@ -10089,268 +8553,251 @@ var selectors$r = {
   freeShippingBar: "[data-free-shipping-bar]",
   crossSells: "[data-cross-sells]"
 };
-var classes$a = {
+const classes$c = {
   active: "active",
   hidden: "hidden",
   updatingQuantity: "has-quantity-update",
   removed: "is-removed"
 };
 register("quick-cart", {
-  onLoad: function onLoad() {
-    var _this = this;
-
-    this.cartWrapper = n$2(selectors$r.cartWrapper, this.container);
+  onLoad() {
+    this.cartWrapper = n$2(selectors$s.cartWrapper, this.container);
     this.cartTrap = createFocusTrap(this.container, {
       allowOutsideClick: true
-    }); // Events are all on events trigger by other components / functions
+    });
 
-    this.events = [c("quick-cart:open", function () {
-      return _this.openQuickCart();
-    }), c("quick-cart:updated", function () {
-      return _this.refreshQuickCart();
-    }), c("quick-cart:error", function (_, _ref) {
-      var key = _ref.key,
-          errorMessage = _ref.errorMessage;
-
-      _this.handleErrorMessage(key, errorMessage);
-    }), c("quick-cart:scrollup", function () {
-      return _this.scrollUpQuickCart();
-    }), c(["quantity-update:subtract", "quantity-update:add"], function (_, _ref2) {
-      var key = _ref2.key;
-
-      _this.handleQuantityUpdate(key);
-    }), c("quantity-update:remove", function (_, _ref3) {
-      var key = _ref3.key;
-
-      _this.handleItemRemoval(key);
+    // Events are all on events trigger by other components / functions
+    this.events = [c("quick-cart:open", () => this.openQuickCart()), c("quick-cart:updated", () => this.refreshQuickCart()), c("quick-cart:error", (_, _ref) => {
+      let {
+        key,
+        errorMessage
+      } = _ref;
+      this.handleErrorMessage(key, errorMessage);
+    }), c("quick-cart:scrollup", () => this.scrollUpQuickCart()), c(["quantity-update:subtract", "quantity-update:add"], (_, _ref2) => {
+      let {
+        key
+      } = _ref2;
+      this.handleQuantityUpdate(key);
+    }), c("quantity-update:remove", (_, _ref3) => {
+      let {
+        key
+      } = _ref3;
+      this.handleItemRemoval(key);
+    }), e$2(document, "apps:product-added-to-cart", () => {
+      this.refreshQuickCart();
     })];
     this.quantityButtons = QuantityButtons(this.container);
     this.cartNoteToggle = CartNoteToggle(this.container);
-
     if (shouldAnimate(this.container)) {
       this.animateQuickCart = animateQuickCart(this.container);
-    } // Delegate handles all click events due to rendering different content
+    }
+
+    // Delegate handles all click events due to rendering different content
     // within quick cart
-
-
     this.delegate = new Delegate(this.container);
-    this.delegate.on("click", selectors$r.overlay, function () {
-      return _this.close();
-    });
-    this.delegate.on("click", selectors$r.closeButton, function () {
-      return _this.close();
-    });
-    this.delegate.on("change", selectors$r.quantityInput, function (e) {
-      return _this.handleQuantityInputChange(e);
-    });
-    var freeShippingBar$1 = n$2(selectors$r.freeShippingBar, this.container);
-
+    this.delegate.on("click", selectors$s.overlay, () => this.close());
+    this.delegate.on("click", selectors$s.closeButton, () => this.close());
+    this.delegate.on("change", selectors$s.quantityInput, e => this.handleQuantityInputChange(e));
+    const freeShippingBar$1 = n$2(selectors$s.freeShippingBar, this.container);
     if (freeShippingBar$1) {
       freeShippingBar(freeShippingBar$1);
     }
-
     this._initCrossSells();
   },
-  openQuickCart: function openQuickCart() {
+  openQuickCart() {
     var _this$animateQuickCar;
-
-    u$1(this.cartWrapper, classes$a.active);
+    u$1(this.cartWrapper, classes$c.active);
     this.cartTrap.activate();
     this.adjustItemPadding();
     (_this$animateQuickCar = this.animateQuickCart) === null || _this$animateQuickCar === void 0 ? void 0 : _this$animateQuickCar.open();
+    document.body.setAttribute("data-fluorescent-overlay-open", "true");
     disableBodyScroll(this.container, {
-      allowTouchMove: function allowTouchMove(el) {
+      allowTouchMove: el => {
         while (el && el !== document.body) {
           if (el.getAttribute("data-scroll-lock-ignore") !== null) {
             return true;
           }
-
           el = el.parentNode;
         }
       },
       reserveScrollBarGap: true
     });
   },
-  refreshQuickCart: function refreshQuickCart() {
-    var _this2 = this;
-
-    var url = "".concat(theme.routes.cart.base, "?section_id=quick-cart");
-    makeRequest("GET", url).then(function (response) {
-      var _this2$crossSells;
-
-      var container = document.createElement("div");
+  refreshQuickCart() {
+    const url = "".concat(theme.routes.cart.base, "?section_id=").concat(this.id);
+    makeRequest("GET", url).then(response => {
+      var _this$crossSells;
+      let container = document.createElement("div");
       container.innerHTML = response;
-      var responseInnerContainer = n$2(selectors$r.innerContainer, container);
-      var cartHasItems = Boolean(n$2(selectors$r.items, _this2.container));
-      var responseHasItems = Boolean(n$2(selectors$r.items, container));
-      var freeShippingBar$1 = n$2(selectors$r.freeShippingBar, container);
-      (_this2$crossSells = _this2.crossSells) === null || _this2$crossSells === void 0 ? void 0 : _this2$crossSells.unload();
-
+      const responseInnerContainer = n$2(selectors$s.innerContainer, container);
+      const cartHasItems = Boolean(n$2(selectors$s.items, this.container));
+      const responseHasItems = Boolean(n$2(selectors$s.items, container));
+      const freeShippingBar$1 = n$2(selectors$s.freeShippingBar, container);
+      (_this$crossSells = this.crossSells) === null || _this$crossSells === void 0 ? void 0 : _this$crossSells.unload();
       if (freeShippingBar$1) {
         freeShippingBar(freeShippingBar$1);
-      } // Cart has items and needs to update them
+      }
 
-
+      // Cart has items and needs to update them
       if (responseHasItems && cartHasItems) {
-        var _this2$animateQuickCa;
-
+        var _this$animateQuickCar2;
         // Render cart items
-        updateInnerHTML("".concat(selectors$r.cartWrapper, " ").concat(selectors$r.items), container);
+        updateInnerHTML("".concat(selectors$s.cartWrapper, " ").concat(selectors$s.items), container);
+        this.adjustItemPadding();
 
-        _this2.adjustItemPadding(); // Render cart count
+        // Render cart count
+        updateInnerHTML("".concat(selectors$s.cartWrapper, " ").concat(selectors$s.cartCount), container);
 
+        // Render subtotal
+        updateInnerHTML("".concat(selectors$s.cartWrapper, " ").concat(selectors$s.subtotal), container);
 
-        updateInnerHTML("".concat(selectors$r.cartWrapper, " ").concat(selectors$r.cartCount), container); // Render subtotal
+        // Render promotions
+        updateInnerHTML("".concat(selectors$s.cartWrapper, " ").concat(selectors$s.discounts), container);
 
-        updateInnerHTML("".concat(selectors$r.cartWrapper, " ").concat(selectors$r.subtotal), container); // Render promotions
-
-        updateInnerHTML("".concat(selectors$r.cartWrapper, " ").concat(selectors$r.discounts), container); // Handle form scroll state
-
-        var form = n$2(selectors$r.form, _this2.container);
-        var previousScrollPosition = form.scrollTop || 0;
+        // Handle form scroll state
+        const form = n$2(selectors$s.form, this.container);
+        const previousScrollPosition = form.scrollTop || 0;
         form.scrollTop = previousScrollPosition;
-        (_this2$animateQuickCa = _this2.animateQuickCart) === null || _this2$animateQuickCa === void 0 ? void 0 : _this2$animateQuickCa.setup();
+        (_this$animateQuickCar2 = this.animateQuickCart) === null || _this$animateQuickCar2 === void 0 ? void 0 : _this$animateQuickCar2.setup();
       } else {
         // Cart needs to render empty from having items, or needs to render
         // items from empty state
-        var innerContainer = n$2(selectors$r.innerContainer, _this2.container);
+        const innerContainer = n$2(selectors$s.innerContainer, this.container);
         innerContainer.innerHTML = responseInnerContainer.innerHTML;
       }
-
-      _this2._initCrossSells();
+      this._initCrossSells();
     });
   },
-  handleErrorMessage: function handleErrorMessage(key) {
-    var item = n$2("[data-key=\"".concat(key, "\"]"), this.container);
-    i$1(n$2(selectors$r.cartError, item), classes$a.hidden);
-    i$1(item, classes$a.updatingQuantity);
+  handleErrorMessage(key) {
+    const item = n$2("[data-key=\"".concat(key, "\"]"), this.container);
+    i$1(n$2(selectors$s.cartError, item), classes$c.hidden);
+    i$1(item, classes$c.updatingQuantity);
   },
-  handleQuantityUpdate: function handleQuantityUpdate(key) {
-    var item = n$2("[data-key=\"".concat(key, "\"]"), this.container);
-    u$1(item, classes$a.updatingQuantity);
+  handleQuantityUpdate(key) {
+    const item = n$2("[data-key=\"".concat(key, "\"]"), this.container);
+    u$1(item, classes$c.updatingQuantity);
   },
-  handleItemRemoval: function handleItemRemoval(key) {
-    var item = n$2("[data-key=\"".concat(key, "\"]"), this.container);
-    u$1(item, classes$a.removed);
-    u$1(item, classes$a.updatingQuantity);
+  handleItemRemoval(key) {
+    const item = n$2("[data-key=\"".concat(key, "\"]"), this.container);
+    u$1(item, classes$c.removed);
+    u$1(item, classes$c.updatingQuantity);
   },
-  handleQuantityInputChange: function handleQuantityInputChange(_ref4) {
-    var target = _ref4.target;
-    var item = target.closest(selectors$r.quantityItem);
-    var key = item.dataset.key;
+  handleQuantityInputChange(_ref4) {
+    let {
+      target
+    } = _ref4;
+    const item = target.closest(selectors$s.quantityItem);
+    const {
+      key
+    } = item.dataset;
     cart.updateItem(key, target.value);
     this.handleQuantityUpdate(key);
   },
-  _initCrossSells: function _initCrossSells() {
-    var crossSells = n$2(selectors$r.crossSells, this.container);
-
+  _initCrossSells() {
+    const crossSells = n$2(selectors$s.crossSells, this.container);
     if (crossSells) {
       this.crossSells = CrossSells(crossSells);
     }
   },
-  scrollUpQuickCart: function scrollUpQuickCart() {
-    var form = n$2(selectors$r.form, this.container);
-    var previousScrollPosition = 0; // delay the scroll up to make it seem more 'fluid'
-
-    setTimeout(function () {
+  scrollUpQuickCart() {
+    const form = n$2(selectors$s.form, this.container);
+    const previousScrollPosition = 0;
+    if (!form) return;
+    // delay the scroll up to make it seem more 'fluid'
+    setTimeout(() => {
       form.scrollTop = previousScrollPosition;
     }, 300);
   },
-  adjustItemPadding: function adjustItemPadding() {
-    var items = n$2(selectors$r.items, this.container);
-    if (!items) return; // Ensure cart items accounts for the height of cart footer
+  adjustItemPadding() {
+    const items = n$2(selectors$s.items, this.container);
+    if (!items) return;
 
-    var footer = n$2(selectors$r.footer, this.container);
+    // Ensure cart items accounts for the height of cart footer
+    const footer = n$2(selectors$s.footer, this.container);
     items.style.paddingBottom = "".concat(footer.clientHeight, "px");
   },
-  close: function close() {
-    var _this3 = this;
-
-    i$1(this.cartWrapper, classes$a.active);
-    setTimeout(function () {
-      var _this3$animateQuickCa;
-
-      (_this3$animateQuickCa = _this3.animateQuickCart) === null || _this3$animateQuickCa === void 0 ? void 0 : _this3$animateQuickCa.close();
-
-      _this3.cartTrap.deactivate();
-
-      enableBodyScroll(_this3.container);
+  close() {
+    i$1(this.cartWrapper, classes$c.active);
+    setTimeout(() => {
+      var _this$animateQuickCar3;
+      (_this$animateQuickCar3 = this.animateQuickCart) === null || _this$animateQuickCar3 === void 0 ? void 0 : _this$animateQuickCar3.close();
+      this.cartTrap.deactivate();
+      document.body.setAttribute("data-fluorescent-overlay-open", "false");
+      enableBodyScroll(this.container);
     }, 500);
   },
-  onSelect: function onSelect() {
+  onSelect() {
     this.openQuickCart();
   },
-  onDeselect: function onDeselect() {
+  onDeselect() {
     this.close();
   },
-  onUnload: function onUnload() {
+  onUnload() {
     this.delegate.off();
-    this.events.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
+    this.events.forEach(unsubscribe => unsubscribe());
     this.quantityButtons.unload();
     this.cartNoteToggle.unload();
   }
 });
 
-var selectors$q = {
+const selectors$r = {
   "settings": "[data-timer-settings]",
   "days": "[data-days]",
   "hours": "[data-hours]",
   "minutes": "[data-minutes]",
   "seconds": "[data-seconds]"
 };
-var classes$9 = {
+const classes$b = {
   "active": "active",
   "hide": "hide",
   "complete": "complete"
 };
 function CountdownTimer(container) {
-  var settings = n$2(selectors$q.settings, container);
-
-  var _JSON$parse = JSON.parse(settings.innerHTML),
-      year = _JSON$parse.year,
-      month = _JSON$parse.month,
-      day = _JSON$parse.day,
-      hour = _JSON$parse.hour,
-      minute = _JSON$parse.minute,
-      shopTimezone = _JSON$parse.shopTimezone,
-      timeZoneSelection = _JSON$parse.timeZoneSelection,
-      hideTimerOnComplete = _JSON$parse.hideTimerOnComplete;
-
-  var daysEl = n$2(selectors$q.days, container);
-  var hoursEl = n$2(selectors$q.hours, container);
-  var minutesEl = n$2(selectors$q.minutes, container);
-  var secondsEl = n$2(selectors$q.seconds, container);
-  var timezoneString = timeZoneSelection === "shop" ? " GMT".concat(shopTimezone) : "";
-  var countDownDate = new Date(Date.parse("".concat(month, " ").concat(day, ", ").concat(year, " ").concat(hour, ":").concat(minute).concat(timezoneString)));
-  var countDownTime = countDownDate.getTime();
-  var timerInterval = setInterval(timerLoop, 1000);
+  const settings = n$2(selectors$r.settings, container);
+  const {
+    year,
+    month,
+    day,
+    hour,
+    minute,
+    shopTimezone,
+    timeZoneSelection,
+    hideTimerOnComplete
+  } = JSON.parse(settings.innerHTML);
+  const daysEl = n$2(selectors$r.days, container);
+  const hoursEl = n$2(selectors$r.hours, container);
+  const minutesEl = n$2(selectors$r.minutes, container);
+  const secondsEl = n$2(selectors$r.seconds, container);
+  const timezoneString = timeZoneSelection === "shop" ? " GMT".concat(shopTimezone) : "";
+  const countDownDate = new Date(Date.parse("".concat(month, " ").concat(day, ", ").concat(year, " ").concat(hour, ":").concat(minute).concat(timezoneString)));
+  const countDownTime = countDownDate.getTime();
+  const timerInterval = setInterval(timerLoop, 1000);
   timerLoop();
-  u$1(container, classes$9.active);
-
+  u$1(container, classes$b.active);
   function timerLoop() {
-    window.requestAnimationFrame(function () {
+    window.requestAnimationFrame(() => {
       // Get today's date and time
-      var now = new Date().getTime(); // Find the distance between now and the count down date
+      const now = new Date().getTime();
 
-      var distance = countDownTime - now; // Time calculations for days, hours, minutes and seconds
+      // Find the distance between now and the count down date
+      const distance = countDownTime - now;
 
-      var days = Math.floor(distance / (1000 * 60 * 60 * 24));
-      var hours = Math.floor(distance % (1000 * 60 * 60 * 24) / (1000 * 60 * 60));
-      var minutes = Math.floor(distance % (1000 * 60 * 60) / (1000 * 60));
-      var seconds = Math.floor(distance % (1000 * 60) / 1000); // If the count down is finished, write some text
+      // Time calculations for days, hours, minutes and seconds
+      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+      const hours = Math.floor(distance % (1000 * 60 * 60 * 24) / (1000 * 60 * 60));
+      const minutes = Math.floor(distance % (1000 * 60 * 60) / (1000 * 60));
+      const seconds = Math.floor(distance % (1000 * 60) / 1000);
 
+      // If the count down is finished, write some text
       if (distance < 0) {
         timerInterval && clearInterval(timerInterval);
         daysEl.innerHTML = 0;
         hoursEl.innerHTML = 0;
         minutesEl.innerHTML = 0;
         secondsEl.innerHTML = 0;
-        u$1(container, classes$9.complete);
-
+        u$1(container, classes$b.complete);
         if (hideTimerOnComplete) {
-          u$1(container, classes$9.hide);
+          u$1(container, classes$b.hide);
         }
       } else {
         daysEl.innerHTML = days;
@@ -10360,17 +8807,15 @@ function CountdownTimer(container) {
       }
     });
   }
-
   function destroy() {
     timerInterval && clearInterval(timerInterval);
   }
-
   return {
-    destroy: destroy
+    destroy
   };
 }
 
-var selectors$p = {
+const selectors$q = {
   wash: ".popup__wash",
   dismissButtons: "[data-dismiss-popup]",
   tab: ".popup__tab",
@@ -10380,97 +8825,91 @@ var selectors$p = {
   formSuccessMessage: ".form-status__message--success",
   timer: "[data-countdown-timer]"
 };
-var classes$8 = {
+const classes$a = {
   visible: "visible"
 };
 function Popup(container) {
-  var focusTrap = createFocusTrap(container, {
+  const focusTrap = createFocusTrap(container, {
     allowOutsideClick: true
   });
-  var popupAnimation = animatePopup(container);
-  var wash = n$2(selectors$p.wash, container);
-  var dismissButtons = t$2(selectors$p.dismissButtons, container);
-  var formSuccessMessage = n$2(selectors$p.formSuccessMessage, container);
-  var timer = n$2(selectors$p.timer, container);
-  var _container$dataset = container.dataset,
-      delayType = _container$dataset.delayType,
-      showOnExitIntent = _container$dataset.showOnExitIntent,
-      id = _container$dataset.id,
-      isSignup = _container$dataset.isSignup,
-      popupType = _container$dataset.popupType;
-  var tab = n$2("".concat(selectors$p.tab, "[data-id=\"").concat(id, "\""));
-  var _container$dataset2 = container.dataset,
-      delayValue = _container$dataset2.delayValue,
-      hourFrequency = _container$dataset2.hourFrequency;
+  const popupAnimation = animatePopup(container);
+  const wash = n$2(selectors$q.wash, container);
+  const dismissButtons = t$2(selectors$q.dismissButtons, container);
+  const formSuccessMessage = n$2(selectors$q.formSuccessMessage, container);
+  const timer = n$2(selectors$q.timer, container);
+  const {
+    delayType,
+    showOnExitIntent,
+    id,
+    isSignup,
+    popupType
+  } = container.dataset;
+  const tab = n$2("".concat(selectors$q.tab, "[data-id=\"").concat(id, "\""));
+  let {
+    delayValue,
+    hourFrequency
+  } = container.dataset;
   delayValue = parseInt(delayValue, 10);
   hourFrequency = parseInt(hourFrequency, 10);
-  var storageKey = "popup-".concat(id);
-  var signupSubmittedKey = "signup-submitted-".concat(id);
-  var formSuccessKey = "form-success-".concat(id);
-  var signupDismissedKey = "signup-dismissed-".concat(id);
-  var ageVerifiedKey = "age-verified-".concat(id);
-  var isSignupPopup = isSignup === "true";
-  var isAgeVerification = popupType === "age";
-  var hasPoppedUp = false;
-  var signupSubmitted = Boolean(getStorage(signupSubmittedKey));
-  var formSuccessShown = Boolean(getStorage(formSuccessKey));
-  var signupDismissed = Boolean(getStorage(signupDismissedKey));
-  var ageVerified = Boolean(getStorage(ageVerifiedKey));
-  var canPopUp = true;
-  var countdownTimer = null;
-
+  const storageKey = "popup-".concat(id);
+  const signupSubmittedKey = "signup-submitted-".concat(id);
+  const formSuccessKey = "form-success-".concat(id);
+  const signupDismissedKey = "signup-dismissed-".concat(id);
+  const ageVerifiedKey = "age-verified-".concat(id);
+  const isSignupPopup = isSignup === "true";
+  const isAgeVerification = popupType === "age";
+  let hasPoppedUp = false;
+  let signupSubmitted = Boolean(getStorage(signupSubmittedKey));
+  let formSuccessShown = Boolean(getStorage(formSuccessKey));
+  let signupDismissed = Boolean(getStorage(signupDismissedKey));
+  let ageVerified = Boolean(getStorage(ageVerifiedKey));
+  let canPopUp = true;
+  let countdownTimer = null;
   if (timer) {
     countdownTimer = CountdownTimer(timer);
   }
-
   ShouldPopUp();
-  var events = [];
-
+  const events = [];
   if (!window.Shopify.designMode) {
     events.push(e$2(dismissButtons, "click", hidePopup));
   }
-
   if (!isAgeVerification && !window.Shopify.designMode) {
     // Only allow wash to be clickable for non age verification popups
     events.push(e$2(wash, "click", hidePopup));
-    events.push(e$2(container, "keydown", function (_ref) {
-      var keyCode = _ref.keyCode;
+    events.push(e$2(container, "keydown", _ref => {
+      let {
+        keyCode
+      } = _ref;
       if (keyCode === 27) hidePopup();
     }));
   }
-
   if (isSignupPopup) {
-    var form = n$2(selectors$p.newsletterForm, container);
-
+    const form = n$2(selectors$q.newsletterForm, container);
     if (form) {
       events.push(e$2(form, "submit", onNewsletterSubmit));
     }
   }
-
   if (tab) {
-    var tabButton = n$2(selectors$p.tabButton, tab);
-    var tabDismiss = n$2(selectors$p.tabDismiss, tab);
+    const tabButton = n$2(selectors$q.tabButton, tab);
+    const tabDismiss = n$2(selectors$q.tabDismiss, tab);
     events.push(e$2(tabButton, "click", handleTabClick));
     events.push(e$2(tabDismiss, "click", hideTab));
-  } // Show popup immediately if signup form was submitted
+  }
 
-
+  // Show popup immediately if signup form was submitted
   if (isSignupPopup && formSuccessMessage && !formSuccessShown) {
     setStorage(formSuccessKey, JSON.stringify(new Date()));
     showPopup();
   } else {
     handleDelay();
-
     if (showOnExitIntent === "true" && !isMobile$1()) {
       handleExitIntent();
     }
   }
-
   function handleDelay() {
     if (!canPopUp) return;
-
     if (delayType === "timer") {
-      setTimeout(function () {
+      setTimeout(() => {
         if (!hasPoppedUp) {
           showPopup();
           setStorage(storageKey, JSON.stringify(new Date()));
@@ -10478,17 +8917,16 @@ function Popup(container) {
       }, delayValue);
     } else if (delayType === "scroll") {
       // Delay window / page height calcs until window has loaded
-      window.addEventListener("load", function () {
-        var scrollPercent = delayValue / 100;
-        var scrollTarget = (document.body.scrollHeight - window.innerHeight) * scrollPercent;
-        var scrollListener = e$2(window, "scroll", function () {
+      window.addEventListener("load", () => {
+        const scrollPercent = delayValue / 100;
+        const scrollTarget = (document.body.scrollHeight - window.innerHeight) * scrollPercent;
+        const scrollListener = e$2(window, "scroll", () => {
           if (window.scrollY >= scrollTarget) {
             if (!hasPoppedUp) {
               showPopup();
               setStorage(storageKey, JSON.stringify(new Date()));
-            } // Unbind listener
-
-
+            }
+            // Unbind listener
             scrollListener();
           }
         });
@@ -10497,13 +8935,11 @@ function Popup(container) {
       });
     }
   }
-
   function handleExitIntent() {
     if (!canPopUp) return;
-    var bodyLeave = e$2(document.body, "mouseout", function (e) {
+    const bodyLeave = e$2(document.body, "mouseout", e => {
       if (!e.relatedTarget && !e.toElement) {
         bodyLeave();
-
         if (!hasPoppedUp) {
           showPopup();
           setStorage(storageKey, JSON.stringify(new Date()));
@@ -10512,53 +8948,47 @@ function Popup(container) {
       }
     });
   }
-
   function ShouldPopUp() {
     // To avoid popups appearing while in the editor we're disabling them
     // Popups will only be visible in customizer when selected
     if (window.Shopify.designMode) {
       canPopUp = false;
       return;
-    } // If age has been verified then don't show popup
+    }
+
+    // If age has been verified then don't show popup
     // Or signup submitted or dismissed
     // don't show popup
-
-
     if (isAgeVerification && ageVerified || isSignupPopup && signupSubmitted) {
       canPopUp = false;
       return;
     }
-
     if (isSignupPopup && !signupSubmitted && signupDismissed) {
       canPopUp = false;
-
       if (tab) {
         showTab();
       }
-
       return;
-    } // If no date has been set allow the popup to set the first when opened
+    }
 
-
+    // If no date has been set allow the popup to set the first when opened
     if (!isSignupPopup && !isAgeVerification && !getStorage(storageKey)) {
       return;
-    } // Compare set date and allowed popup frequency hour diff
+    }
 
+    // Compare set date and allowed popup frequency hour diff
+    const timeStart = new Date(getStorage(storageKey));
+    const timeEnd = new Date();
+    const hourDiff = (timeEnd - timeStart) / 1000 / 60 / 60;
 
-    var timeStart = new Date(getStorage(storageKey));
-    var timeEnd = new Date();
-    var hourDiff = (timeEnd - timeStart) / 1000 / 60 / 60; // Will not allow popup if the hour frequency is below the previously
+    // Will not allow popup if the hour frequency is below the previously
     // set poppedup date.
-
     canPopUp = hourDiff > hourFrequency;
   }
-
   function handleTabClick() {
     showPopup();
-
     if (popupType === "flyout" && !window.Shopify.designMode) {
-      var focusable = n$2("button, [href], input, select, textarea", container);
-
+      const focusable = n$2("button, [href], input, select, textarea", container);
       if (focusable) {
         focusable.focus({
           preventScroll: true
@@ -10566,213 +8996,193 @@ function Popup(container) {
       }
     }
   }
-
   function showPopup() {
-    u$1(container, classes$8.visible);
+    u$1(container, classes$a.visible);
     popupAnimation.open();
-
     if (popupType === "popup" || popupType === "age") {
       if (!window.Shopify.designMode) {
         focusTrap.activate();
       }
-
+      document.body.setAttribute("data-fluorescent-overlay-open", "true");
       disableBodyScroll(container);
     }
-
     hasPoppedUp = true;
-
     if (window.Shopify.designMode && tab) {
       // Show tab in theme editor
       showTab();
     } else if (tab) {
       // hide tab on popup open
-      i$1(tab, classes$8.visible);
+      i$1(tab, classes$a.visible);
     }
   }
-
   function hidePopup() {
-    i$1(container, classes$8.visible);
-
+    i$1(container, classes$a.visible);
     if (isSignupPopup) {
-      setStorage(signupDismissedKey, JSON.stringify(new Date())); // show tab on close, clicking the tab will open the popup again
-
+      setStorage(signupDismissedKey, JSON.stringify(new Date()));
+      // show tab on close, clicking the tab will open the popup again
       if (tab) {
         showTab();
       }
-    } // Set storage when age verification popup has been dismissed
+    }
+
+    // Set storage when age verification popup has been dismissed
     // Age verification popups will always be shown until they are dismissed
-
-
     if (isAgeVerification) {
       setStorage(ageVerifiedKey, JSON.stringify(new Date()));
     }
-
-    setTimeout(function () {
+    setTimeout(() => {
       popupAnimation.close();
-
       if (popupType === "popup" || popupType === "age") {
         focusTrap.deactivate();
+        document.body.setAttribute("data-fluorescent-overlay-open", "false");
         enableBodyScroll(container);
       }
     }, 500);
   }
-
   function showTab() {
-    u$1(tab, classes$8.visible);
+    u$1(tab, classes$a.visible);
   }
-
   function hideTab() {
-    i$1(tab, classes$8.visible); // When tab is removed we want the popup to be able to open again if it has a frequency
+    i$1(tab, classes$a.visible);
+    // When tab is removed we want the popup to be able to open again if it has a frequency
     // We have to remove the storeage saying that the popup was dismissed
-
     removeStorage(signupDismissedKey);
   }
-
   function onNewsletterSubmit() {
     setStorage(signupSubmittedKey, JSON.stringify(new Date()));
   }
-
   function unload() {
     hidePopup();
-    events.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
-
+    events.forEach(unsubscribe => unsubscribe());
     if (isAgeVerification) {
       enableBodyScroll(container);
     }
-
     countdownTimer && countdownTimer.destroy();
   }
-
   return {
-    unload: unload,
-    showPopup: showPopup,
-    hidePopup: hidePopup
+    unload,
+    showPopup,
+    hidePopup
   };
 }
 
 register("popup", {
-  onLoad: function onLoad() {
-    this.popups = t$2("[data-popup]", this.container).map(function (popup) {
+  onLoad() {
+    this.popups = t$2("[data-popup]", this.container).map(popup => {
       return {
         contructor: Popup(popup),
         element: popup
       };
     });
   },
-  onBlockSelect: function onBlockSelect(_ref) {
-    var target = _ref.target;
-    var targetPopup = this.popups.find(function (o) {
-      return o.element === target;
-    });
+  onBlockSelect(_ref) {
+    let {
+      target
+    } = _ref;
+    const targetPopup = this.popups.find(o => o.element === target);
     targetPopup.contructor.showPopup();
   },
-  onBlockDeselect: function onBlockDeselect(_ref2) {
-    var target = _ref2.target;
-    var targetPopup = this.popups.find(function (o) {
-      return o.element === target;
-    });
+  onBlockDeselect(_ref2) {
+    let {
+      target
+    } = _ref2;
+    const targetPopup = this.popups.find(o => o.element === target);
     targetPopup.contructor.hidePopup();
   },
-  onUnload: function onUnload() {
-    this.popups.forEach(function (popup) {
+  onUnload() {
+    this.popups.forEach(popup => {
       var _popup$contructor;
-
       return (_popup$contructor = popup.contructor) === null || _popup$contructor === void 0 ? void 0 : _popup$contructor.unload();
     });
   }
 });
 
 register("blog-posts", {
-  onLoad: function onLoad() {
+  onLoad() {
     if (shouldAnimate(this.container)) {
       this.animateBlogPosts = animateBlogPosts(this.container);
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animateBlogPost;
-
     (_this$animateBlogPost = this.animateBlogPosts) === null || _this$animateBlogPost === void 0 ? void 0 : _this$animateBlogPost.destroy();
   }
 });
 
-var selectors$o = {
+const selectors$p = {
   itemTrigger: ".collapsible-row-list-item__trigger"
 };
 register("collapsible-row-list", {
-  onLoad: function onLoad() {
-    var _this = this;
-
-    this.items = t$2(selectors$o.itemTrigger, this.container);
-    this.clickHandlers = e$2(this.items, "click", function (e) {
+  onLoad() {
+    this.items = t$2(selectors$p.itemTrigger, this.container);
+    this.clickHandlers = e$2(this.items, "click", e => {
       e.preventDefault();
-      var _e$currentTarget = e.currentTarget,
-          group = _e$currentTarget.parentNode,
-          content = _e$currentTarget.nextElementSibling;
-
+      const {
+        parentNode: group,
+        nextElementSibling: content
+      } = e.currentTarget;
       if (isVisible(content)) {
-        _this._close(e.currentTarget, group, content);
+        this._close(e.currentTarget, group, content);
       } else {
-        _this._open(e.currentTarget, group, content);
+        this._open(e.currentTarget, group, content);
       }
     });
-
     if (shouldAnimate(this.container)) {
       this.animateCollapsibleRowList = animateCollapsibleRowList(this.container);
     }
   },
-  _open: function _open(label, group, content) {
+  _open(label, group, content) {
     slideStop(content);
     slideDown(content);
     group.setAttribute("data-open", true);
     label.setAttribute("aria-expanded", true);
     content.setAttribute("aria-hidden", false);
   },
-  _close: function _close(label, group, content) {
+  _close(label, group, content) {
     slideStop(content);
     slideUp(content);
     group.setAttribute("data-open", false);
     label.setAttribute("aria-expanded", false);
     content.setAttribute("aria-hidden", true);
   },
-  onBlockSelect: function onBlockSelect(_ref) {
-    var target = _ref.target;
-    var label = n$2(selectors$o.itemTrigger, target);
-    var group = label.parentNode,
-        content = label.nextElementSibling;
-
+  onBlockSelect(_ref) {
+    let {
+      target
+    } = _ref;
+    const label = n$2(selectors$p.itemTrigger, target);
+    const {
+      parentNode: group,
+      nextElementSibling: content
+    } = label;
     this._open(label, group, content);
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animateCollapsi;
-
     this.clickHandlers();
     (_this$animateCollapsi = this.animateCollapsibleRowList) === null || _this$animateCollapsi === void 0 ? void 0 : _this$animateCollapsi.destroy();
   }
 });
 
 register("collection-list-slider", {
-  onLoad: function onLoad() {
-    var _this$container$datas = this.container.dataset,
-        productsPerView = _this$container$datas.productsPerView,
-        mobileProductsPerView = _this$container$datas.mobileProductsPerView;
+  onLoad() {
+    const {
+      productsPerView,
+      mobileProductsPerView
+    } = this.container.dataset;
     this.events = [];
-    this.perView = parseInt(productsPerView, 10); // 1.05 factor gives us a "peek" without CSS hacks
+    this.perView = parseInt(productsPerView, 10);
+    // 1.05 factor gives us a "peek" without CSS hacks
     // TODO: encapsulate this in carousel instead of duplication wherever
     // we call on carousel.  Can also simplify the config that we pass in
     // to something like perViewSmall, perViewMedium, perViewLarge and same with
     // spaceBetween?
-
     this.mobilePerView = parseInt(mobileProductsPerView, 10) * 1.05;
-
     this._initCarousel();
-
     if (shouldAnimate(this.container)) {
       this.animateListSlider = animateListSlider(this.container);
     }
   },
-  _initCarousel: function _initCarousel() {
+  _initCarousel() {
     // Between 720 - 960 the slides per view stay consistent with section
     // settings, with the exception of 5, which then shrinks down to 4 across.
     this.carousel = Carousel(this.container, {
@@ -10790,101 +9200,86 @@ register("collection-list-slider", {
       }
     });
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$carousel, _this$animateListSlid;
-
     (_this$carousel = this.carousel) === null || _this$carousel === void 0 ? void 0 : _this$carousel.destroy();
     (_this$animateListSlid = this.animateListSlider) === null || _this$animateListSlid === void 0 ? void 0 : _this$animateListSlid.destroy();
   }
 });
 
-var selectors$n = {
+const selectors$o = {
   "timer": "[data-countdown-timer]"
 };
 register("countdown-banner", {
-  onLoad: function onLoad() {
-    var _this = this;
-
-    var timers = t$2(selectors$n.timer, this.container);
+  onLoad() {
+    const timers = t$2(selectors$o.timer, this.container);
     this.countdownTimers = [];
-    timers.forEach(function (timer) {
-      _this.countdownTimers.push(CountdownTimer(timer));
+    timers.forEach(timer => {
+      this.countdownTimers.push(CountdownTimer(timer));
     });
-
     if (shouldAnimate(this.container)) {
       this.animateCountdownBanner = animateCountdownBanner(this.container);
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animateCountdow;
-
     (_this$animateCountdow = this.animateCountdownBanner) === null || _this$animateCountdow === void 0 ? void 0 : _this$animateCountdow.destroy();
-    this.countdownTimers.forEach(function (countdownTimer) {
-      return countdownTimer.destroy();
-    });
+    this.countdownTimers.forEach(countdownTimer => countdownTimer.destroy());
   }
 });
 
-var selectors$m = {
+const selectors$n = {
   "timer": "[data-countdown-timer]"
 };
 register("countdown-bar", {
-  onLoad: function onLoad() {
-    var _this = this;
-
-    var timers = t$2(selectors$m.timer, this.container);
+  onLoad() {
+    const timers = t$2(selectors$n.timer, this.container);
     this.countdownTimers = [];
-    timers.forEach(function (timer) {
-      _this.countdownTimers.push(CountdownTimer(timer));
+    timers.forEach(timer => {
+      this.countdownTimers.push(CountdownTimer(timer));
     });
-
     if (shouldAnimate(this.container)) {
       this.animateCountdownBar = animateCountdownBar(this.container);
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animateCountdow;
-
     (_this$animateCountdow = this.animateCountdownBar) === null || _this$animateCountdow === void 0 ? void 0 : _this$animateCountdow.destroy();
-    this.countdownTimers.forEach(function (countdownTimer) {
-      return countdownTimer.destroy();
-    });
+    this.countdownTimers.forEach(countdownTimer => countdownTimer.destroy());
   }
 });
 
 register("featured-collection-grid", {
-  onLoad: function onLoad() {
-    var _this = this;
-
-    var _this$container$datas = this.container.dataset,
-        productsPerView = _this$container$datas.productsPerView,
-        mobileProductsPerView = _this$container$datas.mobileProductsPerView;
+  onLoad() {
+    const {
+      productsPerView,
+      mobileProductsPerView
+    } = this.container.dataset;
     this.events = [];
     this.perView = parseInt(productsPerView, 10);
-    this.mobilePerView = parseInt(mobileProductsPerView, 10) * 1.05; // 1.05 factor gives us a "peek" without CSS hacks
+    this.mobilePerView = parseInt(mobileProductsPerView, 10) * 1.05;
+    // 1.05 factor gives us a "peek" without CSS hacks
     // TODO: encapsulate this in carousel instead of duplication wherever
     // we call on carousel.  Can also simplify the config that we pass in
     // to something like perViewSmall, perViewMedium, perViewLarge and same with
     // spaceBetween?
 
     this.productItem = ProductItem(this.container);
-    this.breakPointHandler = atBreakpointChange(960, function () {
+    this.breakPointHandler = atBreakpointChange(960, () => {
       if (window.matchMedia(getMediaQuery("below-960")).matches) {
-        _this._initCarousel();
+        this._initCarousel();
       } else {
-        _this.carousel.destroy();
+        this.carousel.destroy();
       }
     });
-
     if (window.matchMedia(getMediaQuery("below-960")).matches) {
       this._initCarousel();
     }
-
     if (shouldAnimate(this.container)) {
       this.animateFeaturedCollectionGrid = animateFeaturedCollectionGrid(this.container);
     }
   },
-  _initCarousel: function _initCarousel() {
+  _initCarousel() {
     // Between 720 - 960 the slides per view stay consistent with section
     // settings, with the exception of 5, which then shrinks down to 4 across.
     this.carousel = Carousel(this.container, {
@@ -10898,20 +9293,19 @@ register("featured-collection-grid", {
       }
     });
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$carousel, _this$animateFeatured;
-
     (_this$carousel = this.carousel) === null || _this$carousel === void 0 ? void 0 : _this$carousel.destroy();
     (_this$animateFeatured = this.animateFeaturedCollectionGrid) === null || _this$animateFeatured === void 0 ? void 0 : _this$animateFeatured.destroy();
   }
 });
 
-var selectors$l = {
+const selectors$m = {
   navItems: ".featured-collection-slider__navigation-list-item",
   sliderContainer: ".carousel",
   navButtons: ".carousel__navigation-buttons"
 };
-var classes$7 = {
+const classes$9 = {
   selected: "selected",
   visible: "visible",
   fadeout: "fadeout",
@@ -10919,43 +9313,38 @@ var classes$7 = {
   reveal: "reveal"
 };
 register("featured-collection-slider", {
-  onLoad: function onLoad() {
+  onLoad() {
     this.events = [];
     this.carousels = [];
-
     this._initCarousels();
-
     if (shouldAnimate(this.container)) {
       this.animateListSlider = animateListSlider(this.container);
     }
   },
-  _initCarousels: function _initCarousels() {
-    var _this = this;
-
-    var _this$container$datas = this.container.dataset,
-        productsPerView = _this$container$datas.productsPerView,
-        mobileProductsPerView = _this$container$datas.mobileProductsPerView;
+  _initCarousels() {
+    const {
+      productsPerView,
+      mobileProductsPerView
+    } = this.container.dataset;
     this.perView = parseInt(productsPerView, 10);
-    this.mobilePerView = parseInt(mobileProductsPerView, 10) * 1.05; // 1.05 factor gives us a "peek" without CSS hacks
+    this.mobilePerView = parseInt(mobileProductsPerView, 10) * 1.05;
+    // 1.05 factor gives us a "peek" without CSS hacks
     // TODO: encapsulate this in carousel instead of duplication wherever
     // we call on carousel.  Can also simplify the config that we pass in
     // to something like perViewSmall, perViewMedium, perViewLarge and same with
     // spaceBetween?
 
     this.productItem = ProductItem(this.container);
-    this.carouselsElements = t$2(selectors$l.sliderContainer, this.container);
-    this.navItems = t$2(selectors$l.navItems, this.container);
-    this.navigationButtons = t$2(selectors$l.navButtons, this.container);
-    this.navItems.forEach(function (button) {
-      return _this.events.push(e$2(button, "click", _this._handleNavButton.bind(_this)));
-    });
-    this.carouselsElements.forEach(function (container, index) {
-      var navigationWrapper = n$2("[data-navigation=\"".concat(index, "\"]"), _this.container);
-      var nextButton = n$2("[data-next]", navigationWrapper);
-      var prevButton = n$2("[data-prev]", navigationWrapper);
-
-      _this.carousels.push(Carousel(container, {
-        slidesPerView: _this.mobilePerView,
+    this.carouselsElements = t$2(selectors$m.sliderContainer, this.container);
+    this.navItems = t$2(selectors$m.navItems, this.container);
+    this.navigationButtons = t$2(selectors$m.navButtons, this.container);
+    this.navItems.forEach(button => this.events.push(e$2(button, "click", this._handleNavButton.bind(this))));
+    this.carouselsElements.forEach((container, index) => {
+      const navigationWrapper = n$2("[data-navigation=\"".concat(index, "\"]"), this.container);
+      const nextButton = n$2("[data-next]", navigationWrapper);
+      const prevButton = n$2("[data-prev]", navigationWrapper);
+      this.carousels.push(Carousel(container, {
+        slidesPerView: this.mobilePerView,
         spaceBetween: 13,
         // matches product grid
         navigation: {
@@ -10966,156 +9355,154 @@ register("featured-collection-slider", {
           720: {
             spaceBetween: 17,
             // matches product grid
-            slidesPerView: _this.perView === 5 ? _this.perView - 1 : _this.perView
+            slidesPerView: this.perView === 5 ? this.perView - 1 : this.perView
           },
           1200: {
             spaceBetween: 25,
             // matches product grid
-            slidesPerView: _this.perView
+            slidesPerView: this.perView
           }
         }
       }));
     });
   },
-  _handleNavButton: function _handleNavButton(e) {
+  _handleNavButton(e) {
     e.preventDefault();
-    var navigationItem = e.currentTarget.dataset.navigationItem;
-
-    if (!a$1(e.currentTarget, classes$7.selected)) {
+    const {
+      navigationItem
+    } = e.currentTarget.dataset;
+    if (!a$1(e.currentTarget, classes$9.selected)) {
       this._hideAll();
-
       this._show(parseInt(navigationItem, 10));
     }
   },
-  _hideAll: function _hideAll() {
-    var _this2 = this;
-
-    i$1(this.navItems, classes$7.selected);
-    i$1(this.navigationButtons, classes$7.visible);
-    i$1(this.carouselsElements, classes$7.initReveal);
-    i$1(this.carouselsElements, classes$7.reveal);
-
+  _hideAll() {
+    i$1(this.navItems, classes$9.selected);
+    i$1(this.navigationButtons, classes$9.visible);
+    i$1(this.carouselsElements, classes$9.initReveal);
+    i$1(this.carouselsElements, classes$9.reveal);
     if (shouldAnimate(this.container)) {
-      u$1(this.carouselsElements, classes$7.fadeout);
-      setTimeout(function () {
-        i$1(_this2.carouselsElements, classes$7.visible);
+      u$1(this.carouselsElements, classes$9.fadeout);
+      setTimeout(() => {
+        i$1(this.carouselsElements, classes$9.visible);
       }, 300);
     } else {
-      i$1(this.carouselsElements, classes$7.visible);
+      i$1(this.carouselsElements, classes$9.visible);
     }
   },
-  _show: function _show(index) {
-    var navigationWrapper = n$2("[data-navigation=\"".concat(index, "\"]"), this.container);
-    u$1(navigationWrapper, classes$7.visible);
-    var collection = n$2("[data-collection=\"".concat(index, "\"]"), this.container);
-
+  _show(index) {
+    const navigationWrapper = n$2("[data-navigation=\"".concat(index, "\"]"), this.container);
+    u$1(navigationWrapper, classes$9.visible);
+    const collection = n$2("[data-collection=\"".concat(index, "\"]"), this.container);
     if (this.navItems.length) {
-      var navigationItem = n$2("[data-navigation-item=\"".concat(index, "\"]"), this.container);
-      u$1(navigationItem, classes$7.selected);
+      const navigationItem = n$2("[data-navigation-item=\"".concat(index, "\"]"), this.container);
+      u$1(navigationItem, classes$9.selected);
     }
-
     if (shouldAnimate(this.container)) {
-      u$1(collection, classes$7.fadeout);
-      u$1(collection, classes$7.initReveal);
-      setTimeout(function () {
-        u$1(collection, classes$7.visible);
-        i$1(collection, classes$7.fadeout);
-        setTimeout(function () {
-          u$1(collection, classes$7.reveal);
+      u$1(collection, classes$9.fadeout);
+      u$1(collection, classes$9.initReveal);
+      setTimeout(() => {
+        u$1(collection, classes$9.visible);
+        i$1(collection, classes$9.fadeout);
+        setTimeout(() => {
+          u$1(collection, classes$9.reveal);
         }, 50);
       }, 300);
     } else {
-      u$1(collection, classes$7.visible);
+      u$1(collection, classes$9.visible);
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animateListSlid;
-
-    this.carousels.forEach(function (swiper) {
-      return swiper.destroy();
-    });
+    this.carousels.forEach(swiper => swiper.destroy());
     (_this$animateListSlid = this.animateListSlider) === null || _this$animateListSlid === void 0 ? void 0 : _this$animateListSlid.destroy();
-    this.events.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
+    this.events.forEach(unsubscribe => unsubscribe());
   },
-  onBlockSelect: function onBlockSelect(_ref) {
-    var target = _ref.target;
-    var collection = target.dataset.collection;
-
+  onBlockSelect(_ref) {
+    let {
+      target
+    } = _ref;
+    const {
+      collection
+    } = target.dataset;
     this._hideAll();
-
     this._show(parseInt(collection, 10));
   }
 });
 
 register("featured-product", {
-  onLoad: function onLoad() {
+  onLoad() {
     this.product = new Product(this.container);
-
     if (shouldAnimate(this.container)) {
       this.animateProduct = animateProduct(this.container);
     }
   },
-  onBlockSelect: function onBlockSelect(_ref) {
-    var target = _ref.target;
-    var label = n$2(".accordion__label", target);
+  onBlockSelect(_ref) {
+    let {
+      target
+    } = _ref;
+    const label = n$2(".accordion__label", target);
     target.scrollIntoView({
       block: "center",
       behavior: "smooth"
     });
     if (!label) return;
-    var group = label.parentNode,
-        content = label.nextElementSibling;
+    const {
+      parentNode: group,
+      nextElementSibling: content
+    } = label;
     slideStop(content);
     slideDown(content);
     group.setAttribute("data-open", true);
     label.setAttribute("aria-expanded", true);
     content.setAttribute("aria-hidden", false);
   },
-  onBlockDeselect: function onBlockDeselect(_ref2) {
-    var target = _ref2.target;
-    var label = n$2(".accordion__label", target);
+  onBlockDeselect(_ref2) {
+    let {
+      target
+    } = _ref2;
+    const label = n$2(".accordion__label", target);
     if (!label) return;
-    var group = label.parentNode,
-        content = label.nextElementSibling;
+    const {
+      parentNode: group,
+      nextElementSibling: content
+    } = label;
     slideStop(content);
     slideUp(content);
     group.setAttribute("data-open", false);
     label.setAttribute("aria-expanded", false);
     content.setAttribute("aria-hidden", true);
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animateProduct;
-
     this.product.unload();
     (_this$animateProduct = this.animateProduct) === null || _this$animateProduct === void 0 ? void 0 : _this$animateProduct.destroy();
   }
 });
 
 register("gallery-carousel", {
-  onLoad: function onLoad() {
-    var _this$container$datas = this.container.dataset,
-        loopCarousel = _this$container$datas.loopCarousel,
-        productsPerView = _this$container$datas.productsPerView,
-        mobileProductsPerView = _this$container$datas.mobileProductsPerView; // Convert loop setting string into boolean
+  onLoad() {
+    const {
+      loopCarousel,
+      productsPerView,
+      mobileProductsPerView
+    } = this.container.dataset;
 
+    // Convert loop setting string into boolean
     this.loopCarousel = loopCarousel === "true";
-    this.perView = parseInt(productsPerView, 10) * 1.05; // 1.05 factor gives us a "peek" without CSS hacks
+    this.perView = parseInt(productsPerView, 10) * 1.05;
+    // 1.05 factor gives us a "peek" without CSS hacks
     // TODO: encapsulate this in carousel instead of duplication wherever
     // we call on carousel.  Can also simplify the config that we pass in
     // to something like perViewSmall, perViewMedium, perViewLarge and same with
     // spaceBetween?
-
     this.mobilePerView = parseInt(mobileProductsPerView, 10) * 1.05;
-
     this._initCarousel();
-
     if (shouldAnimate(this.container)) {
       this.animateListSlider = animateListSlider(this.container);
     }
   },
-  _initCarousel: function _initCarousel() {
+  _initCarousel() {
     // Between 720 - 960 the slides per view stay consistent with section
     // settings, with the exception of 5, which then shrinks down to 4 across.
     this.carousel = Carousel(this.container, {
@@ -11134,93 +9521,189 @@ register("gallery-carousel", {
       }
     });
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$carousel, _this$animateListSlid;
-
     (_this$carousel = this.carousel) === null || _this$carousel === void 0 ? void 0 : _this$carousel.destroy();
     (_this$animateListSlid = this.animateListSlider) === null || _this$animateListSlid === void 0 ? void 0 : _this$animateListSlid.destroy();
   }
 });
 
-var selectors$k = {
-  recommendations: "[data-recommendations]",
-  carouselSlide: ".carousel__slide"
+const selectors$l = {
+  recentlyViewed: "[data-recently-viewed]",
+  carousel: ".carousel",
+  carouselSlide: ".carousel__slide",
+  navButtons: ".carousel__navigation-buttons"
 };
-register("recommended-products", {
-  onLoad: function onLoad() {
-    var _this = this;
-
-    var _this$container$datas = this.container.dataset,
-        limit = _this$container$datas.limit,
-        id = _this$container$datas.productId,
-        sectionId = _this$container$datas.sectionId,
-        productsPerView = _this$container$datas.productsPerView,
-        mobileProductsPerView = _this$container$datas.mobileProductsPerView;
+register("recently-viewed-products", {
+  onLoad() {
+    const {
+      limit,
+      productsPerView,
+      mobileProductsPerView,
+      productHandle
+    } = this.container.dataset;
+    this.limit = parseInt(limit, 10);
     this.perView = parseInt(productsPerView, 10);
-    this.mobilePerView = parseInt(mobileProductsPerView, 10) * 1.05; // 1.05 factor gives us a "peek" without CSS hacks
+    this.mobilePerView = parseInt(mobileProductsPerView, 10) * 1.05;
+    // 1.05 factor gives us a "peek" without CSS hacks
     // TODO: encapsulate this in carousel instead of duplication wherever
     // we call on carousel.  Can also simplify the config that we pass in
     // to something like perViewSmall, perViewMedium, perViewLarge and same with
     // spaceBetween?
 
-    var content = n$2(selectors$k.recommendations, this.container);
-    if (!content) return;
-    var requestUrl = "".concat(window.theme.routes.productRecommendations, "?section_id=").concat(sectionId, "&limit=").concat(limit, "&product_id=").concat(id);
-    var request = new XMLHttpRequest();
-    request.open("GET", requestUrl, true);
+    this.recentProductsContainer = n$2(".recently-viewed-products__slider-wrapper", this.container);
 
-    request.onload = function () {
-      if (request.status >= 200 && request.status < 300) {
-        var container = document.createElement("div");
-        container.innerHTML = request.response;
-        content.innerHTML = n$2(selectors$k.recommendations, container).innerHTML;
-        var carousel = n$2(selectors$k.carouselSlide, content);
-        _this.productItem = ProductItem(_this.container);
-
-        if (shouldAnimate(_this.container)) {
-          _this.animateListSlider = animateListSlider(_this.container);
-        }
-
-        if (carousel) {
-          // Between 720 - 960 the slides per view stay consistent with section
-          // settings, with the exception of 5, which then shrinks down to 4 across.
-          _this.carousel = Carousel(content, {
-            slidesPerView: _this.mobilePerView,
-            spaceBetween: 12,
-            breakpoints: {
-              720: {
-                spaceBetween: 16,
-                slidesPerView: _this.perView === 5 ? _this.perView - 1 : _this.perView
-              },
-              1200: {
-                spaceBetween: 24,
-                slidesPerView: _this.perView
-              }
-            }
-          });
-        } else {
-          _this._removeSection();
-        }
-      } else {
-        // If request returns any errors remove the section markup
-        _this._removeSection();
-      }
-    };
-
-    request.send();
+    // Grab products from localStorage
+    const recentProducts = getRecentProducts();
+    if (!(recentProducts || []).length) {
+      this._removeSection();
+      return;
+    }
+    const recentProductsTrimmed = recentProducts.filter(handle => handle !== productHandle) // don't show current product
+    .slice(0, this.limit);
+    if (recentProductsTrimmed.length >= 1) {
+      this._renderProductItems(recentProductsTrimmed);
+    } else {
+      this._removeSection();
+    }
   },
-  _removeSection: function _removeSection() {
+  _renderProductItems(productHandles) {
+    const actions = productHandles.map(this._renderProductItem.bind(this));
+    const results = Promise.all(actions);
+    results.then(() => {
+      const content = n$2(selectors$l.recentlyViewed, this.container);
+      const carouselSlide = n$2(selectors$l.carouselSlide, this.container);
+      this.productItem = ProductItem(this.container);
+      if (shouldAnimate(this.container)) {
+        this.animateListSlider = animateListSlider(this.container);
+      }
+      if (carouselSlide) {
+        // Between 720 - 960 the slides per view stay consistent with section
+        // settings, with the exception of 5, which then shrinks down to 4 across.
+        this.carousel = Carousel(content, {
+          slidesPerView: this.mobilePerView,
+          spaceBetween: 12,
+          breakpoints: {
+            720: {
+              spaceBetween: 16,
+              slidesPerView: this.perView === 5 ? this.perView - 1 : this.perView
+            },
+            1200: {
+              spaceBetween: 24,
+              slidesPerView: this.perView
+            }
+          }
+        });
+      } else {
+        this._removeSection(); // catch the situation where no product handles are valid
+      }
+    });
+  },
+
+  _renderProductItem(productHandle) {
+    return new Promise(resolve => {
+      const requestUrl = "".concat(theme.routes.products, "/").concat(productHandle, "?section_id=recently-viewed-product-item");
+      makeRequest("GET", requestUrl).then(response => {
+        let container = document.createElement("div");
+        container.innerHTML = response;
+        const productItem = container.querySelector("[data-recently-viewed-item]").innerHTML;
+        this.recentProductsContainer.insertAdjacentHTML("beforeend", productItem);
+        resolve();
+      }).catch(() => {
+        console.error("Recent product \"".concat(productHandle, "\" not found"));
+        resolve(); // continue if product not found
+      });
+    });
+  },
+
+  _removeSection() {
     this.container.parentNode.removeChild(this.container);
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$carousel, _this$animateListSlid;
-
     (_this$carousel = this.carousel) === null || _this$carousel === void 0 ? void 0 : _this$carousel.destroy();
     (_this$animateListSlid = this.animateListSlider) === null || _this$animateListSlid === void 0 ? void 0 : _this$animateListSlid.destroy();
   }
 });
 
-var selectors$j = {
+const selectors$k = {
+  recommendations: "[data-recommendations]",
+  carouselSlide: ".carousel__slide"
+};
+register("recommended-products", {
+  onLoad() {
+    const {
+      limit,
+      productId: id,
+      sectionId,
+      productsPerView,
+      mobileProductsPerView
+    } = this.container.dataset;
+    this.perView = parseInt(productsPerView, 10);
+    this.mobilePerView = parseInt(mobileProductsPerView, 10) * 1.05;
+    // 1.05 factor gives us a "peek" without CSS hacks
+    // TODO: encapsulate this in carousel instead of duplication wherever
+    // we call on carousel.  Can also simplify the config that we pass in
+    // to something like perViewSmall, perViewMedium, perViewLarge and same with
+    // spaceBetween?
+
+    const content = n$2(selectors$k.recommendations, this.container);
+    if (!content) return;
+    const requestUrl = "".concat(window.theme.routes.productRecommendations, "?section_id=").concat(sectionId, "&limit=").concat(limit, "&product_id=").concat(id);
+    const request = new XMLHttpRequest();
+    request.open("GET", requestUrl, true);
+    request.onload = () => {
+      if (request.status >= 200 && request.status < 300) {
+        let container = document.createElement("div");
+        container.innerHTML = request.response;
+        content.innerHTML = n$2(selectors$k.recommendations, container).innerHTML;
+        const carousel = n$2(selectors$k.carouselSlide, content);
+        this.productItem = ProductItem(this.container);
+        if (shouldAnimate(this.container)) {
+          this.animateListSlider = animateListSlider(this.container);
+        }
+        if (carousel) {
+          // Between 720 - 960 the slides per view stay consistent with section
+          // settings, with the exception of 5, which then shrinks down to 4 across.
+          this.carousel = Carousel(content, {
+            slidesPerView: this.mobilePerView,
+            spaceBetween: 12,
+            breakpoints: {
+              720: {
+                spaceBetween: 16,
+                slidesPerView: this.perView === 5 ? this.perView - 1 : this.perView
+              },
+              1200: {
+                spaceBetween: 24,
+                slidesPerView: this.perView
+              }
+            }
+          });
+        } else {
+          this._removeSection();
+        }
+      } else {
+        // If request returns any errors remove the section markup
+        this._removeSection();
+      }
+    };
+    request.send();
+  },
+  _removeSection() {
+    this.container.parentNode.removeChild(this.container);
+  },
+  onUnload() {
+    var _this$carousel, _this$animateListSlid;
+    (_this$carousel = this.carousel) === null || _this$carousel === void 0 ? void 0 : _this$carousel.destroy();
+    (_this$animateListSlid = this.animateListSlider) === null || _this$animateListSlid === void 0 ? void 0 : _this$animateListSlid.destroy();
+  }
+});
+
+const classes$8 = {
+  activeDot: "slideshow-navigation__dot--active",
+  navigationLoader: "slideshow-navigation__dot-loader"
+};
+const selectors$j = {
   slide: "[data-slide]",
   swiper: ".swiper",
   navigationPrev: ".slideshow-navigation__navigation-button--previous",
@@ -11228,40 +9711,36 @@ var selectors$j = {
   navigationDots: ".slideshow-navigation__dots",
   navigationDot: ".slideshow-navigation__dot",
   navigationLoader: ".slideshow-navigation__dot-loader",
-  activeDot: "slideshow-navigation__dot--active",
-  animatableItems: ".animation--section-blocks > *"
+  animatableItems: ".animation--section-blocks > *",
+  pageFooter: "footer"
 };
 register("slideshow", {
-  onLoad: function onLoad() {
-    var _this = this;
-
+  onLoad() {
     this.events = [];
     this.enableAutoplay = this.container.dataset.enableAutoplay;
     this.autoplayDuration = this.container.dataset.autoplay;
+    this.pageFooter = n$2(selectors$j.pageFooter, document);
     this.slideshow = null;
     this.slideshowContainer = n$2(selectors$j.swiper, this.container);
     this.slides = t$2(selectors$j.slide, this.container);
-    this.events.push(e$2(this.container, "focusin", function () {
-      return _this.handleFocus();
-    }));
-
+    this.events.push(e$2(this.container, "focusin", () => this.handleFocus()));
     if (shouldAnimate(this.container)) {
-      this.slideAnimations = this.slides.map(function (slide) {
-        return delayOffset(slide, [selectors$j.animatableItems], 3);
-      });
+      this.slideAnimations = this.slides.map(slide => delayOffset(slide, [selectors$j.animatableItems], 3));
       this.observer = intersectionWatcher(this.container);
     }
-
     if (this.slides.length > 1) {
-      import(flu.chunks.swiper).then(function (_ref) {
-        var Swiper = _ref.Swiper,
-            Navigation = _ref.Navigation,
-            Autoplay = _ref.Autoplay,
-            Pagination = _ref.Pagination,
-            EffectFade = _ref.EffectFade,
-            EffectCreative = _ref.EffectCreative;
-        var swiperOptions = {
+      import(flu.chunks.swiper).then(_ref => {
+        let {
+          Swiper,
+          Navigation,
+          Autoplay,
+          Pagination,
+          EffectFade,
+          EffectCreative
+        } = _ref;
+        const swiperOptions = {
           modules: [Navigation, Pagination],
+          autoHeight: true,
           slidesPerView: 1,
           grabCursor: true,
           effect: "fade",
@@ -11274,38 +9753,64 @@ register("slideshow", {
             nextEl: selectors$j.navigationNext,
             prevEl: selectors$j.navigationPrev
           },
+          preloadImages: false,
+          // if this is true, it negates benefits of lazyloading
           pagination: {
             el: selectors$j.navigationDots,
             clickable: true,
-            bulletActiveClass: selectors$j.activeDot,
+            bulletActiveClass: classes$8.activeDot,
             bulletClass: "slideshow-navigation__dot",
-            renderBullet: function renderBullet(_, className) {
-              return "\n                <button class=\"".concat(className, "\" type=\"button\">\n                  <div class=\"slideshow-navigation__dot-loader\"></div>\n                </button>");
-            }
+            renderBullet: (_, className) => "\n                <button class=\"".concat(className, "\" type=\"button\">\n                  <div class=\"slideshow-navigation__dot-loader\"></div>\n                </button>")
           },
           on: {
-            afterInit: function afterInit() {
-              _this.handleBulletLabels();
+            afterInit: () => {
+              this.handleBulletLabels();
             },
-            slideChangeTransitionEnd: function slideChangeTransitionEnd() {
-              var slideEls = this.slides;
+            slideChangeTransitionEnd() {
+              const slideEls = this.slides;
               setTimeout(function () {
-                slideEls.forEach(function (slide) {
+                slideEls.forEach(slide => {
                   slide.toggleAttribute("inert", !slide.classList.contains("swiper-slide-active"));
                 });
               }, 50);
             }
           }
         };
-
-        if (_this.enableAutoplay === "true") {
+        if (this.enableAutoplay === "true") {
           swiperOptions.modules.push(Autoplay);
           swiperOptions.autoplay = {
-            delay: _this.autoplayDuration,
+            delay: this.autoplayDuration,
             disableOnInteraction: false
           };
-        }
+          this.autoplayObserver = new IntersectionObserver(_ref2 => {
+            let [{
+              isIntersecting: visible
+            }] = _ref2;
+            if (visible) {
+              this.playSlideshow();
+            } else {
+              this.pauseSlideshow();
+            }
+          });
+          this.footerObserver = new IntersectionObserver(_ref3 => {
+            let [{
+              isIntersecting: visible
+            }] = _ref3;
+            if (visible) {
+              this.autoplayObserver.disconnect();
+              this.pauseSlideshow();
+            } else {
+              this.autoplayObserver.observe(this.slideshowContainer);
+            }
+          }, {
+            threshold: 0.8
+          });
 
+          // blocking this function within 2 levels of iframes allows for the section preview to show and animate in the theme editor
+          if (window.frames < 2) {
+            this.footerObserver.observe(this.pageFooter);
+          }
+        }
         if (!prefersReducedMotion()) {
           swiperOptions.modules.push(EffectFade);
           swiperOptions.effect = "fade";
@@ -11324,118 +9829,130 @@ register("slideshow", {
             }
           };
         }
-
-        _this.slideshow = new Swiper(_this.slideshowContainer, swiperOptions);
+        this.slideshow = new Swiper(this.slideshowContainer, swiperOptions);
+        this.navigationLoaderEls = t$2(selectors$j.navigationLoader, this.container);
         r$1("slideshow:initialized");
       });
     }
   },
-  handleFocus: function handleFocus() {
-    if (a$1(document.body, "user-is-tabbing")) {
-      this.slideshow.autoplay.stop();
-    }
-  },
-  handleBulletLabels: function handleBulletLabels() {
-    var _this2 = this;
-
-    var bullets = t$2(selectors$j.navigationDot, this.container);
-    bullets.forEach(function (bullet, index) {
-      var associatedSlide = _this2.slides[index];
-      var bulletLabel = associatedSlide.dataset.bulletLabel;
-      bullet.setAttribute("aria-label", bulletLabel);
+  resetLoaderAnimation(loader) {
+    i$1(loader, classes$8.navigationLoader);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        // double RAF lets the document recompute styles
+        u$1(loader, classes$8.navigationLoader);
+      });
     });
   },
-  handleBlockSelect: function handleBlockSelect(slideIndex) {
-    this.slideshow.slideTo(parseInt(slideIndex, 10));
-    this.slideshow.autoplay.stop(); // Pause all loading animations
-
-    t$2(selectors$j.navigationLoader, this.container).forEach(function (loader) {
+  pauseSlideshow() {
+    this.slideshow.autoplay.stop();
+    this.navigationLoaderEls.forEach(loader => {
       loader.style.animationPlayState = "paused";
     });
   },
-  handleBlockDeselect: function handleBlockDeselect() {
+  playSlideshow() {
     var _this$slideshow;
-
-    (_this$slideshow = this.slideshow) === null || _this$slideshow === void 0 ? void 0 : _this$slideshow.autoplay.start(); // Resume all loading animations
-
-    t$2(selectors$j.navigationLoader, this.container).forEach(function (loader) {
+    (_this$slideshow = this.slideshow) === null || _this$slideshow === void 0 ? void 0 : _this$slideshow.autoplay.start();
+    this.navigationLoaderEls.forEach(loader => {
+      this.resetLoaderAnimation(loader);
       loader.style.animationPlayState = "running";
     });
   },
-  onBlockSelect: function onBlockSelect(_ref2) {
-    var _this3 = this;
-
-    var target = _ref2.target;
-    var slide = target.dataset.slide;
-
+  handleFocus() {
+    if (a$1(document.body, "user-is-tabbing")) {
+      this.pauseSlideshow();
+    }
+  },
+  handleBulletLabels() {
+    const bullets = t$2(selectors$j.navigationDot, this.container);
+    bullets.forEach((bullet, index) => {
+      const associatedSlide = this.slides[index];
+      const {
+        bulletLabel
+      } = associatedSlide.dataset;
+      bullet.setAttribute("aria-label", bulletLabel);
+    });
+  },
+  handleBlockSelect(slideIndex) {
+    this.slideshow.slideTo(parseInt(slideIndex, 10));
+    this.pauseSlideshow();
+  },
+  handleBlockDeselect() {
+    this.playSlideshow();
+  },
+  onBlockSelect(_ref4) {
+    let {
+      target
+    } = _ref4;
+    const {
+      slide
+    } = target.dataset;
     if (this.slideshow) {
       this.handleBlockSelect(slide);
     } else {
       // Listen for initalization if slideshow does not exist
-      this.events.push(c("slideshow:initialized", function () {
-        _this3.handleBlockSelect(slide);
+      this.events.push(c("slideshow:initialized", () => {
+        this.handleBlockSelect(slide);
       }));
     }
   },
-  onBlockDeselect: function onBlockDeselect() {
-    var _this4 = this;
-
+  onBlockDeselect() {
     if (this.slideshow) {
       this.handleBlockDeselect();
     } else {
       // Listen for initalization if slideshow does not exist
-      this.events.push(c("slideshow:initialized", function () {
-        _this4.handleBlockDeselect();
+      this.events.push(c("slideshow:initialized", () => {
+        this.handleBlockDeselect();
       }));
     }
   },
-  onUnload: function onUnload() {
-    var _this$slideshow2, _this$observer;
-
+  onUnload() {
+    var _this$slideshow2, _this$observer, _this$autoplayObserve, _this$footerObserver;
     (_this$slideshow2 = this.slideshow) === null || _this$slideshow2 === void 0 ? void 0 : _this$slideshow2.destroy();
-    this.events.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
+    this.events.forEach(unsubscribe => unsubscribe());
     (_this$observer = this.observer) === null || _this$observer === void 0 ? void 0 : _this$observer.destroy();
+    (_this$autoplayObserve = this.autoplayObserver) === null || _this$autoplayObserve === void 0 ? void 0 : _this$autoplayObserve.disconnect();
+    (_this$footerObserver = this.footerObserver) === null || _this$footerObserver === void 0 ? void 0 : _this$footerObserver.disconnect();
   }
 });
 
-var loaded$1 = null;
+let loaded$1 = null;
 function loadYouTubeAPI() {
   // Loading was triggered by a previous call to function
-  if (loaded$1 !== null) return loaded$1; // API has already loaded
+  if (loaded$1 !== null) return loaded$1;
 
+  // API has already loaded
   if (window.YT && window.YT.loaded) {
     loaded$1 = Promise.resolve();
     return loaded$1;
-  } // Otherwise, load API
+  }
 
-
-  loaded$1 = new Promise(function (resolve) {
-    window.onYouTubeIframeAPIReady = function () {
+  // Otherwise, load API
+  loaded$1 = new Promise(resolve => {
+    window.onYouTubeIframeAPIReady = () => {
       resolve();
     };
-
-    var tag = document.createElement("script");
+    const tag = document.createElement("script");
     tag.src = "https://www.youtube.com/iframe_api";
     document.body.appendChild(tag);
   });
   return loaded$1;
 }
 
-var loaded = null;
+let loaded = null;
 function loadVimeoAPI() {
   // Loading was triggered by a previous call to function
-  if (loaded !== null) return loaded; // API has already loaded
+  if (loaded !== null) return loaded;
 
+  // API has already loaded
   if (window.Vimeo) {
     loaded = Promise.resolve();
     return loaded;
-  } // Otherwise, load API
+  }
 
-
-  loaded = new Promise(function (resolve) {
-    var tag = document.createElement("script");
+  // Otherwise, load API
+  loaded = new Promise(resolve => {
+    const tag = document.createElement("script");
     tag.src = "https://player.vimeo.com/api/player.js";
     tag.onload = resolve;
     document.body.appendChild(tag);
@@ -11443,7 +9960,7 @@ function loadVimeoAPI() {
   return loaded;
 }
 
-var selectors$i = {
+const selectors$i = {
   video: ".video__video",
   videoExternal: "[data-video-external-target]",
   image: ".video__image",
@@ -11451,32 +9968,29 @@ var selectors$i = {
   text: ".video__text-container-wrapper",
   playTrigger: ".video__text-container-wrapper"
 };
-var classes$6 = {
+const classes$7 = {
   visible: "visible"
 };
 register("video", {
-  onLoad: function onLoad() {
-    var _this = this;
-
+  onLoad() {
     this.events = [];
-    var playTrigger = n$2(selectors$i.playTrigger, this.container);
-    var video = n$2(selectors$i.video, this.container);
-    var videoExternal = n$2(selectors$i.videoExternal, this.container);
-    var image = n$2(selectors$i.image, this.container);
-    var overlay = n$2(selectors$i.overlay, this.container);
-    var text = n$2(selectors$i.text, this.container);
-
+    const playTrigger = n$2(selectors$i.playTrigger, this.container);
+    const video = n$2(selectors$i.video, this.container);
+    const videoExternal = n$2(selectors$i.videoExternal, this.container);
+    const image = n$2(selectors$i.image, this.container);
+    const overlay = n$2(selectors$i.overlay, this.container);
+    const text = n$2(selectors$i.text, this.container);
     if (videoExternal) {
-      var _videoExternal$datase = videoExternal.dataset,
-          videoProvider = _videoExternal$datase.videoProvider,
-          videoId = _videoExternal$datase.videoId,
-          loop = _videoExternal$datase.loop;
-
+      const {
+        videoProvider,
+        videoId,
+        loop
+      } = videoExternal.dataset;
       switch (videoProvider) {
         case "youtube":
-          loadYouTubeAPI().then(function () {
-            var player = new window.YT.Player(videoExternal, {
-              videoId: videoId,
+          loadYouTubeAPI().then(() => {
+            const player = new window.YT.Player(videoExternal, {
+              videoId,
               playerVars: {
                 autohide: 0,
                 cc_load_policy: 0,
@@ -11489,14 +10003,13 @@ register("video", {
                 playlist: videoId
               },
               events: {
-                onReady: function onReady() {
+                onReady: () => {
                   player.getIframe().tabIndex = "-1";
-
-                  _this.events.push(e$2(playTrigger, "click", function () {
+                  this.events.push(e$2(playTrigger, "click", () => {
                     player.playVideo();
                   }));
                 },
-                onStateChange: function onStateChange(event) {
+                onStateChange: event => {
                   if (event.data == YT.PlayerState.PLAYING) {
                     player.getIframe().tabIndex = "0";
                     hideCover();
@@ -11506,21 +10019,18 @@ register("video", {
             });
           });
           break;
-
         case "vimeo":
-          loadVimeoAPI().then(function () {
-            var player = new window.Vimeo.Player(videoExternal, {
+          loadVimeoAPI().then(() => {
+            const player = new window.Vimeo.Player(videoExternal, {
               id: videoId,
               controls: true,
               keyboard: false
             });
             player.element.tabIndex = "-1";
-
             if (loop === "true") {
               player.setLoop(1);
             }
-
-            _this.events.push(e$2(playTrigger, "click", function () {
+            this.events.push(e$2(playTrigger, "click", () => {
               player.play();
               player.element.tabIndex = "0";
               hideCover();
@@ -11529,64 +10039,58 @@ register("video", {
           break;
       }
     }
-
     if (playTrigger) {
       if (video) {
-        this.events.push(e$2(playTrigger, "click", function () {
+        this.events.push(e$2(playTrigger, "click", () => {
           video.play();
         }));
       }
     }
-
     if (video) {
-      this.events.push(e$2(video, "playing", function () {
+      this.events.push(e$2(video, "playing", () => {
         video.setAttribute("controls", "");
         hideCover();
       }));
     }
-
     function hideCover() {
-      i$1(overlay, classes$6.visible);
-      i$1(text, classes$6.visible);
-      image && i$1(image, classes$6.visible);
+      i$1(overlay, classes$7.visible);
+      i$1(text, classes$7.visible);
+      image && i$1(image, classes$7.visible);
     }
-
     if (shouldAnimate(this.container)) {
       this.animateVideo = animateVideo(this.container);
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animateVideo;
-
-    this.playButtons && this.playButtons.forEach(function (button) {
-      return button.unload();
-    });
-    this.events.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
+    this.playButtons && this.playButtons.forEach(button => button.unload());
+    this.events.forEach(unsubscribe => unsubscribe());
     this.videoHandler && this.videoHandler();
     (_this$animateVideo = this.animateVideo) === null || _this$animateVideo === void 0 ? void 0 : _this$animateVideo.destroy();
   }
 });
 
-var selectors$h = {
+const selectors$h = {
   playButton: "[data-play-button-block]",
   playButtonVideoContainer: "[data-play-button-block-video-container]",
   photoSwipeElement: ".pswp",
   video: ".play-button-block-video"
 };
-var icons = window.theme.icons;
-
-var playButton = function playButton(node) {
-  var photoSwipeInstance;
-  var playButton = n$2(selectors$h.playButton, node);
-  var videoHtml = n$2(selectors$h.playButtonVideoContainer, node).outerHTML;
+const {
+  icons
+} = window.theme;
+const playButton = node => {
+  let photoSwipeInstance;
+  const playButton = n$2(selectors$h.playButton, node);
+  const videoHtml = n$2(selectors$h.playButtonVideoContainer, node).outerHTML;
   import(flu.chunks.photoswipe); // Load this ahead of needing
 
-  var events = [e$2(playButton, "click", function () {
-    import(flu.chunks.photoswipe).then(function (_ref) {
-      var PhotoSwipeLightbox = _ref.PhotoSwipeLightbox,
-          PhotoSwipe = _ref.PhotoSwipe;
+  const events = [e$2(playButton, "click", () => {
+    import(flu.chunks.photoswipe).then(_ref => {
+      let {
+        PhotoSwipeLightbox,
+        PhotoSwipe
+      } = _ref;
       photoSwipeInstance = new PhotoSwipeLightbox({
         dataSource: [{
           html: videoHtml
@@ -11601,165 +10105,138 @@ var playButton = function playButton(node) {
       });
       photoSwipeInstance.init();
       photoSwipeInstance.loadAndOpen();
-      photoSwipeInstance.on("bindEvents", function () {
-        var instanceVideo = n$2(selectors$h.video, photoSwipeInstance.pswp.container);
+      photoSwipeInstance.on("bindEvents", () => {
+        const instanceVideo = n$2(selectors$h.video, photoSwipeInstance.pswp.container);
         instanceVideo.play();
       });
     });
   })];
-
-  var unload = function unload() {
-    events.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
+  const unload = () => {
+    events.forEach(unsubscribe => unsubscribe());
     photoSwipeInstance && photoSwipeInstance.destroy();
   };
-
   return {
-    unload: unload
+    unload
   };
 };
 
-var autoPlay = function autoPlay(videos) {
-  if (!videos.length) return;
-  var events = [e$2(window, "click", function () {
-    return _handleAutoPlay();
-  }), e$2(window, "touchstart", function () {
-    return _handleAutoPlay();
-  })]; // Force autoplay after device interaction if in low power mode
+const checkAutoPlay = (video, mediaContainer) => {
+  if (!video) return;
+  const events = [e$2(window, "click", () => _handleAutoPlay()), e$2(window, "touchstart", () => _handleAutoPlay()), e$2(video, "playing", () => _handleVideoPlaying())];
 
+  // Force autoplay after device interaction if in low power mode
   function _handleAutoPlay() {
-    videos.forEach(function (video) {
-      if (!video.playing) {
-        video.play();
-      }
-    });
-    events.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
+    if (video.paused) {
+      video.play();
+    }
+  }
+  function _handleVideoPlaying() {
+    mediaContainer.dataset.videoLoading = "false";
+    events.forEach(unsubscribe => unsubscribe());
   }
 };
 
-var selectors$g = {
+const selectors$g = {
+  mediaContainer: ".video-hero__media-container",
   video: ".video-hero__video",
   playButtonVideo: "[data-play-button-block-video]",
   playButtonBlock: ".play-button-block"
 };
 register("video-hero", {
   videoHandler: null,
-  onLoad: function onLoad() {
-    var playButtonVideos = t$2(selectors$g.playButtonVideo, this.container);
-    var video = t$2(selectors$g.video, this.container);
-
+  onLoad() {
+    const playButtonVideos = t$2(selectors$g.playButtonVideo, this.container);
+    const mediaContainer = n$2(selectors$g.mediaContainer, this.container);
+    const video = n$2(selectors$g.video, this.container);
     if (playButtonVideos.length) {
-      this.playButtons = playButtonVideos.map(function (block) {
-        return playButton(block.closest(selectors$g.playButtonBlock));
-      });
+      this.playButtons = playButtonVideos.map(block => playButton(block.closest(selectors$g.playButtonBlock)));
     }
-
     if (video) {
       this.videoHandler = backgroundVideoHandler(this.container);
-      autoPlay(video);
-    }
+      checkAutoPlay(video, mediaContainer);
 
+      // if video is still not ready, show the fallback image
+      if (video.paused) {
+        mediaContainer.dataset.videoLoading = "true";
+      }
+    }
     if (shouldAnimate(this.container)) {
       this.animateVideoHero = animateVideoHero(this.container);
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animateVideoHer;
-
-    this.playButtons && this.playButtons.forEach(function (button) {
-      return button.unload();
-    });
+    this.playButtons && this.playButtons.forEach(button => button.unload());
     this.videoHandler && this.videoHandler();
     (_this$animateVideoHer = this.animateVideoHero) === null || _this$animateVideoHer === void 0 ? void 0 : _this$animateVideoHer.destroy();
   }
 });
 
-var selectors$f = {
+const selectors$f = {
   dots: ".navigation-dot"
 };
-
-var navigationDots = function navigationDots(container) {
-  var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-  var navigationDots = t$2(selectors$f.dots, container);
-  var events = [];
-  navigationDots.forEach(function (dot) {
-    events.push(e$2(dot, "click", function (e) {
-      return _handleDotClick(e);
-    }));
+const navigationDots = function (container) {
+  let options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  const navigationDots = t$2(selectors$f.dots, container);
+  const events = [];
+  navigationDots.forEach(dot => {
+    events.push(e$2(dot, "click", e => _handleDotClick(e)));
   });
-
-  var _handleDotClick = function _handleDotClick(e) {
+  const _handleDotClick = e => {
     e.preventDefault();
     if (e.target.classList.contains("is-selected")) return;
-
     if (options.onSelect) {
-      var index = parseInt(e.target.dataset.index, 10);
+      const index = parseInt(e.target.dataset.index, 10);
       options.onSelect(index);
     }
   };
-
-  var update = function update(dotIndex) {
+  const update = dotIndex => {
     if (typeof dotIndex !== "number") {
       console.debug("navigationDots#update: invalid index, ensure int is passed");
       return;
     }
-
-    var activeClass = "is-selected";
-    navigationDots.forEach(function (dot) {
-      return i$1(dot, activeClass);
-    });
+    const activeClass = "is-selected";
+    navigationDots.forEach(dot => i$1(dot, activeClass));
     u$1(navigationDots[dotIndex], activeClass);
   };
-
-  var unload = function unload() {
-    events.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
+  const unload = () => {
+    events.forEach(unsubscribe => unsubscribe());
   };
-
   return {
-    update: update,
-    unload: unload
+    update,
+    unload
   };
 };
 
-var selectors$e = {
+const selectors$e = {
   slider: "[data-slider]",
   slide: "[data-slide]",
   logoNavButton: "[logo-nav-button]"
 };
 register("quote", {
-  onLoad: function onLoad() {
-    var _this = this;
-
-    var sliderContainer = n$2(selectors$e.slider, this.container);
-    var slides = t$2(selectors$e.slide, this.container);
-
+  onLoad() {
+    const sliderContainer = n$2(selectors$e.slider, this.container);
+    const slides = t$2(selectors$e.slide, this.container);
     if (shouldAnimate(this.container)) {
-      slides.forEach(function (slide) {
-        return animateQuotes(slide);
-      });
+      slides.forEach(slide => animateQuotes(slide));
       this.observer = intersectionWatcher(this.container);
     }
-
     if (slides.length < 2) {
       if (slides.length) u$1(slides[0], "swiper-slide-visible");
       return null;
     }
-
-    var paginationStyle = sliderContainer.dataset.paginationStyle;
-    var autoplayEnabled = sliderContainer.dataset.autoplayEnabled == "true";
-    var autoplayDelay = parseInt(sliderContainer.dataset.autoplayDelay, 10);
+    const paginationStyle = sliderContainer.dataset.paginationStyle;
+    const autoplayEnabled = sliderContainer.dataset.autoplayEnabled == "true";
+    const autoplayDelay = parseInt(sliderContainer.dataset.autoplayDelay, 10);
     this.events = [];
-    import(flu.chunks.swiper).then(function (_ref) {
-      var Swiper = _ref.Swiper,
-          Autoplay = _ref.Autoplay,
-          Navigation = _ref.Navigation,
-          EffectFade = _ref.EffectFade;
-      _this.swiper = new Swiper(sliderContainer, {
+    import(flu.chunks.swiper).then(_ref => {
+      let {
+        Swiper,
+        Autoplay,
+        Navigation,
+        EffectFade
+      } = _ref;
+      this.swiper = new Swiper(sliderContainer, {
         modules: [Navigation, Autoplay, EffectFade],
         grabCursor: true,
         effect: "fade",
@@ -11777,73 +10254,60 @@ register("quote", {
           prevEl: ".slider-nav-button-prev"
         }
       });
-
       if (paginationStyle === "dots") {
-        _this.dotNavigation = navigationDots(_this.container, {
-          onSelect: function onSelect(dotIndex) {
-            _this.swiper.slideToLoop(dotIndex);
+        this.dotNavigation = navigationDots(this.container, {
+          onSelect: dotIndex => {
+            this.swiper.slideToLoop(dotIndex);
           }
         });
       } else if (paginationStyle === "logos") {
-        _this.logoNavButtons = t$2(selectors$e.logoNavButton, _this.container);
-        u$1(_this.logoNavButtons[0], "active");
-
-        _this.logoNavButtons.forEach(function (button) {
-          _this.events.push(e$2(button, "click", function (e) {
-            var index = parseInt(e.currentTarget.dataset.index, 10);
-
-            _this.swiper.slideToLoop(index);
+        this.logoNavButtons = t$2(selectors$e.logoNavButton, this.container);
+        u$1(this.logoNavButtons[0], "active");
+        this.logoNavButtons.forEach(button => {
+          this.events.push(e$2(button, "click", e => {
+            const index = parseInt(e.currentTarget.dataset.index, 10);
+            this.swiper.slideToLoop(index);
           }));
         });
       }
-
-      _this.swiper.on("slideChange", function () {
-        var index = _this.swiper.realIndex;
-
+      this.swiper.on("slideChange", () => {
+        const index = this.swiper.realIndex;
         if (paginationStyle === "dots") {
-          _this.dotNavigation.update(index);
+          this.dotNavigation.update(index);
         } else if (paginationStyle === "logos") {
-          var activeClass = "active";
-
-          _this.logoNavButtons.forEach(function (button) {
-            return i$1(button, activeClass);
-          });
-
-          u$1(_this.logoNavButtons[index], activeClass);
+          const activeClass = "active";
+          this.logoNavButtons.forEach(button => i$1(button, activeClass));
+          u$1(this.logoNavButtons[index], activeClass);
         }
       });
     });
   },
-  onBlockSelect: function onBlockSelect(_ref2) {
+  onBlockSelect(_ref2) {
     var _this$swiper, _this$swiper$autoplay, _this$swiper2;
-
-    var slide = _ref2.target;
-    var index = parseInt(slide.dataset.index, 10);
+    let {
+      target: slide
+    } = _ref2;
+    const index = parseInt(slide.dataset.index, 10);
     (_this$swiper = this.swiper) === null || _this$swiper === void 0 ? void 0 : (_this$swiper$autoplay = _this$swiper.autoplay) === null || _this$swiper$autoplay === void 0 ? void 0 : _this$swiper$autoplay.stop();
     (_this$swiper2 = this.swiper) === null || _this$swiper2 === void 0 ? void 0 : _this$swiper2.slideToLoop(index);
   },
-  onBlockDeselect: function onBlockDeselect() {
+  onBlockDeselect() {
     var _this$swiper3, _this$swiper3$autopla;
-
     (_this$swiper3 = this.swiper) === null || _this$swiper3 === void 0 ? void 0 : (_this$swiper3$autopla = _this$swiper3.autoplay) === null || _this$swiper3$autopla === void 0 ? void 0 : _this$swiper3$autopla.start();
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$swiper4, _this$dotNavigation, _this$observer;
-
     (_this$swiper4 = this.swiper) === null || _this$swiper4 === void 0 ? void 0 : _this$swiper4.destroy();
     (_this$dotNavigation = this.dotNavigation) === null || _this$dotNavigation === void 0 ? void 0 : _this$dotNavigation.unload();
-    this.events.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
+    this.events.forEach(unsubscribe => unsubscribe());
     (_this$observer = this.observer) === null || _this$observer === void 0 ? void 0 : _this$observer.destroy();
   }
 });
 
-var selectors$d = {
+const selectors$d = {
   hotspotWrappers: ".shoppable-item",
   hotspots: ".shoppable-item__hotspot",
   productCard: ".shoppable-item__product-card",
-  closeButtons: "[data-shoppable-item-close]",
   mobileDrawer: ".shoppable-feature-mobile-drawer",
   desktopSliderContainer: ".shoppable-feature__secondary-content",
   slider: ".swiper",
@@ -11855,10 +10319,9 @@ var selectors$d = {
   sliderNavNext: ".slider-nav-button-next",
   drawerBackground: ".mobile-drawer__overlay",
   drawerCloseButton: ".mobile-drawer__close",
-  quickViewTrigger: "[data-quick-view-trigger]",
-  wash: "[data-shoppable-wash]"
+  quickViewTrigger: "[data-quick-view-trigger]"
 };
-var classes$5 = {
+const classes$6 = {
   animating: "shoppable-item--animating",
   unset: "shoppable-item--position-unset",
   hidden: "hidden",
@@ -11866,187 +10329,158 @@ var classes$5 = {
   drawerActive: "active",
   pulse: "shoppable-item__hotspot--pulse"
 };
-var sliderTypes = {
+const sliderTypes = {
   Desktop: "desktop",
   Mobile: "mobile"
 };
 register("shoppable", {
-  onLoad: function onLoad() {
-    var _this2 = this;
-
+  onLoad() {
     this.imageContainer = n$2(selectors$d.imageContainer, this.container);
     this.showHotspotCards = this.container.dataset.showHotspotCards === "true";
-    this.hasCarousel = this.container.dataset.hasCarousel === "true";
     this.productCards = t$2(selectors$d.productCard, this.container);
     this.hotspotContainers = t$2(selectors$d.hotspotWrappers, this.container);
     this.hotspots = t$2(selectors$d.hotspots, this.container);
-    this.wash = n$2(selectors$d.wash, this.container);
-    var closeButtons = t$2(selectors$d.closeButtons, this.container); // Self terminating mouseenter events
+    this.mobileDrawer = n$2(selectors$d.mobileDrawer, this.container);
 
-    this.hotspotEvents = this.hotspots.map(function (hotspot) {
+    // Self terminating mouseenter events
+    this.hotspotEvents = this.hotspots.map(hotspot => {
       return {
         element: hotspot,
-        event: e$2(hotspot, "mouseenter", function (e) {
-          i$1(e.currentTarget.parentNode, classes$5.animating);
-
-          _this2.hotspotEvents.find(function (o) {
-            return o.element === hotspot;
-          }).event();
+        event: e$2(hotspot, "mouseenter", e => {
+          i$1(e.currentTarget.parentNode, classes$6.animating);
+          this.hotspotEvents.find(o => o.element === hotspot).event();
         })
       };
     });
-    this.events = [e$2(this.hotspots, "click", function (e) {
-      return _this2._hotspotClickHandler(e);
-    }), e$2(closeButtons, "click", function () {
-      return _this2._closeAll();
-    }), e$2(this.container, "keydown", function (_ref) {
-      var keyCode = _ref.keyCode;
-      if (keyCode === 27) _this2._closeAll();
-    }), e$2(t$2(selectors$d.quickViewTrigger, this.container), "click", function (e) {
-      var productUrl = e.target.dataset.productUrl;
+    this.events = [e$2(this.hotspots, "click", e => this._hotspotClickHandler(e)), e$2(this.container, "keydown", _ref => {
+      let {
+        keyCode
+      } = _ref;
+      if (keyCode === 27) this._closeAll();
+    }), e$2(t$2(selectors$d.quickViewTrigger, this.container), "click", e => {
+      const {
+        productUrl
+      } = e.target.dataset;
       if (!productUrl) return;
       r$1("quick-view:open", null, {
         productUrl: productUrl
       });
-
       if (window.matchMedia(getMediaQuery("below-960")).matches) {
-        _this2._closeDrawer();
+        this._closeAll();
       }
     })];
-    this.breakPointHandler = atBreakpointChange(960, function () {
-      _this2._closeAll();
+    this._setupDrawer();
+    this._createOrRecreateSlider();
+    this.breakPointHandler = atBreakpointChange(960, () => {
+      this._closeAll();
     });
-
-    if (this.hasCarousel) {
-      this._setupDrawer();
-
-      this._createOrRecreateSlider();
-
-      this.mobileDrawer = n$2(selectors$d.mobileDrawer, this.container);
-      this.widthWatcher = srraf(function (_ref2) {
-        var vw = _ref2.vw,
-            pvw = _ref2.pvw;
-        var wasAboveBreakpoint = pvw >= 960,
-            isAboveBreakpoint = vw >= 960;
-
-        if (wasAboveBreakpoint !== isAboveBreakpoint) {
-          _this2._createOrRecreateSlider();
-        }
-      });
-
-      if (shouldAnimate(this.container)) {
-        this.animateShoppableFeature = animateShoppableFeature(this.container);
+    this.widthWatcher = srraf(_ref2 => {
+      let {
+        vw,
+        pvw
+      } = _ref2;
+      const wasAboveBreakpoint = pvw >= 960,
+        isAboveBreakpoint = vw >= 960;
+      if (wasAboveBreakpoint !== isAboveBreakpoint) {
+        this._createOrRecreateSlider();
       }
-    } else {
-      this.events.push(e$2(document, "click", function (e) {
-        return _this2._clickOutsideHandler(e);
-      }));
-    }
-
+    });
     if (this.showHotspotCards) {
+      this.events.push(e$2(document, "click", e => this._clickOutsideHandler(e)));
+
+      // Predefine product card dimensions
+      this.productCards.forEach(card => this._setCardDimensions(card));
+      if (shouldAnimate(this.container)) {
+        this.animateShoppableImage = animateShoppableImage(this.container);
+      }
+
       // Show the first hotspot as active if showing as card and above drawer
       // showing screen width
       if (window.matchMedia(getMediaQuery("above-960")).matches && this.hotspots.length) {
         this._activateHotspot(0);
-      } // Predefine product card dimensions
-
-
-      this.productCards.forEach(function (card) {
-        return _this2._setCardDemensions(card);
-      });
-
+      }
+    } else {
       if (shouldAnimate(this.container)) {
-        this.animateShoppableImage = animateShoppableImage(this.container);
+        this.animateShoppableFeature = animateShoppableFeature(this.container);
       }
     }
-
     this._initPulseLoop();
   },
-  _initPulseLoop: function _initPulseLoop() {
-    var hotspots = t$2(selectors$d.hotspots, this.container);
-    var pulseIndex = 0;
-    this.pulseInterval = setInterval(function () {
-      i$1(hotspots, classes$5.pulse);
-      setTimeout(function () {
-        u$1(hotspots[pulseIndex], classes$5.pulse);
+  _initPulseLoop() {
+    const hotspots = t$2(selectors$d.hotspots, this.container);
+    let pulseIndex = 0;
+    this.pulseInterval = setInterval(() => {
+      i$1(hotspots, classes$6.pulse);
+      setTimeout(() => {
+        u$1(hotspots[pulseIndex], classes$6.pulse);
         pulseIndex++;
-
         if (pulseIndex >= hotspots.length) {
           pulseIndex = 0;
         }
       }, 0);
     }, 3000);
   },
-  _pulseLoop: function _pulseLoop() {},
-  _createOrRecreateSlider: function _createOrRecreateSlider() {
-    var _this3 = this;
-
+  _createOrRecreateSlider() {
     // This creates or recreates either a mobile or desktop slider as necessary
-    var sliderType = window.matchMedia(getMediaQuery("above-960")).matches ? sliderTypes.Desktop : sliderTypes.Mobile;
-
+    const sliderType = window.matchMedia(getMediaQuery("above-960")).matches ? sliderTypes.Desktop : sliderTypes.Mobile;
     if (this.sliderType !== sliderType) {
       var _this$swiper;
-
       this.sliderType = sliderType;
       (_this$swiper = this.swiper) === null || _this$swiper === void 0 ? void 0 : _this$swiper.destroy();
       this.sliderInitalized = false;
-      var sliderContainerSelector = sliderType === sliderTypes.Desktop ? selectors$d.desktopSliderContainer : selectors$d.mobileDrawer;
+      const sliderContainerSelector = sliderType === sliderTypes.Desktop ? selectors$d.desktopSliderContainer : selectors$d.mobileDrawer;
       this.sliderContainer = n$2(sliderContainerSelector, this.container);
+      if (this.sliderContainer === null) return;
       this.slider = n$2(selectors$d.slider, this.sliderContainer);
       this.slides = t$2(selectors$d.slide, this.sliderContainer);
       this.sliderPagination = n$2(selectors$d.sliderPagination, this.sliderContainer);
       this.sliderNavNext = n$2(selectors$d.sliderNavNext, this.sliderContainer);
       this.sliderNavPrev = n$2(selectors$d.sliderNavPrev, this.sliderContainer);
       this.sliderImages = t$2(selectors$d.sliderImages, this.sliderContainer);
-
       if (this.slides.length < 2) {
         return;
       }
-
-      var _this = this;
-
-      import(flu.chunks.swiper).then(function (_ref3) {
-        var Swiper = _ref3.Swiper,
-            Navigation = _ref3.Navigation,
-            Pagination = _ref3.Pagination;
-        _this3.swiper = new Swiper(_this3.slider, {
+      const _this = this;
+      import(flu.chunks.swiper).then(_ref3 => {
+        let {
+          Swiper,
+          Navigation,
+          Pagination
+        } = _ref3;
+        this.swiper = new Swiper(this.slider, {
           modules: [Navigation, Pagination],
           grabCursor: window.matchMedia(getMediaQuery("below-960")).matches,
           slidesPerView: 1,
           watchSlidesProgress: true,
           loop: true,
           navigation: {
-            nextEl: _this3.sliderNavNext,
-            prevEl: _this3.sliderNavPrev
+            nextEl: this.sliderNavNext,
+            prevEl: this.sliderNavPrev
           },
           pagination: {
-            el: _this3.sliderPagination,
+            el: this.sliderPagination,
             type: "fraction"
           },
           on: {
-            sliderFirstMove: function sliderFirstMove() {
+            sliderFirstMove: function () {
               _this.sliderHasBeenInteractedWith = true;
             },
-            activeIndexChange: function activeIndexChange(swiper) {
-              var index = swiper.realIndex;
+            activeIndexChange: function (swiper) {
+              const index = swiper.realIndex;
               _this.sliderInitalized && _this._indicateActiveHotspot(index);
             },
-            afterInit: function afterInit() {
+            afterInit: function () {
               var _this$sliderImages;
-
               _this.sliderInitalized = true;
-              (_this$sliderImages = _this.sliderImages) === null || _this$sliderImages === void 0 ? void 0 : _this$sliderImages.forEach(function (image) {
-                return image.setAttribute("loading", "eager");
-              });
-
+              (_this$sliderImages = _this.sliderImages) === null || _this$sliderImages === void 0 ? void 0 : _this$sliderImages.forEach(image => image.setAttribute("loading", "eager"));
               if (_this.sliderType !== sliderTypes.Mobile) {
                 _this._indicateActiveHotspot(0);
               }
             },
-            slideChangeTransitionEnd: function slideChangeTransitionEnd() {
-              var slideEls = this.slides;
+            slideChangeTransitionEnd() {
+              const slideEls = this.slides;
               setTimeout(function () {
-                slideEls.forEach(function (slide) {
+                slideEls.forEach(slide => {
                   slide.toggleAttribute("inert", !slide.classList.contains("swiper-slide-active"));
                 });
               }, 50);
@@ -12056,363 +10490,291 @@ register("shoppable", {
       });
     }
   },
-  _indicateActiveHotspot: function _indicateActiveHotspot(index) {
-    this.hotspotContainers.forEach(function (spot) {
-      return i$1(spot, classes$5.active);
-    });
-    var dotWrapper = n$2(".shoppable-item[data-index='".concat(index, "']"), this.container);
-    u$1(dotWrapper, classes$5.active);
+  _indicateActiveHotspot(index) {
+    this.hotspotContainers.forEach(spot => i$1(spot, classes$6.active));
+    const dotWrapper = n$2(".shoppable-item[data-index='".concat(index, "']"), this.container);
+    u$1(dotWrapper, classes$6.active);
   },
-  _activateHotspot: function _activateHotspot(index) {
-    var wrapper = n$2(".shoppable-item[data-index='".concat(index, "']"), this.container);
-    var card = n$2(selectors$d.productCard, wrapper);
-    n$2(selectors$d.hotspots, wrapper);
-
-    if (!card) {
+  _activateHotspot(index) {
+    const wrapper = n$2(".shoppable-item[data-index='".concat(index, "']"), this.container);
+    const card = n$2(selectors$d.productCard, wrapper);
+    if (card && !window.matchMedia(getMediaQuery("below-960")).matches) {
+      if (a$1(card, "hidden")) {
+        this._closeAll();
+        this._showCard(card);
+        this._indicateActiveHotspot(index);
+      } else {
+        this._hideCard(card);
+      }
+    } else {
       if (this.swiper) {
-        var isMobileSwiper = this.sliderType === sliderTypes.Mobile;
+        const isMobileSwiper = this.sliderType === sliderTypes.Mobile;
         this.swiper.slideToLoop(index, isMobileSwiper ? 0 : undefined);
-
         if (isMobileSwiper) {
           this._openDrawer();
         }
+      } else {
+        if (window.matchMedia(getMediaQuery("below-960")).matches) {
+          this._openDrawer();
+        }
       }
-
-      return;
-    }
-
-    if (a$1(card, "hidden")) {
-      this._closeAll();
-
-      card.setAttribute("aria-hidden", false);
-
-      this._setCardDemensions(card);
-
-      i$1(card, classes$5.hidden); // When a slider is involved, updating the slider's active
-      // slide will then trigger an update on the hotspot, but
-      // when there is no slider involved we will do that directly
-
-      if (!this.swiper) {
-        this._indicateActiveHotspot(index);
-      }
-
-      if (window.matchMedia(getMediaQuery("below-960")).matches) {
-        this._showWash();
-      }
-    } else {
-      card.setAttribute("aria-hidden", true);
-      u$1(card, classes$5.hidden);
-      i$1(wrapper, classes$5.active);
     }
   },
-  _setCardDemensions: function _setCardDemensions(card) {
-    var cardHeight = card.offsetHeight;
-    var cardWidth = card.offsetWidth;
+  _showCard(card) {
+    this._setCardDimensions(card);
+    card.setAttribute("aria-hidden", false);
+    i$1(card, classes$6.hidden);
+  },
+  _hideCard(card) {
+    card.setAttribute("aria-hidden", true);
+    u$1(card, classes$6.hidden);
+    // remove(wrapper, classes.active);
+  },
+
+  _setCardDimensions(card) {
+    const cardHeight = card.offsetHeight;
+    const cardWidth = card.offsetWidth;
     card.style.setProperty("--card-height", cardHeight + "px");
     card.style.setProperty("--card-width", cardWidth + "px");
   },
-  _setupDrawer: function _setupDrawer() {
-    var _this4 = this;
-
+  _setupDrawer() {
     // TODO: should this and open/close drawer functions be moved to their own file?
-    var drawerBackground = n$2(selectors$d.drawerBackground, this.container);
-    var drawerCloseButton = n$2(selectors$d.drawerCloseButton, this.container);
-    this.events.push(e$2(drawerBackground, "click", function () {
-      return _this4._closeDrawer();
-    }));
-    this.events.push(e$2(drawerCloseButton, "click", function () {
-      return _this4._closeDrawer();
-    }));
-  },
-  _openDrawer: function _openDrawer() {
-    u$1(this.mobileDrawer, classes$5.drawerActive);
-    disableBodyScroll(this.mobileDrawer);
 
-    this._showWash();
+    const drawerBackground = n$2(selectors$d.drawerBackground, this.container);
+    const drawerCloseButton = n$2(selectors$d.drawerCloseButton, this.container);
+    this.events.push(e$2(drawerBackground, "click", () => this._closeAll()));
+    this.events.push(e$2(drawerCloseButton, "click", () => this._closeAll()));
   },
-  _showWash: function _showWash() {
-    u$1(this.wash, classes$5.active);
+  _openDrawer() {
+    u$1(this.mobileDrawer, classes$6.drawerActive);
+    document.body.setAttribute("data-fluorescent-overlay-open", "true");
+    disableBodyScroll(this.mobileDrawer);
   },
-  _closeDrawer: function _closeDrawer() {
+  _closeDrawer() {
     if (this.mobileDrawer) {
-      i$1(this.mobileDrawer, classes$5.drawerActive);
+      i$1(this.mobileDrawer, classes$6.drawerActive);
+      document.body.setAttribute("data-fluorescent-overlay-open", "false");
       enableBodyScroll(this.mobileDrawer);
     }
-
-    this._closeAll();
   },
-  _hotspotClickHandler: function _hotspotClickHandler(e) {
-    var wrapper = e.currentTarget.parentNode.parentNode;
-    var hotspotIndex = parseInt(wrapper.dataset.index, 10);
-
+  _hotspotClickHandler(e) {
+    const wrapper = e.currentTarget.parentNode.parentNode;
+    const hotspotIndex = parseInt(wrapper.dataset.index, 10);
     this._activateHotspot(hotspotIndex);
   },
-  _clickOutsideHandler: function _clickOutsideHandler(e) {
-    if (!e.target.closest(selectors$d.productCard) && !a$1(e.target, "shoppable-item__hotspot")) {
+  _clickOutsideHandler(e) {
+    if (!e.target.closest(selectors$d.productCard) && !a$1(e.target, "shoppable-item__hotspot") && !window.matchMedia(getMediaQuery("below-960")).matches) {
       this._closeAll();
     }
   },
-  _closeAll: function _closeAll() {
-    this.productCards.forEach(function (card) {
-      u$1(card, classes$5.hidden);
-      card.setAttribute("aria-hidden", true);
+  _closeAll() {
+    this.productCards.forEach(card => {
+      this._hideCard(card);
     });
-    this.hotspotContainers.forEach(function (spot) {
-      return i$1(spot, classes$5.active);
-    });
-    i$1(this.wash, classes$5.active);
+    this.hotspotContainers.forEach(spot => i$1(spot, classes$6.active));
+    this._closeDrawer();
   },
-  onBlockDeselect: function onBlockDeselect() {
+  onBlockDeselect() {
     this._closeAll();
   },
-  onBlockSelect: function onBlockSelect(_ref4) {
-    var el = _ref4.target;
-    var index = parseInt(el.dataset.index, 10);
-
-    if (this.swiper) {
-      this.swiper.slideToLoop(index);
+  onBlockSelect(_ref4) {
+    let {
+      target: el
+    } = _ref4;
+    const index = parseInt(el.dataset.index, 10);
+    if (window.matchMedia(getMediaQuery("below-960")).matches) {
+      setTimeout(() => {
+        this._activateHotspot(index);
+      }, 10);
     } else {
-      this._activateHotspot(index);
+      if (this.swiper) {
+        this.swiper.slideToLoop(index);
+      } else {
+        this._activateHotspot(index);
+      }
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$swiper2, _this$widthWatcher, _this$animateShoppabl, _this$animateShoppabl2;
-
     (_this$swiper2 = this.swiper) === null || _this$swiper2 === void 0 ? void 0 : _this$swiper2.destroy();
     (_this$widthWatcher = this.widthWatcher) === null || _this$widthWatcher === void 0 ? void 0 : _this$widthWatcher.destroy();
-    this.events.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
+    this.events.forEach(unsubscribe => unsubscribe());
     (_this$animateShoppabl = this.animateShoppableImage) === null || _this$animateShoppabl === void 0 ? void 0 : _this$animateShoppabl.destroy();
     (_this$animateShoppabl2 = this.animateShoppableFeature) === null || _this$animateShoppabl2 === void 0 ? void 0 : _this$animateShoppabl2.destroy();
     this.pulseInterval && clearInterval(this.pulseInterval);
   }
 });
 
-var selectors$c = {
+const selectors$c = {
   video: "video",
   quickViewTrigger: "[data-quick-view-trigger]"
 };
 register("complete-the-look", {
   videoHandler: null,
-  onLoad: function onLoad() {
-    var video = n$2(selectors$c.video, this.container);
-
+  onLoad() {
+    const video = n$2(selectors$c.video, this.container);
     if (video) {
       this.videoHandler = backgroundVideoHandler(this.container);
     }
-
-    this.events = [e$2(t$2(selectors$c.quickViewTrigger, this.container), "click", function (e) {
-      var productUrl = e.target.dataset.productUrl;
+    this.events = [e$2(t$2(selectors$c.quickViewTrigger, this.container), "click", e => {
+      const {
+        productUrl
+      } = e.target.dataset;
       if (!productUrl) return;
       r$1("quick-view:open", null, {
         productUrl: productUrl
       });
     })];
-
     if (shouldAnimate(this.container)) {
       this.animateCompleteTheLook = animateCompleteTheLook(this.container);
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animateComplete;
-
     this.videoHandler && this.videoHandler();
-    this.events.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
+    this.events.forEach(unsubscribe => unsubscribe());
     (_this$animateComplete = this.animateCompleteTheLook) === null || _this$animateComplete === void 0 ? void 0 : _this$animateComplete.destroy();
   }
 });
 
-var selectors$b = {
+const selectors$b = {
   playButtonVideo: "[data-play-button-block-video]",
   playButtonBlock: ".play-button-block"
 };
 register("rich-text", {
-  onLoad: function onLoad() {
-    var playButtonVideos = t$2(selectors$b.playButtonVideo, this.container);
-
+  onLoad() {
+    const playButtonVideos = t$2(selectors$b.playButtonVideo, this.container);
     if (playButtonVideos.length) {
-      this.playButtons = playButtonVideos.map(function (block) {
-        return playButton(block.closest(selectors$b.playButtonBlock));
-      });
+      this.playButtons = playButtonVideos.map(block => playButton(block.closest(selectors$b.playButtonBlock)));
     }
-
     if (shouldAnimate(this.container)) {
       this.animateRichText = animateRichText(this.container);
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animateRichText;
-
-    this.playButtons && this.playButtons.forEach(function (button) {
-      return button.unload();
-    });
+    this.playButtons && this.playButtons.forEach(button => button.unload());
     (_this$animateRichText = this.animateRichText) === null || _this$animateRichText === void 0 ? void 0 : _this$animateRichText.destroy();
   }
 });
 
-var selectors$a = {
+const selectors$a = {
   imageContainer: ".image-compare__image-container",
   labelContainer: ".image-compare__label-container",
   slider: ".image-compare__slider"
 };
 register("image-compare", {
-  onLoad: function onLoad() {
+  onLoad() {
     this.events = [];
-
     this._initSliders();
-
     if (shouldAnimate(this.container)) {
       this.animateImageCompare = animateImageCompare(this.container);
     }
   },
-  _initSliders: function _initSliders() {
-    var _this = this;
-
+  _initSliders() {
     this.imageContainer = n$2(selectors$a.imageContainer, this.container);
     this.labelContainers = t$2(selectors$a.labelContainer, this.container);
-    this.slider = n$2(selectors$a.slider, this.container); // Check if slider exists (must be some blocks to exist)
+    this.slider = n$2(selectors$a.slider, this.container);
 
-    this.slider && this.events.push(e$2(this.slider, "input", function (e) {
-      return _this.imageContainer.style.setProperty("--position", "".concat(e.target.value, "%"));
-    }), e$2(this.slider, "mousedown", function () {
-      return _this.hideLabelContainers();
-    }), e$2(this.slider, "touchstart", function () {
-      return _this.hideLabelContainers();
-    }), e$2(this.slider, "mouseup", function () {
-      return _this.showLabelContainers();
-    }), e$2(this.slider, "touchend", function () {
-      return _this.showLabelContainers();
-    }));
+    // Check if slider exists (must be some blocks to exist)
+    this.slider && this.events.push(e$2(this.slider, "input", e => this.imageContainer.style.setProperty("--position", "".concat(e.target.value, "%"))), e$2(this.slider, "mousedown", () => this.hideLabelContainers()), e$2(this.slider, "touchstart", () => this.hideLabelContainers()), e$2(this.slider, "mouseup", () => this.showLabelContainers()), e$2(this.slider, "touchend", () => this.showLabelContainers()));
   },
-  hideLabelContainers: function hideLabelContainers() {
-    this.labelContainers.forEach(function (e) {
+  hideLabelContainers() {
+    this.labelContainers.forEach(e => {
       e.style.setProperty("opacity", "0");
     });
   },
-  showLabelContainers: function showLabelContainers() {
-    this.labelContainers.forEach(function (e) {
+  showLabelContainers() {
+    this.labelContainers.forEach(e => {
       e.style.setProperty("opacity", "1");
     });
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animateImageCom;
-
-    this.events.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
+    this.events.forEach(unsubscribe => unsubscribe());
     (_this$animateImageCom = this.animateImageCompare) === null || _this$animateImageCom === void 0 ? void 0 : _this$animateImageCom.destroy();
   }
 });
 
-var selectors$9 = {
+const selectors$9 = {
   playButtonVideo: "[data-play-button-block-video]",
   playButtonBlock: ".play-button-block"
 };
 register("image-with-text", {
-  onLoad: function onLoad() {
+  onLoad() {
     if (shouldAnimate(this.container)) {
       this.animateImageWithText = animateImageWithText(this.container);
     }
-
-    var playButtonVideos = t$2(selectors$9.playButtonVideo, this.container);
-
+    const playButtonVideos = t$2(selectors$9.playButtonVideo, this.container);
     if (playButtonVideos.length) {
-      this.playButtons = playButtonVideos.map(function (block) {
-        return playButton(block.closest(selectors$9.playButtonBlock));
-      });
+      this.playButtons = playButtonVideos.map(block => playButton(block.closest(selectors$9.playButtonBlock)));
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animateImageWit;
-
     (_this$animateImageWit = this.animateImageWithText) === null || _this$animateImageWit === void 0 ? void 0 : _this$animateImageWit.destroy();
-    this.playButtons && this.playButtons.forEach(function (button) {
-      return button.unload();
-    });
+    this.playButtons && this.playButtons.forEach(button => button.unload());
   }
 });
 
-var selectors$8 = {
+const selectors$8 = {
   playButtonVideo: "[data-play-button-block-video]",
   playButtonBlock: ".play-button-block"
 };
 register("image-with-text-split", {
-  onLoad: function onLoad() {
-    var playButtonVideos = t$2(selectors$8.playButtonVideo, this.container);
-
+  onLoad() {
+    const playButtonVideos = t$2(selectors$8.playButtonVideo, this.container);
     if (playButtonVideos.length) {
-      this.playButtons = playButtonVideos.map(function (block) {
-        return playButton(block.closest(selectors$8.playButtonBlock));
-      });
+      this.playButtons = playButtonVideos.map(block => playButton(block.closest(selectors$8.playButtonBlock)));
     }
-
     if (shouldAnimate(this.container)) {
       this.animateImageWithTextSplit = animateImageWithTextSplit(this.container);
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animateImageWit;
-
-    this.playButtons && this.playButtons.forEach(function (button) {
-      return button.unload();
-    });
+    this.playButtons && this.playButtons.forEach(button => button.unload());
     (_this$animateImageWit = this.animateImageWithTextSplit) === null || _this$animateImageWit === void 0 ? void 0 : _this$animateImageWit.destroy();
   }
 });
 
-var selectors$7 = {
+const selectors$7 = {
   playButtonVideo: "[data-play-button-block-video]",
   playButtonBlock: ".play-button-block"
 };
 register("image-hero", {
-  onLoad: function onLoad() {
-    var playButtonVideos = t$2(selectors$7.playButtonVideo, this.container);
-
+  onLoad() {
+    const playButtonVideos = t$2(selectors$7.playButtonVideo, this.container);
     if (playButtonVideos.length) {
-      this.playButtons = playButtonVideos.map(function (block) {
-        return playButton(block.closest(selectors$7.playButtonBlock));
-      });
+      this.playButtons = playButtonVideos.map(block => playButton(block.closest(selectors$7.playButtonBlock)));
     }
-
     if (shouldAnimate(this.container)) {
       this.animateImageHero = animateImageHero(this.container);
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animateImageHer;
-
-    this.playButtons && this.playButtons.forEach(function (button) {
-      return button.unload();
-    });
+    this.playButtons && this.playButtons.forEach(button => button.unload());
     (_this$animateImageHer = this.animateImageHero) === null || _this$animateImageHer === void 0 ? void 0 : _this$animateImageHer.destroy();
   }
 });
 
 register("image-hero-split", {
-  onLoad: function onLoad() {
+  onLoad() {
     if (shouldAnimate(this.container)) {
       // Setup animations per item
-      t$2(".animation--item", this.container).forEach(function (item) {
-        return animateImageHeroSplit(item);
-      });
+      t$2(".animation--item", this.container).forEach(item => animateImageHeroSplit(item));
     }
-
     this.observer = intersectionWatcher(this.container);
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$observer;
-
-    this.playButtons && this.playButtons.forEach(function (button) {
-      return button.unload();
-    });
+    this.playButtons && this.playButtons.forEach(button => button.unload());
     (_this$observer = this.observer) === null || _this$observer === void 0 ? void 0 : _this$observer.destroy();
   }
 });
 
-var selectors$6 = {
+const selectors$6 = {
   item: ".testimonials__item",
   swiper: ".swiper",
   navigationNext: ".testimonials__navigation-button--next",
@@ -12420,26 +10782,22 @@ var selectors$6 = {
   productImage: ".testimonials__item-product-image"
 };
 register("testimonials", {
-  onLoad: function onLoad() {
-    var _this = this;
-
+  onLoad() {
     this.events = [];
     this.items = t$2(selectors$6.item, this.container);
     this.itemsContainer = n$2(selectors$6.swiper, this.container);
-
     if (shouldAnimate(this.container)) {
-      this.itemAnimations = this.items.map(function (item) {
-        return animateTestimonials(item);
-      });
+      this.itemAnimations = this.items.map(item => animateTestimonials(item));
       this.observer = intersectionWatcher(this.container);
     }
-
     if (this.items.length > 1) {
-      import(flu.chunks.swiper).then(function (_ref) {
-        var Swiper = _ref.Swiper,
-            Navigation = _ref.Navigation,
-            EffectFade = _ref.EffectFade;
-        var swiperOptions = {
+      import(flu.chunks.swiper).then(_ref => {
+        let {
+          Swiper,
+          Navigation,
+          EffectFade
+        } = _ref;
+        const swiperOptions = {
           modules: [Navigation, EffectFade],
           autoHeight: true,
           slidesPerView: 1,
@@ -12459,313 +10817,270 @@ register("testimonials", {
             }
           },
           on: {
-            slideChangeTransitionEnd: function slideChangeTransitionEnd() {
-              var slideEls = this.slides;
+            slideChangeTransitionEnd() {
+              const slideEls = this.slides;
               setTimeout(function () {
-                slideEls.forEach(function (slide) {
+                slideEls.forEach(slide => {
                   slide.toggleAttribute("inert", !slide.classList.contains("swiper-slide-active"));
                 });
               }, 50);
             }
           }
-        }; // We use fade for desktop size animatiosn and slide for under
-        // 720px
+        };
 
+        // We use fade for desktop size animatiosn and slide for under
+        // 720px
         if (window.matchMedia(getMediaQuery("below-720")).matches) {
           swiperOptions.effect = "slide";
           swiperOptions.slidesPerView = "auto";
         }
-
-        _this.carousel = new Swiper(_this.itemsContainer, swiperOptions);
-
-        _this.setMobileButtonOffset();
-
+        this.carousel = new Swiper(this.itemsContainer, swiperOptions);
+        this.setMobileButtonOffset();
         r$1("testimonials:initialized");
       });
     } else if (this.items.length === 1) {
       u$1(this.items[0], "swiper-slide-visible");
     }
   },
-  setMobileButtonOffset: function setMobileButtonOffset() {
+  setMobileButtonOffset() {
     // Mobile paddles should vertically center on the image instead of the item
-    var firstImage = n$2(selectors$6.productImage, this.container);
-    var mobileButtonHeight = 34;
-    var halfMobileButtonHeight = mobileButtonHeight / 2;
-    var halfImageHeight = firstImage.offsetHeight / 2;
-    var offset = halfImageHeight + halfMobileButtonHeight;
+    const firstImage = n$2(selectors$6.productImage, this.container);
+    const mobileButtonHeight = 34;
+    const halfMobileButtonHeight = mobileButtonHeight / 2;
+    const halfImageHeight = firstImage.offsetHeight / 2;
+    const offset = halfImageHeight + halfMobileButtonHeight;
     this.container.style.setProperty("--mobile-button-offset", "".concat(offset, "px"));
   },
-  handleBlockSelect: function handleBlockSelect(slideIndex) {
+  handleBlockSelect(slideIndex) {
     this.carousel.slideToLoop(parseInt(slideIndex, 10));
   },
-  onBlockSelect: function onBlockSelect(_ref2) {
-    var _this2 = this;
-
-    var target = _ref2.target;
-    var index = target.dataset.index;
-
+  onBlockSelect(_ref2) {
+    let {
+      target
+    } = _ref2;
+    const {
+      index
+    } = target.dataset;
     if (this.carousel) {
       this.handleBlockSelect(index);
     } else {
       // Listen for initalization if carousel does not exist
-      this.events.push(c("testimonials:initialized", function () {
-        _this2.handleBlockSelect(index);
+      this.events.push(c("testimonials:initialized", () => {
+        this.handleBlockSelect(index);
       }));
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$observer;
-
-    this.events.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
+    this.events.forEach(unsubscribe => unsubscribe());
     (_this$observer = this.observer) === null || _this$observer === void 0 ? void 0 : _this$observer.destroy();
   }
 });
 
 register("sales-banner", {
-  onLoad: function onLoad() {
+  onLoad() {
     if (shouldAnimate(this.container)) {
       this.animateSalesBanner = animateSalesBanner(this.container);
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animateSalesBan;
-
     (_this$animateSalesBan = this.animateSalesBanner) === null || _this$animateSalesBan === void 0 ? void 0 : _this$animateSalesBan.destroy();
   }
 });
 
 register("promotion-bar", {
-  onLoad: function onLoad() {
+  onLoad() {
     if (shouldAnimate(this.container)) {
       this.animatePromotionBar = animatePromotionBar(this.container);
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animatePromotio;
-
     (_this$animatePromotio = this.animatePromotionBar) === null || _this$animatePromotio === void 0 ? void 0 : _this$animatePromotio.destroy();
   }
 });
 
 register("grid", {
-  onLoad: function onLoad() {
+  onLoad() {
     if (shouldAnimate(this.container)) {
       this.animateGrid = animateGrid(this.container);
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animateGrid;
-
     (_this$animateGrid = this.animateGrid) === null || _this$animateGrid === void 0 ? void 0 : _this$animateGrid.destroy();
   }
 });
 
 register("collection-list-grid", {
-  onLoad: function onLoad() {
+  onLoad() {
     if (shouldAnimate(this.container)) {
       this.animateCollectionListGrid = animateCollectionListGrid(this.container);
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animateCollecti;
-
     (_this$animateCollecti = this.animateCollectionListGrid) === null || _this$animateCollecti === void 0 ? void 0 : _this$animateCollecti.destroy();
   }
 });
 
 register("contact-form", {
-  onLoad: function onLoad() {
+  onLoad() {
     if (shouldAnimate(this.container)) {
       this.animateContactForm = animateContactForm(this.container);
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animateContactF;
-
     (_this$animateContactF = this.animateContactForm) === null || _this$animateContactF === void 0 ? void 0 : _this$animateContactF.destroy();
   }
 });
 
 register("multi-column", {
-  onLoad: function onLoad() {
+  onLoad() {
     if (shouldAnimate(this.container)) {
       this.animateMultiColumn = animateMultiColumn(this.container);
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animateMultiCol;
-
     (_this$animateMultiCol = this.animateMultiColumn) === null || _this$animateMultiCol === void 0 ? void 0 : _this$animateMultiCol.destroy();
   }
 });
 
 register("newsletter", {
-  onLoad: function onLoad() {
+  onLoad() {
     if (shouldAnimate(this.container)) {
       this.animateNewsletter = animateNewsletter(this.container);
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animateNewslett;
-
     (_this$animateNewslett = this.animateNewsletter) === null || _this$animateNewslett === void 0 ? void 0 : _this$animateNewslett.destroy();
   }
 });
 
 register("newsletter-compact", {
-  onLoad: function onLoad() {
+  onLoad() {
     if (shouldAnimate(this.container)) {
       this.animateNewsletterCompact = animateNewsletterCompact(this.container);
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animateNewslett;
-
     (_this$animateNewslett = this.animateNewsletterCompact) === null || _this$animateNewslett === void 0 ? void 0 : _this$animateNewslett.destroy();
   }
 });
 
-var selectors$5 = {
+const selectors$5 = {
   listContainer: "[data-events-eventbrite-container]",
   skeletonList: ".events__list--skeleton"
 };
-var endpoints = {
-  org: function org(token) {
-    return "https://www.eventbriteapi.com//v3/users/me/organizations/?token=".concat(token);
-  },
-  events: function events(id, token) {
-    return "https://www.eventbriteapi.com//v3/organizations/".concat(id, "/events/?token=").concat(token, "&expand=venue&status=live");
-  }
+const endpoints = {
+  org: token => "https://www.eventbriteapi.com//v3/users/me/organizations/?token=".concat(token),
+  events: (id, token) => "https://www.eventbriteapi.com//v3/organizations/".concat(id, "/events/?token=").concat(token, "&expand=venue&status=live")
 };
 register("events", {
-  onLoad: function onLoad() {
+  onLoad() {
     this.accessToken = this.container.dataset.accessToken;
     this.eventCount = parseInt(this.container.dataset.eventCount, 10);
     this.imageAspectRatio = this.container.dataset.imageAspectRatio;
     this.learnMoreText = this.container.dataset.learnMoreText;
-
     this._fetchOrg();
-
     if (shouldAnimate(this.container)) {
       this.animateEvents = animateEvents(this.container);
       if (!this.accessToken) this.animateEvents.animateEventItems();
     }
   },
-
   /**
    * _fetchOrg gets the eventbrite organization data for this user
    */
-  _fetchOrg: function _fetchOrg() {
-    var _this = this;
-
+  _fetchOrg() {
     if (!this.accessToken) return;
-    fetch(endpoints.org(this.accessToken)).then(function (res) {
-      return res.json();
-    }).then(function (res) {
-      _this._fetchEvents(res.organizations[0].id);
+    fetch(endpoints.org(this.accessToken)).then(res => res.json()).then(res => {
+      this._fetchEvents(res.organizations[0].id);
     });
   },
-
   /**
    * _fetchEvents gets the eventbrite events for this user
    * @param {number} id organization id
    */
-  _fetchEvents: function _fetchEvents(id) {
-    var _this2 = this;
-
+  _fetchEvents(id) {
     if (!id) return;
-    fetch(endpoints.events(id, this.accessToken)).then(function (res) {
-      return res.json();
-    }).then(function (events) {
-      _this2._renderEvents(events.events);
+    fetch(endpoints.events(id, this.accessToken)).then(res => res.json()).then(events => {
+      this._renderEvents(events.events);
     });
   },
-
   /**
    * _renderEvents adds the event elements on the page
    * @param {array} events array of event objects
    */
-  _renderEvents: function _renderEvents(events) {
-    var _this3 = this;
+  _renderEvents(events) {
+    const listContainer = n$2(selectors$5.listContainer, this.container);
+    const skeletonList = n$2(selectors$5.skeletonList, this.container);
 
-    var listContainer = n$2(selectors$5.listContainer, this.container);
-    var skeletonList = n$2(selectors$5.skeletonList, this.container); // Build a list of events
-
-    var list = document.createElement("ul");
+    // Build a list of events
+    let list = document.createElement("ul");
     list.className = "events__list";
-    events.slice(0, this.eventCount).forEach(function (event) {
-      list.innerHTML += _this3._renderEventItem(event);
-    }); // Append the list to the container on the page
+    events.slice(0, this.eventCount).forEach(event => {
+      list.innerHTML += this._renderEventItem(event);
+    });
 
+    // Append the list to the container on the page
     u$1(skeletonList, "hide");
-    setTimeout(function () {
+    setTimeout(() => {
       listContainer.textContent = "";
       listContainer.appendChild(list);
-
-      if (shouldAnimate(_this3.container)) {
-        _this3.animateEvents.animateEventItems();
+      if (shouldAnimate(this.container)) {
+        this.animateEvents.animateEventItems();
       }
     }, 300);
   },
-
   /**
    * _renderEventItem builds the html needed for an event item with the event data
    * @param {obj} event the event data
    * @returns eventItem
    */
-  _renderEventItem: function _renderEventItem(event) {
+  _renderEventItem(event) {
     var _event$logo;
-
-    var eventItem = "\n      <li\n        class=\"\n          event-item\n          event-item--eventbrite\n          ".concat((_event$logo = event.logo) !== null && _event$logo !== void 0 && _event$logo.url ? "event-item--has-image" : "", "\n        \"\n      >\n        <a href=\"").concat(event.url, "\" class=\"event-item__link\">\n          <div class=\"event-item__image-wrapper\">\n            ").concat(this._renderImage(event), "\n            ").concat(this._renderDateBadge(event), "\n          </div>\n          <div class=\"event-item__details\">\n            ").concat(this._renderName(event), "\n            ").concat(this._renderDate(event), "\n            ").concat(this._renderVenue(event), "\n            ").concat(this._renderSummary(event), "\n            <span class=\"btn btn--callout event-item__callout\">\n              <span>").concat(this.learnMoreText, "</span>\n            </span>\n          </div>\n        </a>\n      </li>\n    ");
+    let eventItem = "\n      <li\n        class=\"\n          event-item\n          event-item--eventbrite\n          ".concat((_event$logo = event.logo) !== null && _event$logo !== void 0 && _event$logo.url ? "event-item--has-image" : "", "\n        \"\n      >\n        <a href=\"").concat(event.url, "\" class=\"event-item__link\">\n          <div class=\"event-item__image-wrapper\">\n            ").concat(this._renderImage(event), "\n            ").concat(this._renderDateBadge(event), "\n          </div>\n          <div class=\"event-item__details\">\n            ").concat(this._renderName(event), "\n            ").concat(this._renderDate(event), "\n            ").concat(this._renderVenue(event), "\n            ").concat(this._renderSummary(event), "\n            <span class=\"btn btn--callout event-item__callout\">\n              <span>").concat(this.learnMoreText, "</span>\n            </span>\n          </div>\n        </a>\n      </li>\n    ");
     return eventItem;
   },
-  _renderImage: function _renderImage(event) {
+  _renderImage(event) {
     var _event$logo2;
-
-    var image = "";
-
+    let image = "";
     if ((_event$logo2 = event.logo) !== null && _event$logo2 !== void 0 && _event$logo2.url) {
-      image = "\n        <div class=\"image ".concat(this.imageAspectRatio, " event-item__image image--animate animation--lazy-load\">\n          <div class=\"image__inner\">\n            <img\n              src=\"").concat(event.logo.url, "\"\n              alt=\"").concat(event.name.text, "\"\n              loading=\"lazy\"\n              class=\"image__img\"\n              onload=\"javascript: this.closest('.image').classList.add('loaded')\"\n            >\n          </div>\n        </div>\n      ");
+      image = "\n        <div class=\"image ".concat(this.imageAspectRatio, " event-item__image image--animate animation--lazy-load\">\n          <img\n            src=\"").concat(event.logo.url, "\"\n            alt=\"").concat(event.name.text, "\"\n            loading=\"lazy\"\n            class=\"image__img\"\n            onload=\"javascript: this.closest('.image').classList.add('loaded')\"\n          >\n        </div>\n      ");
     }
-
     return image;
   },
-  _renderDateBadge: function _renderDateBadge(event) {
+  _renderDateBadge(event) {
     var _event$start;
-
-    var html = "";
-
+    let html = "";
     if ((_event$start = event.start) !== null && _event$start !== void 0 && _event$start.local) {
-      var date = new Date(event.start.local);
+      const date = new Date(event.start.local);
       html = "\n        <span class=\"event-item__date-badge\">\n          <span class=\"event-item__date-badge-day fs-body-bold fs-body-200\">\n            ".concat(new Intl.DateTimeFormat([], {
         day: "numeric"
       }).format(date), "\n          </span>\n          <span class=\"event-item__date-badge-month fs-accent\">\n            ").concat(new Intl.DateTimeFormat([], {
         month: "short"
       }).format(date), "\n          </span>\n        </span>\n      ");
     }
-
     return html;
   },
-  _renderName: function _renderName(event) {
+  _renderName(event) {
     var _event$name;
-
-    var html = "";
-
+    let html = "";
     if ((_event$name = event.name) !== null && _event$name !== void 0 && _event$name.text) {
       html = "\n        <h4 class=\"event-item__name ff-heading fs-heading-5-base\">\n          ".concat(event.name.text, "\n        </h4>\n      ");
     }
-
     return html;
   },
-  _renderDate: function _renderDate(event) {
+  _renderDate(event) {
     var _event$start2;
-
-    var html = "";
-
+    let html = "";
     if ((_event$start2 = event.start) !== null && _event$start2 !== void 0 && _event$start2.local) {
-      var date = new Date(event.start.local);
+      const date = new Date(event.start.local);
       html = "\n        <p class=\"event-item__date fs-body-75\">\n          ".concat(date.toLocaleDateString([], {
         weekday: "short",
         year: "numeric",
@@ -12777,143 +11092,131 @@ register("events", {
         minute: "2-digit"
       }), "\n        </p>\n      ");
     }
-
     return html;
   },
-  _renderVenue: function _renderVenue(event) {
+  _renderVenue(event) {
     var _event$venue;
-
-    var html = "";
-
+    let html = "";
     if ((_event$venue = event.venue) !== null && _event$venue !== void 0 && _event$venue.name) {
       html = "\n        <p class=\"event-item__venue fs-body-75\">\n          ".concat(event.venue.name, "\n        </p>\n      ");
     }
-
     return html;
   },
-  _renderSummary: function _renderSummary(event) {
-    var html = "";
-
+  _renderSummary(event) {
+    let html = "";
     if (event.summary) {
       html = "\n        <p class=\"event-item__summary\">\n          ".concat(event.summary, "\n        </p>\n      ");
     }
-
     return html;
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animateEvents;
-
     (_this$animateEvents = this.animateEvents) === null || _this$animateEvents === void 0 ? void 0 : _this$animateEvents.destroy();
   }
 });
 
 register("promo-banner", {
-  onLoad: function onLoad() {
+  onLoad() {
     if (shouldAnimate(this.container)) {
       this.animatePromoBanner = animatePromoBanner(this.container);
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animatePromoBan;
-
     (_this$animatePromoBan = this.animatePromoBanner) === null || _this$animatePromoBan === void 0 ? void 0 : _this$animatePromoBan.destroy();
   }
 });
 
-var selectors$4 = {
+const selectors$4 = {
   tabLabels: "[data-tab-label]",
   tabItems: "[data-tab-item]",
   tabList: "[data-tab-list]",
   activeTabItem: "[data-tab-item][aria-hidden='false']"
 };
 register("product-tabs", {
-  onLoad: function onLoad() {
-    var _this = this;
-
+  onLoad() {
     this.accordions = [];
     this.tabItems = t$2(selectors$4.tabItems, this.container);
     this.tabLabels = t$2(selectors$4.tabLabels, this.container);
     this.tabList = n$2(selectors$4.tabList, this.container);
     this.activeTabItem = n$2(selectors$4.activeTabItem, this.container);
-
     if (this.activeTabItem) {
       this._setTabHeight(this.activeTabItem);
     }
-
-    this.clickHandlers = e$2(this.tabLabels, "click", function (e) {
+    this.clickHandlers = e$2(this.tabLabels, "click", e => {
       e.preventDefault();
-      var contentID = e.currentTarget.getAttribute("aria-controls");
-      var content = n$2("#".concat(contentID), _this.container);
-
-      _this._closeAll();
-
-      _this._open(e.currentTarget, content);
+      const contentID = e.currentTarget.getAttribute("aria-controls");
+      const content = n$2("#".concat(contentID), this.container);
+      this._closeAll();
+      this._open(e.currentTarget, content);
     });
-    var accordionElements = t$2(".accordion", this.container);
-    accordionElements.forEach(function (accordion) {
-      var accordionOpen = accordion.classList.contains("accordion--open");
-
-      _this.accordions.push(Accordions(accordion, {
+    const accordionElements = t$2(".accordion", this.container);
+    accordionElements.forEach(accordion => {
+      const accordionOpen = accordion.classList.contains("accordion--open");
+      this.accordions.push(Accordions(accordion, {
         firstOpen: accordionOpen
       }));
-
       accordion.classList.add("rte--product", "accordion--product");
     });
-
     if (shouldAnimate(this.container)) {
       this.animateProductTabs = animateProductTabs(this.container);
     }
   },
-  _closeAll: function _closeAll() {
-    var _this2 = this;
-
-    this.tabLabels.forEach(function (label) {
-      var contentID = label.getAttribute("aria-controls");
-      var content = n$2("#".concat(contentID), _this2.container);
-
-      if (_this2._isVisible(content)) {
-        _this2._close(label, content);
+  _closeAll() {
+    this.tabLabels.forEach(label => {
+      const contentID = label.getAttribute("aria-controls");
+      const content = n$2("#".concat(contentID), this.container);
+      if (this._isVisible(content)) {
+        this._close(label, content);
       }
     });
   },
-  _open: function _open(label, content) {
+  _open(label, content) {
     label.setAttribute("aria-expanded", true);
     content.setAttribute("aria-hidden", false);
-
     this._setTabHeight(content);
   },
-  _close: function _close(label, content) {
+  _close(label, content) {
     label.setAttribute("aria-expanded", false);
     content.setAttribute("aria-hidden", true);
   },
-  _isVisible: function _isVisible(content) {
+  _isVisible(content) {
     return content.getAttribute("aria-hidden") === "false";
   },
-  _setTabHeight: function _setTabHeight(content) {
-    var height = content.offsetHeight;
+  _setTabHeight(content) {
+    const height = content.offsetHeight;
     this.tabList.style.height = "".concat(height, "px");
   },
-  onBlockSelect: function onBlockSelect(_ref) {
-    var target = _ref.target;
-    var contentID = target.getAttribute("aria-controls");
-    var content = n$2("#".concat(contentID), this.container);
-
+  onBlockSelect(_ref) {
+    let {
+      target
+    } = _ref;
+    const contentID = target.getAttribute("aria-controls");
+    const content = n$2("#".concat(contentID), this.container);
     this._closeAll();
-
     this._open(target, content);
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animateProductT;
-
     this.clickHandlers();
-    this.accordions.forEach(function (accordion) {
-      return accordion.unload();
-    });
+    this.accordions.forEach(accordion => accordion.unload());
     (_this$animateProductT = this.animateProductTabs) === null || _this$animateProductT === void 0 ? void 0 : _this$animateProductT.destroy();
   }
 });
 
-var selectors$3 = {
+register("apps", {
+  onLoad() {
+    if (shouldAnimate(this.container)) {
+      this.animateApps = animateApps(this.container);
+    }
+  },
+  onUnload() {
+    var _this$animateApps;
+    (_this$animateApps = this.animateApps) === null || _this$animateApps === void 0 ? void 0 : _this$animateApps.destroy();
+  }
+});
+
+const selectors$3 = {
   cartError: ".cart__form-item-error",
   cartNoteTrigger: "[data-order-note-trigger]",
   cartUpdateButton: ".cart__update",
@@ -12922,148 +11225,144 @@ var selectors$3 = {
   freeShippingBar: "[data-free-shipping-bar]",
   crossSells: "[data-cross-sells]"
 };
-var classes$4 = {
+const classes$5 = {
   updatingQuantity: "has-quantity-update",
   removed: "is-removed"
 };
 register("cart", {
-  onLoad: function onLoad() {
-    var _this = this;
-
-    var cartNoteTrigger = n$2(selectors$3.cartNoteTrigger, this.container);
-    var freeShippingBar$1 = n$2(selectors$3.freeShippingBar, this.container);
-
+  onLoad() {
+    const cartNoteTrigger = n$2(selectors$3.cartNoteTrigger, this.container);
+    const freeShippingBar$1 = n$2(selectors$3.freeShippingBar, this.container);
     if (freeShippingBar$1) {
       freeShippingBar(freeShippingBar$1);
     }
-
     this._initCrossSells();
-
     if (cartNoteTrigger) this.cartNoteToggle = CartNoteToggle(this.container);
-    this.quantityButtons = QuantityButtons(this.container); // Events are all on events trigger by other components / functions
+    this.quantityButtons = QuantityButtons(this.container);
 
-    this.events = [c("cart:updated", function () {
-      return _this.refreshCart();
-    }), c("cart:error", function (_, _ref) {
-      var key = _ref.key,
-          errorMessage = _ref.errorMessage;
+    // Events are all on events trigger by other components / functions
+    this.events = [c("cart:updated", () => this.refreshCart()), c("cart:error", (_, _ref) => {
+      let {
+        key,
+        errorMessage
+      } = _ref;
+      this.handleErrorMessage(key, errorMessage);
+    }), c(["quantity-update:subtract", "quantity-update:add"], (_, _ref2) => {
+      let {
+        key
+      } = _ref2;
+      this.handleQuantityUpdate(key);
+    }), c("quantity-update:remove", (_, _ref3) => {
+      let {
+        key
+      } = _ref3;
+      this.handleItemRemoval(key);
+    })];
 
-      _this.handleErrorMessage(key, errorMessage);
-    }), c(["quantity-update:subtract", "quantity-update:add"], function (_, _ref2) {
-      var key = _ref2.key;
-
-      _this.handleQuantityUpdate(key);
-    }), c("quantity-update:remove", function (_, _ref3) {
-      var key = _ref3.key;
-
-      _this.handleItemRemoval(key);
-    })]; // Delegate handles all click events due to rendering different content
+    // Delegate handles all click events due to rendering different content
     // within cart
-
     this.delegate = new Delegate(this.container);
-    this.delegate.on("change", selectors$3.quantityInput, function (e) {
-      return _this.handleQuantityInputChange(e);
-    });
+    this.delegate.on("change", selectors$3.quantityInput, e => this.handleQuantityInputChange(e));
   },
-  refreshCart: function refreshCart() {
-    var _this2 = this;
-
-    var url = "".concat(theme.routes.cart.base, "?section_id=main-cart");
-    makeRequest("GET", url).then(function (response) {
+  refreshCart() {
+    const url = "".concat(theme.routes.cart.base, "?section_id=main-cart");
+    makeRequest("GET", url).then(response => {
       var _window$Shopify;
-
-      var container = document.createElement("div");
+      let container = document.createElement("div");
       container.innerHTML = response;
-      _this2.container.innerHTML = container.innerHTML;
-
+      this.container.innerHTML = container.innerHTML;
       if ((_window$Shopify = window.Shopify) !== null && _window$Shopify !== void 0 && _window$Shopify.StorefrontExpressButtons) {
         window.Shopify.StorefrontExpressButtons.initialize();
       }
-
-      var freeShippingBar$1 = n$2(selectors$3.freeShippingBar, _this2.container);
-
+      const freeShippingBar$1 = n$2(selectors$3.freeShippingBar, this.container);
       if (freeShippingBar$1) {
         freeShippingBar(freeShippingBar$1);
       }
-
-      _this2._initCrossSells();
+      this._initCrossSells();
     });
   },
-  handleErrorMessage: function handleErrorMessage(key) {
-    var item = n$2("[data-key=\"".concat(key, "\"]"), this.container);
+  handleErrorMessage(key) {
+    const item = n$2("[data-key=\"".concat(key, "\"]"), this.container);
     i$1(n$2(selectors$3.cartError, item), "hidden");
-    i$1(item, classes$4.updatingQuantity);
+    i$1(item, classes$5.updatingQuantity);
   },
-  handleQuantityInputChange: function handleQuantityInputChange(_ref4) {
-    var target = _ref4.target;
-    var item = target.closest(selectors$3.quantityItem);
-    var key = item.dataset.key;
+  handleQuantityInputChange(_ref4) {
+    let {
+      target
+    } = _ref4;
+    const item = target.closest(selectors$3.quantityItem);
+    const {
+      key
+    } = item.dataset;
     cart.updateItem(key, target.value);
     this.handleQuantityUpdate(key);
   },
-  handleQuantityUpdate: function handleQuantityUpdate(key) {
-    var item = n$2("[data-key=\"".concat(key, "\"]"), this.container);
-    u$1(item, classes$4.updatingQuantity);
+  handleQuantityUpdate(key) {
+    const item = n$2("[data-key=\"".concat(key, "\"]"), this.container);
+    u$1(item, classes$5.updatingQuantity);
   },
-  handleItemRemoval: function handleItemRemoval(key) {
-    var item = n$2("[data-key=\"".concat(key, "\"]"), this.container);
-    u$1(item, classes$4.removed);
-    u$1(item, classes$4.updatingQuantity);
+  handleItemRemoval(key) {
+    const item = n$2("[data-key=\"".concat(key, "\"]"), this.container);
+    u$1(item, classes$5.removed);
+    u$1(item, classes$5.updatingQuantity);
   },
-  _initCrossSells: function _initCrossSells() {
-    var crossSells = n$2(selectors$3.crossSells, this.container);
-
+  _initCrossSells() {
+    const crossSells = n$2(selectors$3.crossSells, this.container);
     if (crossSells) {
       this.crossSells = CrossSells(crossSells);
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$cartNoteToggle;
-
-    this.events.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
+    this.events.forEach(unsubscribe => unsubscribe());
     this.quantityButtons.unload();
     (_this$cartNoteToggle = this.cartNoteToggle) === null || _this$cartNoteToggle === void 0 ? void 0 : _this$cartNoteToggle.unload();
   }
 });
 
 register("product", {
-  onLoad: function onLoad() {
+  onLoad() {
     this.product = new Product(this.container);
     this.animateProduct = animateProduct(this.container);
   },
-  onBlockSelect: function onBlockSelect(_ref) {
-    var target = _ref.target;
-    var label = n$2(".accordion__label", target);
+  onBlockSelect(_ref) {
+    let {
+      target
+    } = _ref;
+    const label = n$2(".accordion__label", target);
     target.scrollIntoView({
       block: "center",
       behavior: "smooth"
     });
     if (!label) return;
-    var group = label.parentNode,
-        content = label.nextElementSibling;
+    const {
+      parentNode: group,
+      nextElementSibling: content
+    } = label;
     slideStop(content);
     slideDown(content);
     group.setAttribute("data-open", true);
     label.setAttribute("aria-expanded", true);
     content.setAttribute("aria-hidden", false);
   },
-  onBlockDeselect: function onBlockDeselect(_ref2) {
-    var target = _ref2.target;
-    var label = n$2(".accordion__label", target);
+  onBlockDeselect(_ref2) {
+    let {
+      target
+    } = _ref2;
+    const label = n$2(".accordion__label", target);
     if (!label) return;
-    var group = label.parentNode,
-        content = label.nextElementSibling;
+    const {
+      parentNode: group,
+      nextElementSibling: content
+    } = label;
     slideStop(content);
     slideUp(content);
     group.setAttribute("data-open", false);
     label.setAttribute("aria-expanded", false);
     content.setAttribute("aria-hidden", true);
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animateProduct;
-
     this.product.unload();
     (_this$animateProduct = this.animateProduct) === null || _this$animateProduct === void 0 ? void 0 : _this$animateProduct.destroy();
   }
@@ -13229,7 +11528,7 @@ Ajaxinate.prototype.loadMore = function getTheHtmlOfTheNextPageWithAnAjaxRequest
       this.initialize();
     }
   }.bind(this);
-  this.request.open("GET", this.nextPageUrl, false);
+  this.request.open("GET", this.nextPageUrl);
   this.request.send();
 };
 
@@ -13262,102 +11561,101 @@ Ajaxinate.prototype.destroy = function destroy() {
   return this;
 };
 
-var filtering = function filtering(container) {
-  var forms = t$2("[data-filter-form]", container);
-  var formData, searchParams;
+const filtering = container => {
+  const forms = t$2("[data-filter-form]", container);
+  let formData, searchParams;
   setParams();
-
   function setParams(form) {
     form = form || forms[0];
     formData = new FormData(form);
     searchParams = new URLSearchParams(formData).toString();
   }
-  /**
-   * Takes the updated form element and updates all other forms with the updated values
-   * @param {*} target
-   */
 
-
+  // Takes the updated form element and updates all other forms with the updated values
+  // @param {*} target
   function syncForms(target) {
     if (!target) return;
-    var targetInputs = t$2("[data-filter-item-input]", target);
-    targetInputs.forEach(function (targetInput) {
+    const targetInputs = t$2("[data-filter-item-input]", target);
+    targetInputs.forEach(targetInput => {
       if (targetInput.type === "checkbox" || targetInput.type === "radio") {
-        var valueEscaped = targetInput.dataset.valueEscaped;
-        var items = t$2("input[name='".concat(targetInput.name, "'][data-value-escaped='").concat(valueEscaped, "']"));
-        items.forEach(function (input) {
+        const {
+          valueEscaped
+        } = targetInput.dataset;
+        const items = t$2("input[name='".concat(escapeQuotes(targetInput.name), "'][data-value-escaped='").concat(escapeQuotes(valueEscaped), "']"));
+        items.forEach(input => {
           input.checked = targetInput.checked;
         });
       } else {
-        var _items = t$2("input[name='".concat(targetInput.name, "']"));
-
-        _items.forEach(function (input) {
+        const items = t$2("input[name='".concat(targetInput.name, "']"));
+        items.forEach(input => {
           input.value = targetInput.value;
         });
       }
     });
   }
-  /**
-   * When filters are removed, set the checked attribute to false
-   * for all filter inputs for that filter.
-   * Can accept multiple filters
-   * @param {Array} targets Array of inputs
-   */
 
-
+  // When filters are removed, set the checked attribute to false
+  // for all filter inputs for that filter.
+  // Can accept multiple filters
+  // @param {Array} targets Array of inputs
   function uncheckFilters(targets) {
     if (!targets) return;
-    var selector;
-    targets.forEach(function (target) {
-      selector = !selector ? "" : ", ".concat(selector);
-      var _target$dataset = target.dataset,
-          name = _target$dataset.name,
-          valueEscaped = _target$dataset.valueEscaped;
-      selector = "input[name='".concat(name, "'][data-value-escaped='").concat(valueEscaped, "']").concat(selector);
+    let selector;
+    targets.forEach(target => {
+      selector = selector ? ", ".concat(selector) : "";
+      const {
+        name,
+        valueEscaped
+      } = target.dataset;
+      selector = "input[name='".concat(escapeQuotes(name), "'][data-value-escaped='").concat(escapeQuotes(valueEscaped), "']").concat(selector);
     });
-    var inputs = t$2(selector, container);
-    inputs.forEach(function (input) {
+    const inputs = t$2(selector, container);
+    inputs.forEach(input => {
       input.checked = false;
     });
   }
-
+  function escapeQuotes(str) {
+    const escapeMap = {
+      '"': '\\"',
+      "'": "\\'"
+    };
+    return str.replace(/"|'/g, m => escapeMap[m]);
+  }
   function clearRangeInputs() {
-    var rangeInputs = t$2("[data-range-input]", container);
-    rangeInputs.forEach(function (input) {
+    const rangeInputs = t$2("[data-range-input]", container);
+    rangeInputs.forEach(input => {
       input.value = "";
     });
   }
-
   function resetForms() {
-    forms.forEach(function (form) {
+    forms.forEach(form => {
       form.reset();
     });
   }
-
   return {
-    getState: function getState() {
+    getState() {
       return {
         url: searchParams
       };
     },
-    filtersUpdated: function filtersUpdated(target, cb) {
+    filtersUpdated(target, cb) {
       syncForms(target);
       setParams(target);
       r$1("filters:updated");
       return cb(this.getState());
     },
-    removeFilters: function removeFilters(target, cb) {
+    removeFilters(target, cb) {
       uncheckFilters(target);
       setParams();
       r$1("filters:filter-removed");
       return cb(this.getState());
     },
-    removeRange: function removeRange(cb) {
+    removeRange(cb) {
       clearRangeInputs();
       setParams();
       return cb(this.getState());
     },
-    clearAll: function clearAll(cb) {
+    clearAll(cb) {
       searchParams = "";
       resetForms();
       return cb(this.getState());
@@ -13365,106 +11663,99 @@ var filtering = function filtering(container) {
   };
 };
 
-var FILTERS_REMOVE = "collection:filters:remove";
-var RANGE_REMOVE = "collection:range:remove";
-var EVERYTHING_CLEAR = "collection:clear";
-var FILTERS_UPDATE = "collection:filters:update";
-var updateFilters = function updateFilters(target) {
-  return r$1(FILTERS_UPDATE, null, {
-    target: target
-  });
-};
-var removeFilters = function removeFilters(target) {
-  return r$1(FILTERS_REMOVE, null, {
-    target: target
-  });
-};
-var filtersUpdated = function filtersUpdated(cb) {
-  return c(FILTERS_UPDATE, cb);
-};
-var filtersRemoved = function filtersRemoved(cb) {
-  return c(FILTERS_REMOVE, cb);
-};
-var everythingCleared = function everythingCleared(cb) {
-  return c(EVERYTHING_CLEAR, cb);
-};
-var rangeRemoved = function rangeRemoved(cb) {
-  return c(RANGE_REMOVE, cb);
-};
+const FILTERS_REMOVE = "collection:filters:remove";
+const RANGE_REMOVE = "collection:range:remove";
+const EVERYTHING_CLEAR = "collection:clear";
+const FILTERS_UPDATE = "collection:filters:update";
+const updateFilters = target => r$1(FILTERS_UPDATE, null, {
+  target
+});
+const removeFilters = target => r$1(FILTERS_REMOVE, null, {
+  target
+});
+const filtersUpdated = cb => c(FILTERS_UPDATE, cb);
+const filtersRemoved = cb => c(FILTERS_REMOVE, cb);
+const everythingCleared = cb => c(EVERYTHING_CLEAR, cb);
+const rangeRemoved = cb => c(RANGE_REMOVE, cb);
 
-var filterHandler = function filterHandler(_ref) {
-  var container = _ref.container,
-      renderCB = _ref.renderCB;
-  var subscriptions = null;
-  var filters = null;
-  var delegate = null;
-  filters = filtering(container); // Set initial evx state from collection url object
+const filterHandler = _ref => {
+  let {
+    container,
+    renderCB
+  } = _ref;
+  let subscriptions = null;
+  let filters = null;
+  let delegate = null;
+  filters = filtering(container);
 
+  // Set initial evx state from collection url object
   o$1(filters.getState());
-  subscriptions = [filtersRemoved(function (_, _ref2) {
-    var target = _ref2.target;
-    filters.removeFilters(target, function (data) {
+  subscriptions = [filtersRemoved((_, _ref2) => {
+    let {
+      target
+    } = _ref2;
+    filters.removeFilters(target, data => {
       renderCB(data.url);
       o$1(data)();
     });
-  }), rangeRemoved(function () {
-    filters.removeRange(function (data) {
+  }), rangeRemoved(() => {
+    filters.removeRange(data => {
       renderCB(data.url);
       o$1(data)();
     });
-  }), filtersUpdated(function (_, _ref3) {
-    var target = _ref3.target;
-    filters.filtersUpdated(target, function (data) {
+  }), filtersUpdated((_, _ref3) => {
+    let {
+      target
+    } = _ref3;
+    filters.filtersUpdated(target, data => {
       renderCB(data.url);
       o$1(data)();
     });
-  }), everythingCleared(function () {
-    filters.clearAll(function (data) {
+  }), everythingCleared(() => {
+    filters.clearAll(data => {
       renderCB(data.url);
       o$1(data)();
     });
   })];
   delegate = new Delegate(container);
-  delegate.on("click", "[data-remove-filter]", function (e) {
+  delegate.on("click", "[data-remove-filter]", e => {
     e.preventDefault();
     removeFilters([e.target]);
   });
   window.addEventListener("popstate", onPopstate);
-
   function onPopstate() {
-    var url = new URL(window.location);
-    var searchParams = url.search.replace("?", "");
+    const url = new URL(window.location);
+    const searchParams = url.search.replace("?", "");
     renderCB(searchParams, false);
     o$1({
       url: searchParams
     });
   }
-
-  var unload = function unload() {
+  const unload = () => {
     delegate && delegate.off();
-    subscriptions && subscriptions.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
+    subscriptions && subscriptions.forEach(unsubscribe => unsubscribe());
     window.removeEventListener("popstate", onPopstate);
   };
-
   return {
-    unload: unload
+    unload
   };
 };
 
-var strings$2 = window.theme.strings;
-
-var priceRange = function priceRange(container) {
-  var inputs = t$2("input", container);
-  var minInput = inputs[0];
-  var maxInput = inputs[1];
-  var events = [e$2(inputs, "change", onRangeChange)];
-  var slider = n$2("[data-range-slider]", container);
-  var min = Math.floor(minInput.value ? minInput.value : minInput.getAttribute("min"));
-  var max = Math.floor(maxInput.value ? maxInput.value : maxInput.getAttribute("max"));
-  import(flu.chunks.nouislider).then(function (_ref) {
-    var noUiSlider = _ref.noUiSlider;
+const {
+  strings: strings$2
+} = window.theme;
+const priceRange = container => {
+  const inputs = t$2("input", container);
+  const minInput = inputs[0];
+  const maxInput = inputs[1];
+  const events = [e$2(inputs, "change", onRangeChange)];
+  const slider = n$2("[data-range-slider]", container);
+  let min = Math.floor(minInput.value ? minInput.value : minInput.getAttribute("min"));
+  let max = Math.floor(maxInput.value ? maxInput.value : maxInput.getAttribute("max"));
+  import(flu.chunks.nouislider).then(_ref => {
+    let {
+      noUiSlider
+    } = _ref;
     noUiSlider.create(slider, {
       start: [minInput.value ? minInput.value : minInput.getAttribute("min"), maxInput.value ? maxInput.value : maxInput.getAttribute("max")],
       handleAttributes: [{
@@ -13478,91 +11769,69 @@ var priceRange = function priceRange(container) {
         "max": parseInt(maxInput.getAttribute("max"))
       }
     });
-    slider.noUiSlider.on("slide", function (e) {
-      var maxNew, minNew;
-
-      var _e = _slicedToArray(e, 2);
-
-      minNew = _e[0];
-      maxNew = _e[1];
+    slider.noUiSlider.on("slide", e => {
+      let maxNew, minNew;
+      [minNew, maxNew] = e;
       minInput.value = Math.floor(minNew);
       maxInput.value = Math.floor(maxNew);
       setMinAndMaxValues();
     });
-    slider.noUiSlider.on("set", function (e) {
-      var maxNew, minNew;
+    slider.noUiSlider.on("set", e => {
+      let maxNew, minNew;
       minNew = Math.floor(e[0]);
       maxNew = Math.floor(e[1]);
-
       if (minNew != min) {
         minInput.value = minNew;
         fireMinChangeEvent();
         min = Math.floor(minInput.value ? minInput.value : minInput.getAttribute("min"));
       }
-
       if (maxNew != max) {
         maxInput.value = maxNew;
         fireMaxChangeEvent();
         max = Math.floor(maxInput.value ? maxInput.value : maxInput.getAttribute("max"));
       }
-
       setMinAndMaxValues();
     });
     setMinAndMaxValues();
   });
-
   function setMinAndMaxValues() {
     if (maxInput.value) minInput.setAttribute("max", maxInput.value);
     if (minInput.value) maxInput.setAttribute("min", minInput.value);
     if (minInput.value === "") maxInput.setAttribute("min", 0);
     if (maxInput.value === "") minInput.setAttribute("max", maxInput.getAttribute("max"));
   }
-
   function adjustToValidValues(input) {
-    var value = Number(input.value);
-    var minNew = Number(input.getAttribute("min"));
-    var maxNew = Number(input.getAttribute("max"));
+    const value = Number(input.value);
+    const minNew = Number(input.getAttribute("min"));
+    const maxNew = Number(input.getAttribute("max"));
     if (value < minNew) input.value = minNew;
     if (value > maxNew) input.value = maxNew;
   }
-
   function fireMinChangeEvent() {
     minInput.dispatchEvent(new Event("change", {
       bubbles: true
     }));
   }
-
   function fireMaxChangeEvent() {
     maxInput.dispatchEvent(new Event("change", {
       bubbles: true
     }));
   }
-
   function onRangeChange(event) {
     adjustToValidValues(event.currentTarget);
     setMinAndMaxValues();
     if (minInput.value === "" && maxInput.value === "") return;
-    var currentMax, currentMin;
-
-    var _slider$noUiSlider$ge = slider.noUiSlider.get();
-
-    var _slider$noUiSlider$ge2 = _slicedToArray(_slider$noUiSlider$ge, 2);
-
-    currentMin = _slider$noUiSlider$ge2[0];
-    currentMax = _slider$noUiSlider$ge2[1];
+    let currentMax, currentMin;
+    [currentMin, currentMax] = slider.noUiSlider.get();
     currentMin = Math.floor(currentMin);
     currentMax = Math.floor(currentMax);
     if (currentMin !== Math.floor(minInput.value)) slider.noUiSlider.set([minInput.value, null]);
     if (currentMax !== Math.floor(maxInput.value)) slider.noUiSlider.set([null, maxInput.value]);
   }
-
   function validateRange() {
-    inputs.forEach(function (input) {
-      return setMinAndMaxValues();
-    });
+    inputs.forEach(input => setMinAndMaxValues());
   }
-
-  var reset = function reset() {
+  const reset = () => {
     slider.noUiSlider.set([minInput.getAttribute("min"), maxInput.getAttribute("max")], false);
     minInput.value = "";
     maxInput.value = "";
@@ -13570,18 +11839,14 @@ var priceRange = function priceRange(container) {
     max = Math.floor(maxInput.getAttribute("max"));
     setMinAndMaxValues();
   };
-
-  var unload = function unload() {
-    events.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
+  const unload = () => {
+    events.forEach(unsubscribe => unsubscribe());
     slider.noUiSlider.destroy();
   };
-
   return {
-    unload: unload,
-    reset: reset,
-    validateRange: validateRange
+    unload,
+    reset,
+    validateRange
   };
 };
 
@@ -13590,17 +11855,15 @@ var priceRange = function priceRange(container) {
  * @param {*} selector The selector to target
  * @param {*} doc The updated document returned by the fetch request
  */
-
 function replaceElement(selector, doc) {
-  var updatedItem = n$2(selector, doc);
-  var oldItem = n$2(selector);
-
+  const updatedItem = n$2(selector, doc);
+  const oldItem = n$2(selector);
   if (updatedItem && oldItem) {
     oldItem.parentElement.replaceChild(updatedItem, oldItem);
   }
 }
 
-var sel$1 = {
+const sel$2 = {
   drawer: "[data-filter-drawer]",
   drawerTitle: "[data-filter-drawer-title]",
   filter: "[data-filter]",
@@ -13614,54 +11877,45 @@ var sel$1 = {
   group: ".filter-drawer__group",
   groupToggle: "[data-drawer-group-toggle]",
   panel: ".filter-drawer__panel",
-  flyoutWrapper: "[data-filer-modal-wrapper]",
+  flyoutWrapper: "[data-filter-modal-wrapper]",
   priceRange: "[data-price-range]",
   resultsCount: "[data-results-count]",
   activeFilters: "[data-active-filters]",
   activeFilterCount: "[data-active-filter-count]"
 };
-var classes$3 = {
+const classes$4 = {
   active: "active",
   activeFilters: "filters-active",
   fixed: "is-fixed",
   filterDisabled: "filter-item__content--disabled"
 };
-
-var filterDrawer = function filterDrawer(node) {
+const filterDrawer = node => {
   if (!node) {
     return false;
   }
-
-  var container = n$2(sel$1.drawer, node);
-
+  const container = n$2(sel$2.drawer, node);
   if (!container) {
     return false;
   }
-
-  var flyouts = t$2(sel$1.flyouts, container);
-  var wash = n$2(sel$1.wash, container);
-  var rangeInputs = t$2("[data-range-input]", container);
-  var focusTrap = null;
-  var range = null;
-  var filterDrawerAnimation = null;
-
+  const flyouts = t$2(sel$2.flyouts, container);
+  const wash = n$2(sel$2.wash, container);
+  const rangeInputs = t$2("[data-range-input]", container);
+  let focusTrap = null;
+  let range = null;
+  let filterDrawerAnimation = null;
   if (shouldAnimate(node)) {
     filterDrawerAnimation = animateFilterDrawer(container);
   }
-
-  var rangeContainer = n$2(sel$1.priceRange, container);
-
+  const rangeContainer = n$2(sel$2.priceRange, container);
   if (rangeContainer) {
     range = priceRange(rangeContainer);
   }
-
-  var events = [e$2(t$2(sel$1.filterTarget, node), "click", clickFlyoutTrigger), e$2(container, "change", changeHandler), e$2(wash, "click", clickWash), e$2(t$2("".concat(sel$1.button, ", ").concat(sel$1.clearAll), container), "click", clickButton), e$2(t$2(sel$1.close, container), "click", clickWash), e$2(container, "keydown", function (_ref) {
-    var keyCode = _ref.keyCode;
+  const events = [e$2(t$2(sel$2.filterTarget, node), "click", clickFlyoutTrigger), e$2(container, "change", changeHandler), e$2(wash, "click", clickWash), e$2(t$2("".concat(sel$2.button, ", ").concat(sel$2.clearAll), container), "click", clickButton), e$2(t$2(sel$2.close, container), "click", clickWash), e$2(container, "keydown", _ref => {
+    let {
+      keyCode
+    } = _ref;
     if (keyCode === 27) clickWash();
-  }), e$2(rangeInputs, "change", rangeChanged), c("filters:filter-removed", function () {
-    return syncActiveStates();
-  })];
-
+  }), e$2(rangeInputs, "change", rangeChanged), c("filters:filter-removed", () => syncActiveStates())];
   function changeHandler(e) {
     if (e.target.classList.contains("filter-item__checkbox")) {
       filterChange(e.target);
@@ -13669,117 +11923,109 @@ var filterDrawer = function filterDrawer(node) {
       sortChange(e);
     }
   }
-
   function clickFlyoutTrigger(e) {
     e.preventDefault();
-    var filterDrawerTarget = e.currentTarget.dataset.filterDrawerTarget;
-    var modal = n$2("[data-filter-modal=\"".concat(filterDrawerTarget, "\"]"), container);
+    const {
+      filterDrawerTarget
+    } = e.currentTarget.dataset;
+    const modal = n$2("[data-filter-modal=\"".concat(filterDrawerTarget, "\"]"), container);
     focusTrap = createFocusTrap(modal, {
       allowOutsideClick: true
     });
-    u$1(container, classes$3.fixed);
-    setTimeout(function () {
+    u$1(container, classes$4.fixed);
+    setTimeout(() => {
       if (shouldAnimate(node)) {
         filterDrawerAnimation.open(modal);
       }
-
-      u$1(container, classes$3.active);
-      u$1(modal, classes$3.active);
+      u$1(container, classes$4.active);
+      u$1(modal, classes$4.active);
     }, 0);
     modal.setAttribute("aria-hidden", "false");
     focusTrap.activate();
+    document.body.setAttribute("data-fluorescent-overlay-open", "true");
     disableBodyScroll(node, {
-      allowTouchMove: function allowTouchMove(el) {
+      allowTouchMove: el => {
         while (el && el !== document.body) {
           if (el.getAttribute("data-scroll-lock-ignore") !== null) {
             return true;
           }
-
           el = el.parentNode;
         }
       },
       reserveScrollBarGap: true
     });
   }
-
   function clickWash(e) {
     e && e.preventDefault();
     focusTrap && focusTrap.deactivate();
-    i$1(flyouts, classes$3.active);
-    i$1(container, classes$3.active);
-    flyouts.forEach(function (flyout) {
-      return flyout.setAttribute("aria-hidden", "true");
-    });
+    i$1(flyouts, classes$4.active);
+    i$1(container, classes$4.active);
+    flyouts.forEach(flyout => flyout.setAttribute("aria-hidden", "true"));
+    document.body.setAttribute("data-fluorescent-overlay-open", "false");
     enableBodyScroll(node);
-    setTimeout(function () {
-      i$1(container, classes$3.fixed);
-
+    setTimeout(() => {
+      i$1(container, classes$4.fixed);
       if (shouldAnimate(node)) {
         filterDrawerAnimation.close(flyouts);
       }
     }, 500);
   }
-
   function filterChange(filter) {
-    if (filter.classList.contains(classes$3.filterDisabled)) {
+    if (filter.classList.contains(classes$4.filterDisabled)) {
       return;
     }
-
     checkForActiveModalitems(filter);
     range && range.validateRange();
-    debounce(function () {
-      return updateFilters(container);
-    }, 1000)();
+    debounce(() => updateFilters(container), 1000)();
   }
-
   function sortChange(e) {
     checkForActiveModalitems(e.target);
     range && range.validateRange();
     updateFilters(container);
   }
-
   function rangeChanged(e) {
     checkForActiveModalitems(e.currentTarget);
-    var wrappingContainer = e.target.closest(sel$1.group);
-    wrappingContainer && l(wrappingContainer, classes$3.activeFilters, rangeInputsHaveValue());
+    const wrappingContainer = e.target.closest(sel$2.group);
+    wrappingContainer && l(wrappingContainer, classes$4.activeFilters, rangeInputsHaveValue());
     updateFilters(container);
   }
-
   function clickButton(e) {
     e.preventDefault();
-    var button = e.currentTarget.dataset.button;
-    var scope = e.currentTarget.closest(sel$1.flyouts);
-    var filterModal = scope.dataset.filterModal;
-
+    const {
+      button
+    } = e.currentTarget.dataset;
+    const scope = e.currentTarget.closest(sel$2.flyouts);
+    const {
+      filterModal
+    } = scope.dataset;
     if (button === "close") {
       clickWash();
-    } // Sort flyouts
+    }
 
-
+    // Sort flyouts
     if (filterModal === "__sort") {
       if (button === "clear-all") {
-        t$2("[data-filter-modal=\"__sort\"] ".concat(sel$1.sort), container).forEach(function (element) {
+        t$2("[data-filter-modal=\"__sort\"] ".concat(sel$2.sort), container).forEach(element => {
           n$2("input", element).checked = false;
         });
-        i$1(e.currentTarget.closest(sel$1.panel), classes$3.activeFilters);
+        i$1(e.currentTarget.closest(sel$2.panel), classes$4.activeFilters);
       }
     } else {
       // Regular filter flyout
+
       if (button === "clear-all") {
-        t$2("input", scope).forEach(function (input) {
+        t$2("input", scope).forEach(input => {
           input.checked = false;
         });
-        var panel = e.currentTarget.closest(sel$1.panel);
-        i$1([].concat(_toConsumableArray(t$2(sel$1.group, panel)), [panel]), classes$3.activeFilters);
+        const panel = e.currentTarget.closest(sel$2.panel);
+        i$1([...t$2(sel$2.group, panel), panel], classes$4.activeFilters);
         range && range.reset();
         updateFilters(container);
       }
-
       if (button === "group_toggle") {
-        var group = n$2("#".concat(e.currentTarget.getAttribute("aria-controls")));
-        var ariaExpanded = e.currentTarget.getAttribute("aria-expanded") === "true";
+        const group = n$2("#".concat(e.currentTarget.getAttribute("aria-controls")));
+        const ariaExpanded = e.currentTarget.getAttribute("aria-expanded") === "true";
         slideStop(group);
-
         if (ariaExpanded) {
           closeGroup(e.currentTarget, group);
         } else {
@@ -13788,86 +12034,68 @@ var filterDrawer = function filterDrawer(node) {
       }
     }
   }
-
   function openGroup(button, group) {
     slideDown(group);
     button.setAttribute("aria-expanded", true);
     group.setAttribute("aria-hidden", false);
   }
-
   function closeGroup(button, group) {
     slideUp(group);
     button.setAttribute("aria-expanded", false);
     group.setAttribute("aria-hidden", true);
   }
-
   function containsCheckedInputs(items) {
-    return items.some(function (input) {
-      return input.checked;
-    });
+    return items.some(input => input.checked);
   }
-
   function rangeInputsHaveValue() {
-    return rangeInputs.some(function (input) {
-      return input.value !== "";
-    });
+    return rangeInputs.some(input => input.value !== "");
   }
-
   function checkForActiveModalitems(currentTarget) {
-    var panel = currentTarget.closest(sel$1.panel);
+    const panel = currentTarget.closest(sel$2.panel);
     if (!panel) return;
-    var activeItems = containsCheckedInputs(t$2("input", panel)) || rangeInputsHaveValue();
-    l(panel, classes$3.activeFilters, activeItems);
+    const activeItems = containsCheckedInputs(t$2("input", panel)) || rangeInputsHaveValue();
+    l(panel, classes$4.activeFilters, activeItems);
   }
-
   function syncActiveStates() {
-    var panels = t$2(sel$1.panel, container);
-    panels.forEach(function (panel) {
-      var activeItems = false;
-      var rangeInputs = n$2("[data-range-input]", panel);
-
+    const panels = t$2(sel$2.panel, container);
+    panels.forEach(panel => {
+      let activeItems = false;
+      const rangeInputs = n$2("[data-range-input]", panel);
       if (containsCheckedInputs(t$2("input", panel))) {
         activeItems = true;
       }
-
       if (rangeInputs && rangeInputsHaveValue()) {
         activeItems = true;
       }
-
-      l(panel, classes$3.activeFilters, activeItems);
+      l(panel, classes$4.activeFilters, activeItems);
     });
   }
-
   function renderFilters(doc) {
-    var updatedFilterItems = t$2("".concat(sel$1.drawer, " ").concat(sel$1.filterItem), doc);
-    updatedFilterItems.forEach(function (element) {
-      replaceElement("".concat(sel$1.drawer, " ").concat(sel$1.filterItem, "[for=\"").concat(element.getAttribute("for"), "\"] .filter-item__checkbox"), doc);
-      replaceElement("".concat(sel$1.drawer, " ").concat(sel$1.filterItem, "[for=\"").concat(element.getAttribute("for"), "\"] .filter-item__count"), doc);
+    const updatedFilterItems = t$2("".concat(sel$2.drawer, " ").concat(sel$2.filterItem), doc);
+    updatedFilterItems.forEach(element => {
+      replaceElement("".concat(sel$2.drawer, " ").concat(sel$2.filterItem, "[for=\"").concat(element.getAttribute("for"), "\"] .filter-item__checkbox"), doc);
+      replaceElement("".concat(sel$2.drawer, " ").concat(sel$2.filterItem, "[for=\"").concat(element.getAttribute("for"), "\"] .filter-item__count"), doc);
     });
-    var updatedGroupToggles = t$2("".concat(sel$1.drawer, " ").concat(sel$1.groupToggle), doc);
-    updatedGroupToggles.forEach(function (element) {
-      updateInnerHTML("".concat(sel$1.drawer, " [data-drawer-group-toggle=\"").concat(element.getAttribute("data-drawer-group-toggle"), "\"]"), doc);
+    const updatedGroupToggles = t$2("".concat(sel$2.drawer, " ").concat(sel$2.groupToggle), doc);
+    updatedGroupToggles.forEach(element => {
+      updateInnerHTML("".concat(sel$2.drawer, " [data-drawer-group-toggle=\"").concat(element.getAttribute("data-drawer-group-toggle"), "\"]"), doc);
     });
-    updateInnerHTML("".concat(sel$1.drawer, " ").concat(sel$1.resultsCount), doc);
-    updateInnerHTML("".concat(sel$1.drawer, " ").concat(sel$1.activeFilters), doc);
-    updateInnerHTML("".concat(sel$1.drawer, " ").concat(sel$1.drawerTitle), doc);
+    updateInnerHTML("".concat(sel$2.drawer, " ").concat(sel$2.resultsCount), doc);
+    updateInnerHTML("".concat(sel$2.drawer, " ").concat(sel$2.activeFilters), doc);
+    updateInnerHTML("".concat(sel$2.drawer, " ").concat(sel$2.drawerTitle), doc);
     updateInnerHTML("[data-mobile-filters] [data-mobile-filters-toggle]", doc);
   }
-
   function unload() {
-    events.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
+    events.forEach(unsubscribe => unsubscribe());
     range && range.unload();
   }
-
   return {
-    renderFilters: renderFilters,
-    unload: unload
+    renderFilters,
+    unload
   };
 };
 
-var sel = {
+const sel$1 = {
   bar: "[data-filter-bar]",
   filterItem: "[data-filter-item]",
   dropdownToggle: "[data-dropdown-toggle]",
@@ -13885,121 +12113,112 @@ var sel = {
   activeFilters: "[data-active-filters]",
   clearAll: "[data-clear-all-filters]"
 };
-var classes$2 = {
+const classes$3 = {
   activeFilters: "filters-active",
   filterDisabled: "filter-item__content--disabled",
   filterBarActive: "filter-bar__filters-inner--active",
   filterBarWashActive: "filter-bar--wash-active",
   filterGroupActive: "filter-group--active",
   filterGroupRight: "filter-group__values--right"
-}; // eslint-disable-next-line valid-jsdoc
+};
 
+// eslint-disable-next-line valid-jsdoc
 /**
  * A class to handle desktop filter bar functionality
  * @param {*} node the collection section container
  * @returns renderFilters and unload methods
  */
-
-var filterBar = function filterBar(node) {
+const filterBar = node => {
   if (!node) {
     return false;
-  } // `node` is the colelction section container.
+  }
+
+  // `node` is the colelction section container.
   // Using `container` here as the filter bar container to keep filter bar
   // and filter drawer DOM scope separate.
-
-
-  var container = n$2(sel.bar, node);
-  var groupLabels = t$2(sel.groupLabels, container);
-  var rangeInputs = t$2(sel.rangeInput, container);
-  var rangeContainer = n$2(sel.priceRange, container);
-  var focusTrap = null;
-  var range = null;
-
+  const container = n$2(sel$1.bar, node);
+  const groupLabels = t$2(sel$1.groupLabels, container);
+  const rangeInputs = t$2(sel$1.rangeInput, container);
+  const rangeContainer = n$2(sel$1.priceRange, container);
+  let focusTrap = null;
+  let range = null;
   if (rangeContainer) {
     range = priceRange(rangeContainer);
   }
-
-  var events = [e$2(window, "click", clickHandler), e$2(container, "change", changeHandler), c("filters:filter-removed", function () {
-    return syncActiveStates();
-  }), e$2(container, "keydown", function (_ref) {
-    var keyCode = _ref.keyCode;
+  const events = [e$2(window, "click", clickHandler), e$2(container, "change", changeHandler), c("filters:filter-removed", () => syncActiveStates()), e$2(container, "keydown", _ref => {
+    let {
+      keyCode
+    } = _ref;
     if (keyCode === 27) closeGroups();
-  })]; // eslint-disable-next-line valid-jsdoc
+  })];
 
+  // eslint-disable-next-line valid-jsdoc
   /**
    * Delegates click events
    * @param {event} e click event
    */
-
   function clickHandler(e) {
-    var group = e.target.closest(sel.group);
-    var dropdownToggle = e.target.closest(sel.dropdownToggle);
-    var groupReset = e.target.closest(sel.groupReset);
-    var removeRange = e.target.closest(sel.removeRange);
-    var clearAll = e.target.closest(sel.clearAll); // If the click happened outside of a filter group
-    // We don't want to close the groups if the click happened on a filter in a group
+    const group = e.target.closest(sel$1.group);
+    const dropdownToggle = e.target.closest(sel$1.dropdownToggle);
+    const groupReset = e.target.closest(sel$1.groupReset);
+    const removeRange = e.target.closest(sel$1.removeRange);
+    const clearAll = e.target.closest(sel$1.clearAll);
 
+    // If the click happened outside of a filter group
+    // We don't want to close the groups if the click happened on a filter in a group
     if (!group) {
       closeGroups();
     }
-
     if (dropdownToggle) {
       toggleDropdown(dropdownToggle);
     }
-
     if (groupReset) {
       handleGroupReset(groupReset);
     }
-
     if (removeRange) {
       e.preventDefault();
       priceRangeRemove();
     }
-
     if (clearAll) {
       e.preventDefault();
       clearAllFilters();
     }
   }
-
   function clearAllFilters() {
     range && range.reset();
-    t$2("".concat(sel.filterInputs), container).forEach(function (input) {
+    t$2("".concat(sel$1.filterInputs), container).forEach(input => {
       input.checked = false;
     });
     updateFilters(container);
   }
-
   function handleGroupReset(groupReset) {
-    var group = groupReset.closest(sel.groupValues);
-    var filterType = group.dataset.filterType;
-
+    const group = groupReset.closest(sel$1.groupValues);
+    const {
+      filterType
+    } = group.dataset;
     if (filterType === "price_range") {
       priceRangeRemove();
     } else {
-      t$2(sel.filterInputs, group).forEach(function (input) {
+      t$2(sel$1.filterInputs, group).forEach(input => {
         input.checked = false;
       });
       updateFilters(container);
     }
   }
-
   function priceRangeRemove() {
     range && range.reset();
     checkForActiveFilters();
     updateFilters(container);
-  } // eslint-disable-next-line valid-jsdoc
+  }
 
+  // eslint-disable-next-line valid-jsdoc
   /**
    * Delegates change events
    * @param {event} e change event
    */
-
-
   function changeHandler(e) {
-    var filterInput = e.target.closest("".concat(sel.bar, " ").concat(sel.filterInputs, ", ").concat(sel.bar, " ").concat(sel.sortInputs));
-    var rangeInput = e.target.closest("".concat(sel.bar, " ").concat(sel.rangeInput));
-
+    const filterInput = e.target.closest("".concat(sel$1.bar, " ").concat(sel$1.filterInputs, ", ").concat(sel$1.bar, " ").concat(sel$1.sortInputs));
+    const rangeInput = e.target.closest("".concat(sel$1.bar, " ").concat(sel$1.rangeInput));
     if (filterInput) {
       checkForActiveFilters();
       filterChange(filterInput);
@@ -14008,16 +12227,13 @@ var filterBar = function filterBar(node) {
       filterChange(rangeInput);
     }
   }
-
   function closeGroups() {
-    groupLabels.forEach(function (button) {
+    groupLabels.forEach(button => {
       hideDropdown(button);
     });
   }
-
   function toggleDropdown(button) {
-    var ariaExpanded = button.getAttribute("aria-expanded") === "true";
-
+    const ariaExpanded = button.getAttribute("aria-expanded") === "true";
     if (ariaExpanded) {
       closeGroups();
       hideDropdown(button);
@@ -14026,27 +12242,27 @@ var filterBar = function filterBar(node) {
       showDropdown(button);
     }
   }
-
   function showDropdown(button) {
-    var group = button.closest(sel.group);
+    const group = button.closest(sel$1.group);
     button.setAttribute("aria-expanded", true);
-    var dropdown = n$2("#".concat(button.getAttribute("aria-controls")), container);
-    var dropdownToggle = button.dataset.dropdownToggle;
-
+    const dropdown = n$2("#".concat(button.getAttribute("aria-controls")), container);
+    const {
+      dropdownToggle
+    } = button.dataset;
     if (dropdown) {
       if (dropdownToggle === "filter-bar-filters") {
         slideStop(dropdown);
-        slideDown(dropdown).then(function () {
+        slideDown(dropdown).then(() => {
           dropdown.setAttribute("aria-hidden", false);
         });
       } else {
         dropdown.setAttribute("aria-hidden", false);
-
         if (group) {
-          u$1(group, classes$2.filterGroupActive);
-          positionGroup(group, dropdown); // Lock the filter bar to stop horizontal scrolling
+          u$1(group, classes$3.filterGroupActive);
+          positionGroup(group, dropdown);
 
-          u$1(container, classes$2.filterBarWashActive);
+          // Lock the filter bar to stop horizontal scrolling
+          u$1(container, classes$3.filterBarWashActive);
           focusTrap = createFocusTrap(group, {
             allowOutsideClick: true
           });
@@ -14055,37 +12271,38 @@ var filterBar = function filterBar(node) {
       }
     }
   }
-
   function hideDropdown(button) {
-    var group = button.closest(sel.group);
-    i$1(container, classes$2.filterBarWashActive);
+    const group = button.closest(sel$1.group);
+    i$1(container, classes$3.filterBarWashActive);
     button.setAttribute("aria-expanded", false);
-    var dropdown = n$2("#".concat(button.getAttribute("aria-controls")), container);
-    var dropdownToggle = button.dataset.dropdownToggle;
-
+    const dropdown = n$2("#".concat(button.getAttribute("aria-controls")), container);
+    const {
+      dropdownToggle
+    } = button.dataset;
     if (dropdown) {
       dropdown.setAttribute("aria-hidden", true);
-
       if (dropdownToggle === "filter-bar-filters") {
         slideStop(dropdown);
         slideUp(dropdown);
       } else if (group) {
-        i$1(group, classes$2.filterGroupActive);
+        i$1(group, classes$3.filterGroupActive);
         focusTrap && focusTrap.deactivate();
       }
     }
   }
-
   function positionGroup(group, dropdown) {
-    i$1(dropdown, classes$2.filterGroupRight); // The filter bar bounding rect
+    i$1(dropdown, classes$3.filterGroupRight);
 
-    var parentBounds = group.parentElement.getBoundingClientRect(); // This filter groups bounding rect.
+    // The filter bar bounding rect
+    const parentBounds = group.parentElement.getBoundingClientRect();
+    // This filter groups bounding rect.
     // This will be around the toggle button
     // and what the drop down is positioned inside of
+    const groupBounds = group.getBoundingClientRect();
+    // The drop down bounding rect
+    const dropdownBounds = dropdown.getBoundingClientRect();
 
-    var groupBounds = group.getBoundingClientRect(); // The drop down bounding rect
-
-    var dropdownBounds = dropdown.getBoundingClientRect(); // Check if the drop down will stick out too far past the toggle button
+    // Check if the drop down will stick out too far past the toggle button
     // Basicially checks if the drop down will overflow the page or not
     // 1. add the left side X position of the toggle button
     //    to the width of the drop down
@@ -14093,352 +12310,471 @@ var filterBar = function filterBar(node) {
     // 2. If the left side of the drop down is past the width of the filter bar
     // 3. Add a class to the drop down to position it
     //    to the right side of the toggle button
-
     if (groupBounds.x + dropdownBounds.width >= parentBounds.width) {
-      u$1(dropdown, classes$2.filterGroupRight);
+      u$1(dropdown, classes$3.filterGroupRight);
     }
   }
-
   function updateGroupPositions() {
-    var buttons = t$2(sel.dropdownToggle, container);
-    buttons.forEach(function (button) {
-      var ariaExpanded = button.getAttribute("aria-expanded") === "true";
-
+    const buttons = t$2(sel$1.dropdownToggle, container);
+    buttons.forEach(button => {
+      const ariaExpanded = button.getAttribute("aria-expanded") === "true";
       if (ariaExpanded) {
-        var group = button.closest(sel.group);
-        var dropdown = n$2("#".concat(button.getAttribute("aria-controls")), container);
-
+        const group = button.closest(sel$1.group);
+        const dropdown = n$2("#".concat(button.getAttribute("aria-controls")), container);
         if (group && dropdown) {
           positionGroup(group, dropdown);
         }
       }
     });
   }
+  function filterChange(filter) {
+    if (filter.classList.contains(classes$3.filterDisabled)) {
+      return;
+    }
+    checkForActiveFilters();
+    range && range.validateRange();
+    debounce(() => updateFilters(container), 1000)();
+  }
+  function checkForActiveFilters() {
+    const activeItems = containsCheckedInputs(t$2(sel$1.filterInputs, container)) || rangeInputsHaveValue();
+    l(container, classes$3.activeFilters, activeItems);
+  }
+  function rangeInputsHaveValue() {
+    return rangeInputs.some(input => input.value !== "");
+  }
+  function containsCheckedInputs(items) {
+    return items.some(input => input.checked);
+  }
+  function syncActiveStates() {
+    let activeItems = false;
+    if (rangeInputs && rangeInputsHaveValue() || containsCheckedInputs(t$2(sel$1.filterInputs, container))) {
+      activeItems = true;
+    }
+    l(container, classes$3.activeFilters, activeItems);
+  }
+  function renderFilters(doc) {
+    const updatedFilterItems = t$2("".concat(sel$1.bar, " ").concat(sel$1.filterItem), doc);
+    updatedFilterItems.forEach(element => {
+      replaceElement("".concat(sel$1.bar, " ").concat(sel$1.filterItem, "[for=\"").concat(element.getAttribute("for"), "\"] .filter-item__checkbox"), doc);
+      replaceElement("".concat(sel$1.bar, " ").concat(sel$1.filterItem, "[for=\"").concat(element.getAttribute("for"), "\"] .filter-item__count"), doc);
+    });
+    updateInnerHTML("".concat(sel$1.bar, " ").concat(sel$1.resultsCount), doc);
+    updateInnerHTML("".concat(sel$1.bar, " ").concat(sel$1.activeFilters), doc);
+    updateInnerHTML("".concat(sel$1.bar, " ").concat(sel$1.groupHeader), doc);
+    const updatedDropdownToggles = t$2("".concat(sel$1.bar, " ").concat(sel$1.dropdownToggle), doc);
+    if (updatedDropdownToggles.length > 0) {
+      updatedDropdownToggles.forEach(updated => {
+        updateInnerHTML("".concat(sel$1.bar, " [data-dropdown-toggle=\"").concat(updated.getAttribute("data-dropdown-toggle"), "\"]"), doc);
+      });
+    }
+    const updatedGroupHeader = t$2("".concat(sel$1.bar, " ").concat(sel$1.groupHeader), doc);
+    updatedGroupHeader.forEach(element => {
+      updateInnerHTML("".concat(sel$1.bar, " [data-group-values-header=\"").concat(element.getAttribute("data-group-values-header"), "\"]"), doc);
+    });
+    updateGroupPositions();
+  }
+  function unload() {
+    events.forEach(unsubscribe => unsubscribe());
+    range && range.unload();
+    focusTrap && focusTrap.deactivate();
+  }
+  return {
+    renderFilters,
+    unload
+  };
+};
 
+const sel = {
+  sidebar: "[data-filter-sidebar]",
+  sidebarToggle: '.filter-bar__button--filters[data-filter-location="sidebar"]',
+  sidebarToggleText: ".filter-bar__button-text",
+  filterBar: "[data-filter-bar]",
+  filter: "[data-filter]",
+  filterItem: "[data-filter-item]",
+  filterInputs: "[data-filter-item-input]",
+  button: "[data-button]",
+  group: ".filter-drawer__group",
+  groupToggle: "[data-drawer-group-toggle]",
+  priceRange: "[data-price-range]"
+};
+const classes$2 = {
+  active: "active",
+  activeFilters: "filters-active",
+  filterDisabled: "filter-item__content--disabled"
+};
+const filterSidebar = node => {
+  if (!node) {
+    return false;
+  }
+  const container = n$2(sel.sidebar, node);
+  if (!container) {
+    return false;
+  }
+  let filterSidebarAnimation = null;
+  if (shouldAnimate(node)) {
+    filterSidebarAnimation = animateFilterSidebar(container);
+    if (container.getAttribute("aria-expanded") === "true") {
+      filterSidebarAnimation.open(container);
+    } else {
+      filterSidebarAnimation.close(container);
+    }
+  }
+  const filterBar = n$2(sel.filterBar, node);
+  const rangeInputs = t$2("[data-range-input]", container);
+  const rangeContainer = n$2(sel.priceRange, container);
+  let range = null;
+  if (rangeContainer) {
+    range = priceRange(rangeContainer);
+  }
+  const events = [e$2(container, "change", changeHandler), e$2(n$2(sel.sidebarToggle, node), "click", clickSidebarToggle), e$2(t$2("".concat(sel.button, ", ").concat(sel.clearAll), container), "click", clickButton), e$2(rangeInputs, "change", rangeChanged)];
+  function clickSidebarToggle(e) {
+    e.preventDefault();
+    const sidebarToggle = e.currentTarget;
+    const {
+      collapsedTitle,
+      expandedTitle
+    } = sidebarToggle.dataset;
+    const buttonTextEl = n$2(sel.sidebarToggleText, sidebarToggle);
+    if (container.getAttribute("aria-expanded") === "true") {
+      container.setAttribute("aria-expanded", "false");
+      buttonTextEl.innerText = collapsedTitle;
+      setTimeout(() => {
+        if (shouldAnimate(node)) {
+          filterSidebarAnimation.close(container);
+        }
+      }, 0);
+    } else {
+      container.setAttribute("aria-expanded", "true");
+      buttonTextEl.innerText = expandedTitle;
+      setTimeout(() => {
+        if (shouldAnimate(node)) {
+          filterSidebarAnimation.open(container);
+        }
+      }, 0);
+    }
+  }
+  function changeHandler(e) {
+    filterChange(e.target);
+  }
   function filterChange(filter) {
     if (filter.classList.contains(classes$2.filterDisabled)) {
       return;
     }
-
     checkForActiveFilters();
     range && range.validateRange();
-    debounce(function () {
-      return updateFilters(container);
-    }, 1000)();
+    debounce(() => updateFilters(container), 1000)();
   }
-
-  function checkForActiveFilters() {
-    var activeItems = containsCheckedInputs(t$2(sel.filterInputs, container)) || rangeInputsHaveValue();
-    l(container, classes$2.activeFilters, activeItems);
+  function rangeChanged(e) {
+    const wrappingContainer = e.target.closest(sel.group);
+    wrappingContainer && l(wrappingContainer, classes$2.activeFilters, rangeInputsHaveValue());
+    updateFilters(container);
   }
-
-  function rangeInputsHaveValue() {
-    return rangeInputs.some(function (input) {
-      return input.value !== "";
-    });
-  }
-
-  function containsCheckedInputs(items) {
-    return items.some(function (input) {
-      return input.checked;
-    });
-  }
-
-  function syncActiveStates() {
-    var activeItems = false;
-
-    if (rangeInputs && rangeInputsHaveValue() || containsCheckedInputs(t$2(sel.filterInputs, container))) {
-      activeItems = true;
-    }
-
-    l(container, classes$2.activeFilters, activeItems);
-  }
-
-  function renderFilters(doc) {
-    var updatedFilterItems = t$2("".concat(sel.bar, " ").concat(sel.filterItem), doc);
-    updatedFilterItems.forEach(function (element) {
-      replaceElement("".concat(sel.bar, " ").concat(sel.filterItem, "[for=\"").concat(element.getAttribute("for"), "\"] .filter-item__checkbox"), doc);
-      replaceElement("".concat(sel.bar, " ").concat(sel.filterItem, "[for=\"").concat(element.getAttribute("for"), "\"] .filter-item__count"), doc);
-    });
-    updateInnerHTML("".concat(sel.bar, " ").concat(sel.resultsCount), doc);
-    updateInnerHTML("".concat(sel.bar, " ").concat(sel.activeFilters), doc);
-    updateInnerHTML("".concat(sel.bar, " ").concat(sel.groupHeader), doc);
-    var updatedDropdownToggles = t$2("".concat(sel.bar, " ").concat(sel.dropdownToggle), doc);
-
-    if (updatedDropdownToggles.length > 0) {
-      updatedDropdownToggles.forEach(function (updated) {
-        updateInnerHTML("".concat(sel.bar, " [data-dropdown-toggle=\"").concat(updated.getAttribute("data-dropdown-toggle"), "\"]"), doc);
+  function clickButton(e) {
+    e.preventDefault();
+    const {
+      button
+    } = e.currentTarget.dataset;
+    if (button === "clear-all") {
+      t$2("input", container).forEach(input => {
+        input.checked = false;
       });
+      range && range.reset();
+      updateFilters(container);
     }
-
-    var updatedGroupHeader = t$2("".concat(sel.bar, " ").concat(sel.groupHeader), doc);
-    updatedGroupHeader.forEach(function (element) {
-      updateInnerHTML("".concat(sel.bar, " [data-group-values-header=\"").concat(element.getAttribute("data-group-values-header"), "\"]"), doc);
-    });
-    updateGroupPositions();
+    if (button === "group_toggle") {
+      const group = n$2("#".concat(e.currentTarget.getAttribute("aria-controls")));
+      const ariaExpanded = e.currentTarget.getAttribute("aria-expanded") === "true";
+      slideStop(group);
+      if (ariaExpanded) {
+        closeGroup(e.currentTarget, group);
+      } else {
+        openGroup(e.currentTarget, group);
+      }
+    }
   }
-
+  function openGroup(button, group) {
+    slideDown(group);
+    button.setAttribute("aria-expanded", true);
+    group.setAttribute("aria-hidden", false);
+  }
+  function closeGroup(button, group) {
+    slideUp(group);
+    button.setAttribute("aria-expanded", false);
+    group.setAttribute("aria-hidden", true);
+  }
+  function checkForActiveFilters() {
+    const activeItems = containsCheckedInputs(t$2(sel.filterInputs, container)) || rangeInputsHaveValue();
+    l(filterBar, classes$2.activeFilters, activeItems);
+  }
+  function rangeInputsHaveValue() {
+    return rangeInputs.some(input => input.value !== "");
+  }
+  function containsCheckedInputs(items) {
+    return items.some(input => input.checked);
+  }
+  function renderFilters(doc) {
+    const updatedFilterItems = t$2("".concat(sel.sidebar, " ").concat(sel.filterItem), doc);
+    updatedFilterItems.forEach(element => {
+      replaceElement("".concat(sel.sidebar, " ").concat(sel.filterItem, "[for=\"").concat(element.getAttribute("for"), "\"] .filter-item__checkbox"), doc);
+      replaceElement("".concat(sel.sidebar, " ").concat(sel.filterItem, "[for=\"").concat(element.getAttribute("for"), "\"] .filter-item__count"), doc);
+    });
+    const updatedGroupToggles = t$2("".concat(sel.sidebar, " ").concat(sel.groupToggle), doc);
+    updatedGroupToggles.forEach(element => {
+      updateInnerHTML("".concat(sel.sidebar, " [data-drawer-group-toggle=\"").concat(element.getAttribute("data-drawer-group-toggle"), "\"]"), doc);
+    });
+    updateInnerHTML("".concat(sel.filterBar, " ").concat(sel.resultsCount), doc);
+    updateInnerHTML("".concat(sel.filterBar, " ").concat(sel.activeFilters), doc);
+    updateInnerHTML("".concat(sel.filterBar, " ").concat(sel.sidebarToggle), doc);
+  }
   function unload() {
-    events.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
+    events.forEach(unsubscribe => unsubscribe());
     range && range.unload();
-    focusTrap && focusTrap.deactivate();
   }
-
   return {
-    renderFilters: renderFilters,
-    unload: unload
+    renderFilters,
+    unload
   };
 };
 
-var selectors$2 = {
+const selectors$2 = {
   infiniteScrollContainer: ".collection__infinite-container",
   infiniteScrollTrigger: ".collection__infinite-trigger",
   partial: "[data-partial]",
   filterDrawer: "[data-filter-drawer]",
   filterBar: "[data-filter-bar]",
+  filterSidebar: "[data-filter-sidebar]",
   loader: ".collection__loading",
   paginationItemCount: "[data-pagination-item-count]",
   productItems: ".product-item"
 };
-var classes$1 = {
+const classes$1 = {
   active: "is-active",
   hideProducts: "animation--collection-products-hide"
 };
-var strings$1 = window.theme.strings;
+const {
+  strings: strings$1
+} = window.theme;
 register("collection", {
   infiniteScroll: null,
-  onLoad: function onLoad() {
-    var _this$container$datas = this.container.dataset,
-        collectionItemCount = _this$container$datas.collectionItemCount,
-        paginationType = _this$container$datas.paginationType;
+  onLoad() {
+    const {
+      collectionItemCount,
+      paginationType
+    } = this.container.dataset;
     if (!parseInt(collectionItemCount)) return;
     this.filterDrawerEl = n$2(selectors$2.filterDrawer, this.container);
     this.filterbarEl = n$2(selectors$2.filterBar, this.container);
     this.paginationItemCount = n$2(selectors$2.paginationItemCount, this.container);
-
     if (this.filterDrawerEl || this.filterbarEl) {
       this.partial = n$2(selectors$2.partial, this.container);
       this.filterDrawer = filterDrawer(this.container);
       this.filterBar = filterBar(this.container);
+      this.filterSidebar = filterSidebar(this.container);
       this.filterHandler = filterHandler({
         container: this.container,
         renderCB: this._renderView.bind(this)
       });
-    } // Ininite scroll
+      if (this.filterSidebar && this.container.dataset.enableStickyFilterSidebar === "true") {
+        this.mobileQuery = window.matchMedia(getMediaQuery("below-960"));
+        this._initStickyScroll();
+        this.breakPointHandler = atBreakpointChange(960, () => {
+          this._initStickyScroll();
+        });
+      }
+    }
 
-
+    // Infinite scroll
     this.paginationType = paginationType;
     this.paginated = this.paginationType === "paginated";
     this.infiniteScrollTrigger = n$2(selectors$2.infiniteScrollTrigger, this.container);
-
     if (!this.paginated) {
       this._initInfiniteScroll();
     }
-
     this.productItem = ProductItem(this.container);
-
     if (shouldAnimate(this.container)) {
       this.animateCollection = animateCollection(this.container);
     }
   },
-  _initInfiniteScroll: function _initInfiniteScroll() {
-    var _this = this;
-
-    var infiniteScrollOptions = {
+  _initStickyScroll() {
+    if (this.mobileQuery.matches) {
+      if (this.stickyScroll) {
+        this.stickyScroll.destroy();
+        this.stickyScroll = null;
+      }
+    } else if (!this.stickyScroll) {
+      this.stickyScroll = stickyScroll(this.container);
+    }
+  },
+  _initInfiniteScroll() {
+    const infiniteScrollOptions = {
       container: selectors$2.infiniteScrollContainer,
       pagination: selectors$2.infiniteScrollTrigger,
       loadingText: "Loading...",
-      callback: function callback() {
+      callback: () => {
         var _this$animateCollecti;
-
-        _this.productItem && _this.productItem.unload();
-        _this.productItem = ProductItem(_this.container);
-        (_this$animateCollecti = _this.animateCollection) === null || _this$animateCollecti === void 0 ? void 0 : _this$animateCollecti.infiniteScrollReveal();
-
-        _this._updatePaginationCount();
-
+        this.productItem && this.productItem.unload();
+        this.productItem = ProductItem(this.container);
+        (_this$animateCollecti = this.animateCollection) === null || _this$animateCollecti === void 0 ? void 0 : _this$animateCollecti.infiniteScrollReveal();
+        this._updatePaginationCount();
         r$1("collection:updated");
       }
     };
-
     if (this.paginationType === "click") {
       infiniteScrollOptions.method = "click";
     }
-
     this.infiniteScroll = new Ajaxinate(infiniteScrollOptions);
   },
-  _updatePaginationCount: function _updatePaginationCount() {
-    var productItemCount = t$2(selectors$2.productItems, this.container).length;
-    var viewing = strings$1.pagination.viewing.replace("{{ of }}", "1-".concat(productItemCount)).replace("{{ total }}", this.partial.dataset.collectionProductsCount);
+  _updatePaginationCount() {
+    const productItemCount = t$2(selectors$2.productItems, this.container).length;
+    const viewing = strings$1.pagination.viewing.replace("{{ of }}", "1-".concat(productItemCount)).replace("{{ total }}", this.partial.dataset.collectionProductsCount);
     this.paginationItemCount.innerHTML = "".concat(viewing, " ").concat(strings$1.pagination.products);
   },
-  _renderView: function _renderView(searchParams) {
-    var _this2 = this;
-
-    var updateHistory = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-    var url = "".concat(window.location.pathname, "?section_id=").concat(this.container.dataset.sectionId, "&").concat(searchParams);
-    var loading = n$2(selectors$2.loader, this.container);
+  _renderView(searchParams) {
+    let updateHistory = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+    const url = "".concat(window.location.pathname, "?section_id=").concat(this.container.dataset.sectionId, "&").concat(searchParams);
+    const loading = n$2(selectors$2.loader, this.container);
     u$1(this.partial, classes$1.hideProducts);
     u$1(loading, classes$1.active);
-    fetch(url).then(function (res) {
-      return res.text();
-    }).then(function (res) {
-      var _this2$animateCollect;
-
+    fetch(url).then(res => res.text()).then(res => {
+      var _this$animateCollecti2;
       if (updateHistory) {
-        _this2._updateURLHash(searchParams);
+        this._updateURLHash(searchParams);
       }
-
-      var doc = new DOMParser().parseFromString(res, "text/html");
-      var updatedPartial = n$2(selectors$2.partial, doc);
-      _this2.partial.innerHTML = updatedPartial.innerHTML;
-      _this2.partial.dataset.collectionProductsCount = updatedPartial.dataset.collectionProductsCount;
-      (_this2$animateCollect = _this2.animateCollection) === null || _this2$animateCollect === void 0 ? void 0 : _this2$animateCollect.updateContents();
-
-      if (!_this2.paginated && _this2.infiniteScrollTrigger) {
-        _this2.infiniteScrollTrigger.innerHTML = "";
-
-        _this2._initInfiniteScroll();
+      const doc = new DOMParser().parseFromString(res, "text/html");
+      const updatedPartial = n$2(selectors$2.partial, doc);
+      this.partial.innerHTML = updatedPartial.innerHTML;
+      this.partial.dataset.collectionProductsCount = updatedPartial.dataset.collectionProductsCount;
+      (_this$animateCollecti2 = this.animateCollection) === null || _this$animateCollecti2 === void 0 ? void 0 : _this$animateCollecti2.updateContents();
+      if (!this.paginated && this.infiniteScrollTrigger) {
+        this.infiniteScrollTrigger.innerHTML = "";
+        this._initInfiniteScroll();
       }
-
-      _this2.filterDrawer && _this2.filterDrawer.renderFilters(doc);
-      _this2.filterBar && _this2.filterBar.renderFilters(doc);
-      _this2.productItem && _this2.productItem.unload();
-      _this2.productItem = ProductItem(_this2.container);
-      _this2.paginationItemCount = n$2(selectors$2.paginationItemCount, _this2.container);
+      this.filterDrawer && this.filterDrawer.renderFilters(doc);
+      this.filterBar && this.filterBar.renderFilters(doc);
+      this.filterSidebar && this.filterSidebar.renderFilters(doc);
+      this.productItem && this.productItem.unload();
+      this.productItem = ProductItem(this.container);
+      this.paginationItemCount = n$2(selectors$2.paginationItemCount, this.container);
       i$1(loading, classes$1.active);
       r$1("collection:updated");
     });
   },
-  _updateURLHash: function _updateURLHash(searchParams) {
+  _updateURLHash(searchParams) {
     history.pushState({
-      searchParams: searchParams
+      searchParams
     }, "", "".concat(window.location.pathname).concat(searchParams && "?".concat(searchParams)));
   },
-  onUnload: function onUnload() {
-    var _this$animateCollecti2;
-
+  onUnload() {
+    var _this$animateCollecti3;
     this.infiniteScroll && this.infiniteScroll.destroy();
     this.filterHandler && this.filterHandler.unload();
     this.filterDrawer && this.filterDrawer.unload();
     this.filterBar && this.filterBar.unload();
+    this.filterSidebar && this.filterSidebar.unload();
     this.filtering && this.filtering.unload();
     this.productItem && this.productItem.unload();
-    (_this$animateCollecti2 = this.animateCollection) === null || _this$animateCollecti2 === void 0 ? void 0 : _this$animateCollecti2.destroy();
+    (_this$animateCollecti3 = this.animateCollection) === null || _this$animateCollecti3 === void 0 ? void 0 : _this$animateCollecti3.destroy();
   }
 });
 
 register("login", {
-  onLoad: function onLoad() {
-    var main = n$2('[data-part="login"]', this.container);
-    var reset = n$2('[data-part="reset"]', this.container);
-    var toggles = t$2("[data-toggle]", this.container);
-    var loginError = n$2(".form-status__message--error", reset);
-    var isSuccess = n$2(".form-status__message--success", reset);
-    var successMessage = n$2("[data-success-message]", this.container);
-
+  onLoad() {
+    const main = n$2('[data-part="login"]', this.container);
+    const reset = n$2('[data-part="reset"]', this.container);
+    const toggles = t$2("[data-toggle]", this.container);
+    const loginError = n$2(".form-status__message--error", reset);
+    const isSuccess = n$2(".form-status__message--success", reset);
+    const successMessage = n$2("[data-success-message]", this.container);
     if (isSuccess) {
       u$1(successMessage, "visible");
       u$1([main, reset], "hide");
     }
-
     if (loginError) {
       toggleView();
     }
-
     function toggleView(e) {
       e && e.preventDefault();
       l([main, reset], "hide");
       main.setAttribute("aria-hidden", a$1(main, "hide"));
       reset.setAttribute("aria-hidden", a$1(reset, "hide"));
     }
-
     this.toggleClick = e$2(toggles, "click", toggleView);
   },
-  onUnload: function onUnload() {
+  onUnload() {
     this.toggleClick();
   }
 });
 
 register("addresses", {
-  onLoad: function onLoad() {
-    var _this = this;
-
+  onLoad() {
     this.modals = t$2("[data-address-modal]", this.container);
     this.focusTrap = null;
-    var overlays = t$2("[data-overlay]", this.container);
-    var open = t$2("[data-open]", this.container);
-    var close = t$2("[data-close]", this.container);
-    var remove = t$2("[data-remove]", this.container);
-    var countryOptions = t$2("[data-country-option]", this.container) || [];
-    this.events = [e$2(open, "click", function (e) {
-      return _this.openModal(e);
-    }), e$2([].concat(_toConsumableArray(close), _toConsumableArray(overlays)), "click", function (e) {
-      return _this.closeModal(e);
-    }), e$2(remove, "click", function (e) {
-      return _this.removeAddress(e);
-    }), e$2(this.modals, "keydown", function (e) {
-      if (e.keyCode === 27) _this.closeModal(e);
+    const overlays = t$2("[data-overlay]", this.container);
+    const open = t$2("[data-open]", this.container);
+    const close = t$2("[data-close]", this.container);
+    const remove = t$2("[data-remove]", this.container);
+    const countryOptions = t$2("[data-country-option]", this.container) || [];
+    this.events = [e$2(open, "click", e => this.openModal(e)), e$2([...close, ...overlays], "click", e => this.closeModal(e)), e$2(remove, "click", e => this.removeAddress(e)), e$2(this.modals, "keydown", e => {
+      if (e.keyCode === 27) this.closeModal(e);
     })];
-    countryOptions.forEach(function (el) {
-      var formId = el.dataset.formId;
-      var countrySelector = "AddressCountry_" + formId;
-      var provinceSelector = "AddressProvince_" + formId;
-      var containerSelector = "AddressProvinceContainer_" + formId;
+    countryOptions.forEach(el => {
+      const {
+        formId
+      } = el.dataset;
+      const countrySelector = "AddressCountry_" + formId;
+      const provinceSelector = "AddressProvince_" + formId;
+      const containerSelector = "AddressProvinceContainer_" + formId;
       new window.Shopify.CountryProvinceSelector(countrySelector, provinceSelector, {
         hideElement: containerSelector
       });
     });
   },
-  onUnload: function onUnload() {
-    this.events.forEach(function (unsubscribe) {
-      return unsubscribe();
-    });
+  onUnload() {
+    this.events.forEach(unsubscribe => unsubscribe());
   },
-  openModal: function openModal(e) {
+  openModal(e) {
     e.preventDefault();
-    var which = e.currentTarget.dataset.open;
-    var modal = this.modals.find(function (el) {
-      return el.dataset.addressModal == which;
-    });
+    const {
+      open: which
+    } = e.currentTarget.dataset;
+    const modal = this.modals.find(el => el.dataset.addressModal == which);
     u$1(modal, "active");
     this.focusTrap = createFocusTrap(modal, {
       allowOutsideClick: true
     });
     this.focusTrap.activate();
+    document.body.setAttribute("data-fluorescent-overlay-open", "true");
     disableBodyScroll(modal, {
-      allowTouchMove: function allowTouchMove(el) {
+      allowTouchMove: el => {
         while (el && el !== document.body) {
           if (el.getAttribute("data-scroll-lock-ignore") !== null) {
             return true;
           }
-
           el = el.parentNode;
         }
       },
       reserveScrollBarGap: true
     });
-    setTimeout(function () {
+    setTimeout(() => {
       u$1(modal, "visible");
     }, 50);
   },
-  closeModal: function closeModal(e) {
+  closeModal(e) {
     e.preventDefault();
-    var modal = e.target.closest(".addresses__modal");
+    const modal = e.target.closest(".addresses__modal");
+    document.body.setAttribute("data-fluorescent-overlay-open", "false");
     enableBodyScroll(modal);
     this.focusTrap.deactivate();
     i$1(modal, "visible");
-    setTimeout(function () {
+    setTimeout(() => {
       i$1(modal, "active");
     }, 350);
   },
-  removeAddress: function removeAddress(e) {
-    var _e$currentTarget$data = e.currentTarget.dataset,
-        confirmMessage = _e$currentTarget$data.confirmMessage,
-        target = _e$currentTarget$data.target;
-
+  removeAddress(e) {
+    const {
+      confirmMessage,
+      target
+    } = e.currentTarget.dataset;
     if (confirm(confirmMessage)) {
       window.Shopify.postLink(target, {
         parameters: {
@@ -14450,78 +12786,65 @@ register("addresses", {
 });
 
 register("article", {
-  onLoad: function onLoad() {
+  onLoad() {
     focusFormStatus(this.container);
-    var socialShareContainer = n$2(".social-share", this.container);
-
+    const socialShareContainer = n$2(".social-share", this.container);
     if (socialShareContainer) {
       this.socialShare = SocialShare(socialShareContainer);
     }
-
     wrapIframes(t$2("iframe", this.container));
     wrapTables(t$2("table", this.container));
-
     if (shouldAnimate(this.container)) {
       this.animateArticle = animateArticle(this.container);
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animateArticle;
-
     this.socialShare && this.socialShare();
     (_this$animateArticle = this.animateArticle) === null || _this$animateArticle === void 0 ? void 0 : _this$animateArticle.destroy();
   }
 });
 
 register("password", {
-  onLoad: function onLoad() {
+  onLoad() {
     if (shouldAnimate(this.container)) {
       this.animatePassword = animatePassword(this.container);
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animatePassword;
-
     (_this$animatePassword = this.animatePassword) === null || _this$animatePassword === void 0 ? void 0 : _this$animatePassword.destroy();
   }
 });
 
-var selectors$1 = {
+const selectors$1 = {
   video: ".about__block-video"
 };
 register("page", {
-  onLoad: function onLoad() {
-    var _this = this;
-
-    var videos = t$2(selectors$1.video, this.container);
+  onLoad() {
+    const videos = t$2(selectors$1.video, this.container);
     this.videoHandlers = [];
-
     if (videos.length) {
-      videos.forEach(function (video) {
-        _this.videoHandlers.push(backgroundVideoHandler(video.parentNode));
+      videos.forEach(video => {
+        this.videoHandlers.push(backgroundVideoHandler(video.parentNode));
       });
     }
-
     this.accordions = Accordions(t$2(".accordion", this.container));
     wrapIframes(t$2("iframe", this.container));
     wrapTables(t$2("table", this.container));
-
     if (shouldAnimate(this.container)) {
       this.animatePage = animatePage(this.container);
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animatePage;
-
     this.accordions.unload();
-    this.videoHandlers.forEach(function (handler) {
-      return handler();
-    });
+    this.videoHandlers.forEach(handler => handler());
     (_this$animatePage = this.animatePage) === null || _this$animatePage === void 0 ? void 0 : _this$animatePage.destroy();
   }
 });
 
-var selectors = {
+const selectors = {
   searchSection: ".search",
   searchBanner: ".search-header",
   infiniteScrollContainer: ".search__infinite-container",
@@ -14529,262 +12852,290 @@ var selectors = {
   partial: "[data-partial]",
   filterDrawer: "[data-filter-drawer]",
   filterBar: "[data-filter-bar]",
+  filterSidebar: "[data-filter-sidebar]",
   loader: ".search__loading",
   paginationItemCount: "[data-pagination-item-count]",
   searchItems: ".product-item, .search-item"
 };
-var classes = {
+const classes = {
   active: "is-active",
   hideProducts: "animation--search-products-hide"
 };
-var strings = window.theme.strings;
+const {
+  strings
+} = window.theme;
 register("search", {
   infiniteScroll: null,
-  onLoad: function onLoad() {
+  onLoad() {
     this.searchBannerEl = n$2(selectors.searchBanner, this.container);
-
     if (shouldAnimate(this.searchBannerEl)) {
       this.animateSearchBanner = animateSearchBanner(this.searchBannerEl);
     }
-
-    var _this$container$datas = this.container.dataset,
-        searchItemCount = _this$container$datas.searchItemCount,
-        paginationType = _this$container$datas.paginationType;
+    const {
+      searchItemCount,
+      paginationType
+    } = this.container.dataset;
     if (!parseInt(searchItemCount)) return;
     this.searchSectionEl = n$2(selectors.searchSection, this.container);
     this.filterDrawerEl = n$2(selectors.filterDrawer, this.container);
     this.filterBarEl = n$2(selectors.filterBar, this.container);
     this.paginationItemCount = n$2(selectors.paginationItemCount, this.container);
-
     if (this.filterBarEl) {
       this.partial = n$2(selectors.partial, this.container);
       this.filterDrawer = filterDrawer(this.searchSectionEl);
       this.filterBar = filterBar(this.searchSectionEl);
+      this.filterSidebar = filterSidebar(this.searchSectionEl);
       this.filterHandler = filterHandler({
         container: this.searchSectionEl,
         renderCB: this._renderView.bind(this)
       });
-    } // Ininite scroll
+      if (this.filterSidebar && this.searchSectionEl.dataset.enableStickyFilterSidebar === "true") {
+        this.mobileQuery = window.matchMedia(getMediaQuery("below-960"));
+        this._initStickyScroll();
+        this.breakPointHandler = atBreakpointChange(960, () => {
+          this._initStickyScroll();
+        });
+      }
+    }
 
-
+    // Ininite scroll
     this.paginationType = paginationType;
     this.paginated = this.paginationType === "paginated";
     this.infiniteScrollTrigger = n$2(selectors.infiniteScrollTrigger, this.container);
-
     if (!this.paginated) {
       this._initInfiniteScroll();
     }
-
     this.productItem = ProductItem(this.container);
-
     if (shouldAnimate(this.searchSectionEl)) {
       this.animateSearch = animateSearch(this.searchSectionEl);
     }
   },
-  _initInfiniteScroll: function _initInfiniteScroll() {
-    var _this = this;
-
-    var infiniteScrollOptions = {
+  _initStickyScroll() {
+    if (this.mobileQuery.matches) {
+      if (this.stickyScroll) {
+        this.stickyScroll.destroy();
+        this.stickyScroll = null;
+      }
+    } else if (!this.stickyScroll) {
+      this.stickyScroll = stickyScroll(this.searchSectionEl);
+    }
+  },
+  _initInfiniteScroll() {
+    const infiniteScrollOptions = {
       container: selectors.infiniteScrollContainer,
       pagination: selectors.infiniteScrollTrigger,
       loadingText: "Loading...",
-      callback: function callback() {
+      callback: () => {
         var _this$animateSearch;
-
-        _this.productItem && _this.productItem.unload();
-        _this.productItem = ProductItem(_this.container);
-        (_this$animateSearch = _this.animateSearch) === null || _this$animateSearch === void 0 ? void 0 : _this$animateSearch.infiniteScrollReveal();
-
-        _this._updatePaginationCount();
-
+        this.productItem && this.productItem.unload();
+        this.productItem = ProductItem(this.container);
+        (_this$animateSearch = this.animateSearch) === null || _this$animateSearch === void 0 ? void 0 : _this$animateSearch.infiniteScrollReveal();
+        this._updatePaginationCount();
         r$1("collection:updated");
       }
     };
-
     if (this.paginationType === "click") {
       infiniteScrollOptions.method = "click";
     }
-
     this.infiniteScroll = new Ajaxinate(infiniteScrollOptions);
   },
-  _updatePaginationCount: function _updatePaginationCount() {
-    var searchItemCount = t$2(selectors.searchItems, this.container).length;
-    var viewing = strings.pagination.viewing.replace("{{ of }}", "1-".concat(searchItemCount)).replace("{{ total }}", this.partial.dataset.searchResultsCount);
+  _updatePaginationCount() {
+    const searchItemCount = t$2(selectors.searchItems, this.container).length;
+    const viewing = strings.pagination.viewing.replace("{{ of }}", "1-".concat(searchItemCount)).replace("{{ total }}", this.partial.dataset.searchResultsCount);
     this.paginationItemCount.innerHTML = "".concat(viewing, " ").concat(strings.pagination.results);
   },
-  _renderView: function _renderView(searchParams) {
-    var _this2 = this;
-
-    var updateHistory = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-    var url = "".concat(window.location.pathname, "?section_id=").concat(this.container.dataset.sectionId, "&").concat(searchParams);
-    var loading = n$2(selectors.loader, this.container);
+  _renderView(searchParams) {
+    let updateHistory = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+    const url = "".concat(window.location.pathname, "?section_id=").concat(this.container.dataset.sectionId, "&").concat(searchParams);
+    const loading = n$2(selectors.loader, this.container);
     u$1(loading, classes.active);
-    fetch(url).then(function (res) {
-      return res.text();
-    }).then(function (res) {
-      var _this2$animateSearch;
-
+    fetch(url).then(res => res.text()).then(res => {
+      var _this$animateSearch2;
       if (updateHistory) {
-        _this2._updateURLHash(searchParams);
+        this._updateURLHash(searchParams);
       }
-
-      var doc = new DOMParser().parseFromString(res, "text/html");
-      var updatedPartial = n$2(selectors.partial, doc);
-      _this2.partial.innerHTML = updatedPartial.innerHTML;
-      _this2.partial.dataset.searchResultsCount = updatedPartial.dataset.searchResultsCount;
-      (_this2$animateSearch = _this2.animateSearch) === null || _this2$animateSearch === void 0 ? void 0 : _this2$animateSearch.updateContents();
-
-      if (!_this2.paginated && _this2.infiniteScrollTrigger) {
-        _this2.infiniteScrollTrigger.innerHTML = "";
-
-        _this2._initInfiniteScroll();
+      const doc = new DOMParser().parseFromString(res, "text/html");
+      const updatedPartial = n$2(selectors.partial, doc);
+      this.partial.innerHTML = updatedPartial.innerHTML;
+      this.partial.dataset.searchResultsCount = updatedPartial.dataset.searchResultsCount;
+      (_this$animateSearch2 = this.animateSearch) === null || _this$animateSearch2 === void 0 ? void 0 : _this$animateSearch2.updateContents();
+      if (!this.paginated && this.infiniteScrollTrigger) {
+        this.infiniteScrollTrigger.innerHTML = "";
+        this._initInfiniteScroll();
       }
-
-      _this2.filterDrawer && _this2.filterDrawer.renderFilters(doc);
-      _this2.filterBar && _this2.filterBar.renderFilters(doc);
-      _this2.productItem && _this2.productItem.unload();
-      _this2.productItem = ProductItem(_this2.container);
-      _this2.paginationItemCount = n$2(selectors.paginationItemCount, _this2.container);
+      this.filterDrawer && this.filterDrawer.renderFilters(doc);
+      this.filterBar && this.filterBar.renderFilters(doc);
+      this.filterSidebar && this.filterSidebar.renderFilters(doc);
+      this.productItem && this.productItem.unload();
+      this.productItem = ProductItem(this.container);
+      this.paginationItemCount = n$2(selectors.paginationItemCount, this.container);
       i$1(loading, classes.active);
       r$1("collection:updated");
     });
   },
-  _updateURLHash: function _updateURLHash(searchParams) {
+  _updateURLHash(searchParams) {
     history.pushState({
-      searchParams: searchParams
+      searchParams
     }, "", "".concat(window.location.pathname).concat(searchParams && "?".concat(searchParams)));
   },
-  onUnload: function onUnload() {
-    var _this$animateSearch2, _this$animateSearchBa;
-
+  onUnload() {
+    var _this$animateSearch3, _this$animateSearchBa;
     this.infiniteScroll && this.infiniteScroll.destroy();
     this.filterHandler && this.filterHandler.unload();
     this.filterDrawer && this.filterDrawer.unload();
     this.filterBar && this.filterBar.unload();
+    this.filterSidebar && this.filterSidebar.unload();
     this.filtering && this.filtering.unload();
     this.productItem && this.productItem.unload();
-    (_this$animateSearch2 = this.animateSearch) === null || _this$animateSearch2 === void 0 ? void 0 : _this$animateSearch2.destroy();
+    (_this$animateSearch3 = this.animateSearch) === null || _this$animateSearch3 === void 0 ? void 0 : _this$animateSearch3.destroy();
     (_this$animateSearchBa = this.animateSearchBanner) === null || _this$animateSearchBa === void 0 ? void 0 : _this$animateSearchBa.destroy();
   }
 });
 
 register("contact", {
-  onLoad: function onLoad() {
+  onLoad() {
     this.accordions = Accordions(t$2(".accordion", this.container));
     wrapIframes(t$2("iframe", this.container));
     wrapTables(t$2("table", this.container));
   },
-  onUnload: function onUnload() {
+  onUnload() {
     this.accordions.unload();
   }
 });
 
 register("blog", {
-  onLoad: function onLoad() {
-    var mobileNavSelect = n$2("#blog-mobile-nav", this.container);
-
+  onLoad() {
+    const mobileNavSelect = n$2("#blog-mobile-nav", this.container);
     if (mobileNavSelect) {
-      this.mobileNavSelectEvent = e$2(mobileNavSelect, "change", function () {
+      this.mobileNavSelectEvent = e$2(mobileNavSelect, "change", () => {
         window.location.href = mobileNavSelect.value;
       });
     }
-
     if (shouldAnimate(this.container)) {
       this.animateBlog = animateBlog(this.container);
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animateBlog;
-
     (_this$animateBlog = this.animateBlog) === null || _this$animateBlog === void 0 ? void 0 : _this$animateBlog.destroy();
     this.mobileNavSelectEvent && this.mobileNavSelectEvent.unsubscribe();
   }
 });
 
 register("collection-banner", {
-  onLoad: function onLoad() {
+  onLoad() {
     if (shouldAnimate(this.container)) {
       this.animateCollectionBanner = animateCollectionBanner(this.container);
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animateCollecti;
-
     (_this$animateCollecti = this.animateCollectionBanner) === null || _this$animateCollecti === void 0 ? void 0 : _this$animateCollecti.destroy();
   }
 });
 
 register("list-collections", {
-  onLoad: function onLoad() {
+  onLoad() {
     if (shouldAnimate(this.container)) {
       this.animateListCollections = animateListCollections(this.container);
     }
   },
-  onUnload: function onUnload() {
+  onUnload() {
     var _this$animateListColl;
-
     (_this$animateListColl = this.animateListCollections) === null || _this$animateListColl === void 0 ? void 0 : _this$animateListColl.destroy();
   }
 });
 
+var _window$Shopify;
+
+// eslint-disable-next-line no-prototype-builtins
+if (!HTMLElement.prototype.hasOwnProperty("inert")) {
+  import(flu.chunks.polyfillInert);
+}
+
+// Detect theme editor
 if (window.Shopify.designMode === true) {
   u$1(document.documentElement, "theme-editor");
   document.documentElement.classList.add("theme-editor");
 } else {
-  var el = n$2(".theme-editor-scroll-offset", document);
+  const el = n$2(".theme-editor-scroll-offset", document);
   el && el.parentNode.removeChild(el);
-} // Function to load all sections
+}
 
-
-var loadSections = function loadSections() {
+// Function to load all sections
+const loadSections = () => {
   load("*");
   o$1({
     SelectedProductSection: null
   });
-}; // Call above function either immediately or bind on loaded event
+};
 
-
+// Call above function either immediately or bind on loaded event
 if (document.readyState === "complete" || document.readyState === "interactive") {
   loadSections();
 } else {
   e$2(document, "DOMContentLoaded", loadSections);
 }
-
 if (isMobile$1({
   tablet: true,
   featureDetect: true
 })) {
   u$1(document.body, "is-mobile");
-} // Page transitions
+}
 
+// Page transitions
+pageTransition();
 
-pageTransition(); // a11y tab handler
+// a11y tab handler
+handleTab();
 
-handleTab(); // Apply contrast classes
+// Apply contrast classes
+sectionClasses();
 
-sectionClasses(); // Load productlightbox
+// Load productlightbox
+productLightbox();
 
-productLightbox(); // Quick view modal
-
-var quickViewModalElement = n$2("[data-quick-view-modal]", document);
-
+// Quick view modal
+const quickViewModalElement = n$2("[data-quick-view-modal]", document);
 if (quickViewModalElement) {
   quickViewModal(quickViewModalElement);
-} // Setup modal
+}
 
-
-var modalElement = n$2("[data-modal]", document);
+// Setup modal
+const modalElement = n$2("[data-modal]", document);
 modal(modalElement);
-var flashModal = n$2("[data-flash-alert]", document);
-flashAlertModal(flashModal); // Product availabilty drawer
+const flashModal = n$2("[data-flash-alert]", document);
+flashAlertModal(flashModal);
 
-var availabilityDrawer = n$2("[data-store-availability-drawer]", document);
-storeAvailabilityDrawer(availabilityDrawer); // Setup header overlay
+// Product availabilty drawer
+const availabilityDrawer = n$2("[data-store-availability-drawer]", document);
+storeAvailabilityDrawer(availabilityDrawer);
 
-var headerOverlayContainer = document.querySelector("[data-header-overlay]");
-headerOverlay(headerOverlayContainer); // Init back to top button
+// Setup header overlay
+const headerOverlayContainer = document.querySelector("[data-header-overlay]");
+headerOverlay(headerOverlayContainer);
 
-backToTop(); // Make it easy to see exactly what theme version
+// Init back to top button
+backToTop();
+
+// Make it easy to see exactly what theme version
 // this is by commit SHA
-
-window.SHA = "36aa4d0278";
+window.SHA = "e69ef5fcf8";
+if (!sessionStorage.getItem("flu_stat_recorded") && !((_window$Shopify = window.Shopify) !== null && _window$Shopify !== void 0 && _window$Shopify.designMode)) {
+  var _window$Shopify2, _window$Shopify3, _window$Shopify3$them;
+  // eslint-disable-next-line no-process-env
+  fetch("https://stats.fluorescent.co", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      ...window.theme.coreData,
+      s: (_window$Shopify2 = window.Shopify) === null || _window$Shopify2 === void 0 ? void 0 : _window$Shopify2.shop,
+      r: (_window$Shopify3 = window.Shopify) === null || _window$Shopify3 === void 0 ? void 0 : (_window$Shopify3$them = _window$Shopify3.theme) === null || _window$Shopify3$them === void 0 ? void 0 : _window$Shopify3$them.role
+    })
+  });
+  if (window.sessionStorage) {
+    sessionStorage.setItem("flu_stat_recorded", "true");
+  }
+}
