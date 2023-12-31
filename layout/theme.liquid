@@ -14,9 +14,9 @@
        \__\/                     \__\/         \__\/         \__\/
 
   --------------------------------------------------------------------
-  #  Stiletto v1.6.0
-  #  Documentation: https://fluorescent.co/help/TODO/
-  #  Purchase: https://themes.shopify.com/themes/TODO/
+  #  Stiletto v2.4.0
+  #  Documentation: https://fluorescent.co/help/stiletto/
+  #  Purchase: https://themes.shopify.com/themes/stiletto/
   #  A product by Fluorescent: https://fluorescent.co/
   --------------------------------------------------------------------
 -->
@@ -26,6 +26,8 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="viewport" content="width=device-width,initial-scale=1">
+    {% render 'meta-description' %}
+
     <link rel="canonical" href="{{ canonical_url }}">
     <link rel="preconnect" href="https://cdn.shopify.com" crossorigin>
 
@@ -54,10 +56,6 @@
     {%- endcapture -%}
     <title>{{ seo_title | strip }}</title>
 
-    {%- if page_description -%}
-      <meta name="description" content="{{ page_description | escape }}">
-    {%- endif -%}
-
     {% render 'social-meta-tags' %}
 
     {% render 'theme-setup' %}
@@ -76,9 +74,10 @@
       <div class="theme-editor-scroll-offset"></div>
 
       <div class="header__space" data-header-space></div>
-      {% section 'announcement-bar' %}
-      {% section 'header' %}
-      {% section 'quick-cart' %}
+
+      {% sections 'header-group' %}
+      {% sections 'overlay-group' %}
+
       {%- if settings.enable_quick_search -%}
         {% render 'quick-search' %}
       {%- endif -%}
@@ -91,8 +90,8 @@
         {{ content_for_layout }}
       </main>
 
-      {% section 'footer' %}
-      {% section 'popup' %}
+      {% sections 'footer-group' %}
+
       {% render 'store-availability-drawer' %}
       {% render 'quick-view-modal' %}
       {% render 'modal' %}
@@ -102,4 +101,12 @@
     {{ '//www.youtube.com/iframe_api' | script_tag }}
     {{ '//cdn.shopify.com/shopifycloud/shopify-plyr/v1.0/shopify-plyr.css' | stylesheet_tag }}
   </body>
+  <link
+    rel="preload"
+    fetchpriority="low"
+    href="{{ 'theme-deferred.css' | asset_url }}"
+    as="style"
+    onload="this.onload=null;this.rel='stylesheet'"
+  >
+  <noscript><link rel="stylesheet" href="{{ 'theme-deferred.css' | asset_url }}"></noscript>
 </html>
