@@ -3364,7 +3364,6 @@ html.no-js .product__media-show-more{
         align-items:center;
         justify-content:center;
       }
-/* comment ****&&&*** removed     aspect-ratio:var(--video-aspect-ratio); */
 .product__media-item[data-aspect-ratio="square"] .media[data-media-type="video"] .plyr,
         .product__media-item[data-aspect-ratio="square"] .media[data-media-type="video"] .plyr__video-wrapper,
         .product__media-item[data-aspect-ratio="square"] .media[data-media-type="video"] .plyr__poster,
@@ -3377,6 +3376,7 @@ html.no-js .product__media-show-more{
         .product__media-item[data-aspect-ratio="portrait"] .media[data-media-type="video"] .plyr__video-wrapper,
         .product__media-item[data-aspect-ratio="portrait"] .media[data-media-type="video"] .plyr__poster,
         .product__media-item[data-aspect-ratio="portrait"] .media[data-media-type="video"] video{
+          aspect-ratio:var(--video-aspect-ratio);
           width:100%;
           height:auto;
           max-width:100%;
@@ -9673,8 +9673,8 @@ html.no-js .product-tabs__tab-item{
 
   transition:opacity var(--duration-fast) var(--easing), transform var(--duration-fast) var(--easing)
 }
-/* comment ****&&&*** removed     transform:scale(1); */
 .product-item__image--two.image.active{
+    transform:scale(1);
     opacity:1;
     transition:opacity 300ms cubic-bezier(0.33, 0, 0, 1), transform 300ms cubic-bezier(0.33, 0, 0, 1), z-index 0ms 300ms linear;
     transition:opacity var(--duration-fast) var(--easing), transform var(--duration-fast) var(--easing), z-index 0ms var(--duration-fast) linear;
@@ -17896,33 +17896,3 @@ html:not(.no-js):not(.prefers-reduced-motion) .animation.animation--apps .animat
     var(--delay-amount) * var(--delay-offset-multiplier, 0)
   );
   }
-
-.product-thumbnails__item.visible__img {
-    display: block !important;
-}
-
-.product__media-item.hide__img {
-    display: none;
-}
-
-
-@media(max-width: 960px){
-  .product__media-item.visible__img {
-    display: flex !important;
-}
-  .product__media-container .product__media {
-    display: flex;
-    flex-wrap: nowrap;
-    overflow-x: scroll;
-    gap: 10px;
-}
-
-.product__media-container.below-mobile .product__media-item, .product__media-container.below-mobile .product__media-item .media {
-    width: 100%;
-    width: 350px;
-    overflow: unset !important;
-}
-  .product__media::-webkit-scrollbar {
-    display: none;
-}
-}
