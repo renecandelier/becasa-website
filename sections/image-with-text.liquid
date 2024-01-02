@@ -9,6 +9,10 @@
   if settings.enable_section_animations and section.settings.enable_animation
     assign show_animations = true
   endif
+  assign prioritize_loading = false
+  if section.index == 1
+    assign prioritize_loading = true
+  endif
 -%}
 
 {%- capture image_sizes -%}
@@ -55,12 +59,14 @@
     {% render 'overlay-button-vars' with color_button_text: section.settings.button_text_color, color_button_background: section.settings.button_background_color %}
   "
 >
-  <div class="
+  <div
+    class="
       image-with-text__inner
       {% if has_background_color %}
         {{ section_classes }}
       {% endif %}
-    ">
+    "
+  >
     <div class="image-with-text__content">
       <div class="image-with-text__image-container">
         <div class="image-with-text__image-container-inner">
@@ -73,7 +79,8 @@
               aspect_ratio: section.settings.aspect_ratio,
               focal_point: section.settings.focal_point,
               include_placeholder: true,
-              animate: show_animations
+              animate: show_animations,
+              prioritize_loading: prioritize_loading
             -%}
 
             {%- unless section.settings.image_caption == blank -%}
@@ -93,7 +100,8 @@
                 aspect_ratio: section.settings.image_small_aspect_ratio,
                 focal_point: section.settings.image_small_focal_point,
                 include_placeholder: true,
-                animate: show_animations
+                animate: show_animations,
+                prioritize_loading: prioritize_loading
               -%}
             </div>
           {%- endif -%}
@@ -101,11 +109,13 @@
       </div>
 
       <div class="image-with-text__text-container">
-        <div class="
+        <div
+          class="
             image-with-text__text-container-inner
             section-blocks
             {% if show_animations %}animation--section-blocks{% endif %}
-          ">
+          "
+        >
           {%- for block in section.blocks -%}
             {%- case block.type -%}
               {%- when 'accent' -%}
@@ -183,6 +193,9 @@
 {
   "name": "t:sections.image_with_text.name",
   "tag": "section",
+  "disabled_on": {
+    "groups": ["header", "custom.overlay"]
+  },
   "settings": [
     {
       "type": "select",
@@ -253,8 +266,8 @@
       "id": "focal_point",
       "type": "select",
       "label": "t:shared.settings.focal_point.label",
-      "options": [{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
-      "default": "center"
+      "options": [{"label":"t:shared.settings.focal_point.option_image","value":"image_presentation"},{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
+      "default": "image_presentation"
     },
     {
       "type": "text",
@@ -300,8 +313,8 @@
       "id": "image_small_focal_point",
       "type": "select",
       "label": "t:sections.image_with_text.settings.image_small_focal.label",
-      "options": [{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
-      "default": "center"
+      "options": [{"label":"t:shared.settings.focal_point.option_image","value":"image_presentation"},{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
+      "default": "image_presentation"
     },
     {
       "type": "header",

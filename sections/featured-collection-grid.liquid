@@ -44,32 +44,49 @@
       -%}
     </div>
 
-    <div class="
+    <div
+      class="
         featured-collection-grid__content
         carousel
         carousel--mobile-per-view-{{ section.settings.mobile_columns }}
         carousel--per-view-{{ section.settings.columns }}
         swiper
-      ">
+      "
+    >
       <div class="featured-collection-grid__products carousel__wrapper swiper-wrapper">
         {%- for block in section.blocks -%}
-          {%- assign featured_collection_products = block.settings.collection.products | default: block.settings.product_list -%}
+          {%- assign featured_collection_products = block.settings.collection.products
+            | default: block.settings.product_list
+          -%}
 
           {%- for product in featured_collection_products limit: max_collections -%}
             <div class="featured-collection-grid__product carousel_slide swiper-slide">
-              {% render 'product-item', prod: product, collection: block.settings.collection, aspect_ratio: settings.product_listing_aspect_ratio, product_columns: section.settings.columns %}
+              {% render 'product-item',
+                prod: product,
+                collection: block.settings.collection,
+                aspect_ratio: settings.product_listing_aspect_ratio,
+                product_columns: section.settings.columns
+              %}
             </div>
           {%- else -%}
             {%- for i in (1..max_collections) -%}
               <div class="featured-collection-grid__product carousel_slide swiper-slide">
-                {% render 'product-item', aspect_ratio: settings.product_listing_aspect_ratio, product_columns: section.settings.columns, placeholder: true %}
+                {% render 'product-item',
+                  aspect_ratio: settings.product_listing_aspect_ratio,
+                  product_columns: section.settings.columns,
+                  placeholder: true
+                %}
               </div>
             {%- endfor -%}
           {%- endfor -%}
         {%- else -%}
           {%- for i in (1..max_collections) -%}
             <div class="featured-collection-grid__product carousel_slide swiper-slide">
-              {% render 'product-item', aspect_ratio: settings.product_listing_aspect_ratio, product_columns: section.settings.columns, placeholder: true %}
+              {% render 'product-item',
+                aspect_ratio: settings.product_listing_aspect_ratio,
+                product_columns: section.settings.columns,
+                placeholder: true
+              %}
             </div>
           {%- endfor -%}
         {%- endfor -%}
@@ -82,26 +99,10 @@
 {
   "name": "t:sections.featured_collection_grid.name",
   "tag": "section",
-  "templates": [
-    "404",
-    "article",
-    "blog",
-    "cart",
-    "collection",
-    "list-collections",
-    "customers/account",
-    "customers/activate_account",
-    "customers/addresses",
-    "customers/login",
-    "customers/order",
-    "customers/register",
-    "customers/reset_password",
-    "gift_card",
-    "index",
-    "page",
-    "product",
-    "search"
-  ],
+  "disabled_on": {
+    "groups": ["header", "custom.overlay"],
+    "templates": ["password"]
+  },
   "settings": [
     {
       "type": "text",
@@ -140,36 +141,36 @@
     {
       "type": "select",
       "id": "columns",
-      "label": "t:sections.collection_sections_shared.settings.columns.label",
+      "label": "t:shared.settings.column_count.desktop.label",
       "default": "4",
       "options": [
         {
           "value": "3",
-          "label": "t:sections.collection_sections_shared.settings.columns.option_3"
+          "label": "t:shared.settings.column_count.columns.option_3"
         },
         {
           "value": "4",
-          "label": "t:sections.collection_sections_shared.settings.columns.option_4"
+          "label": "t:shared.settings.column_count.columns.option_4"
         },
         {
           "value": "5",
-          "label": "t:sections.collection_sections_shared.settings.columns.option_5"
+          "label": "t:shared.settings.column_count.columns.option_5"
         }
       ]
     },
     {
       "type": "select",
       "id": "mobile_columns",
-      "label": "t:sections.collection_sections_shared.settings.mobile_columns.label",
+      "label": "t:shared.settings.column_count.mobile.label",
       "default": "2",
       "options": [
         {
           "value": "1",
-          "label": "t:sections.collection_sections_shared.settings.mobile_columns.option_1"
+          "label": "t:shared.settings.column_count.columns.option_1"
         },
         {
           "value": "2",
-          "label": "t:sections.collection_sections_shared.settings.mobile_columns.option_2"
+          "label": "t:shared.settings.column_count.columns.option_2"
         }
       ]
     },

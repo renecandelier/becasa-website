@@ -52,13 +52,6 @@
       <div class="product__media-container below-mobile carousel swiper{% if section.settings.enable_product_lightbox %} lightbox-media-container{% endif %}">
         <div class="product__media carousel__wrapper swiper-wrapper">
           {%- for media in featured_product.media -%}
-            {%- liquid
-              assign prioritize_loading = false
-
-              if forloop.first
-                assign prioritize_loading = true
-              endif
-            -%}
             <div
               class="product__media-item carousel_slide swiper-slide"
               data-media-item-id="{{ media.id }}"
@@ -75,7 +68,6 @@
                 loop_video: section.settings.enable_video_looping,
                 aspect_ratio: section.settings.image_aspect_ratio,
                 sizes: "90vw",
-                prioritize_loading: prioritize_loading,
                 within_carousel: true
               %}
             </div>
@@ -162,7 +154,8 @@
           prod: featured_product,
           is_quick: false,
           is_featured: true,
-          column: 'left'
+          column: 'left',
+          featured_media: product_featured_image_url
         -%}
       {% endcapture %}
 
@@ -185,6 +178,14 @@
           current_variant: current_variant,
           featured_media: featured_media
         -%}
+
+        {% # Render a dummy product form if buy buttons are absent -%}
+
+        {%- assign buy_buttons_enabled = section.blocks | where: 'type', 'buy_buttons' -%}
+        {%- if buy_buttons_enabled == blank and featured_product != blank -%}
+          {% render 'product-form', prod: featured_product, hidden: true %}
+        {%- endif -%}
+
         {%- comment -%}
           Live region for announcing updated price and availability to screen readers
         {%- endcomment -%}
@@ -242,26 +243,10 @@
 {
   "name": "t:sections.featured_product.name",
   "tag": "section",
-  "templates": [
-    "404",
-    "article",
-    "blog",
-    "cart",
-    "collection",
-    "list-collections",
-    "customers/account",
-    "customers/activate_account",
-    "customers/addresses",
-    "customers/login",
-    "customers/order",
-    "customers/register",
-    "customers/reset_password",
-    "gift_card",
-    "index",
-    "page",
-    "product",
-    "search"
-  ],
+  "disabled_on": {
+    "groups": ["header", "custom.overlay"],
+    "templates": ["password"]
+  },
   "settings": [
     {
       "type": "product",
@@ -331,6 +316,17 @@
           "label": "t:shared.settings.aspect_ratio.option_landscape"
         }
       ]
+    },
+    {
+      "type": "header",
+      "content": "t:sections.main_product_overview.settings.gift_card_header.content"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_gift_card_recipient",
+      "default": true,
+      "label": "t:sections.main_product_overview.settings.enable_gift_card_recipient.label",
+      "info": "t:sections.main_product_overview.settings.enable_gift_card_recipient.info"
     },
     {
       "type": "header",
@@ -666,6 +662,12 @@
       "limit": 1,
       "settings": [
         {
+          "id": "title",
+          "type": "text",
+          "label": "t:sections.main_product_overview.blocks.shared_settings.title.label",
+          "default": "Description"
+        },
+        {
           "type": "select",
           "id": "text_font_class",
           "label": "t:shared.settings.text_font_class.label",
@@ -716,12 +718,6 @@
           "type": "checkbox",
           "label": "t:sections.main_product_overview.blocks.shared_settings.expand_by_default.label",
           "default": false
-        },
-        {
-          "id": "collapsible_row_title",
-          "type": "text",
-          "label": "t:sections.main_product_overview.blocks.shared_settings.collapsible_row_title.label",
-          "default": "Description"
         }
       ]
     },
@@ -1029,6 +1025,12 @@
           "id": "show_status_bar",
           "label": "t:sections.main_product_overview.blocks.inventory_counter.settings.show_status_bar.label",
           "default": true
+        },
+        {
+          "type": "checkbox",
+          "id": "show_untracked_quantity",
+          "label": "t:sections.main_product_overview.blocks.inventory_counter.settings.show_untracked_quantity.label",
+          "default": false
         }
       ]
     },

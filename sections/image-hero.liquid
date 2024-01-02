@@ -29,6 +29,11 @@
   if section.settings.image_aspect == 'original'
     assign placeholder_aspect_ratio = 'square'
   endif
+
+  assign prioritize_loading = false
+  if section.index == 1
+    assign prioritize_loading = true
+  endif
 -%}
 
 <div
@@ -75,7 +80,8 @@
           focal_point: section.settings.mobile_focal_point,
           placeholder_name: "lifestyle-2",
           animate: true,
-          src_set_type: "full-width"
+          src_set_type: "full-width",
+          prioritize_loading: prioritize_loading
         -%}
       {%- endif -%}
 
@@ -89,7 +95,8 @@
         placeholder_natural_fallback_ratio: placeholder_aspect_ratio,
         placeholder_name: "lifestyle-2",
         animate: true,
-        src_set_type: "full-width"
+        src_set_type: "full-width",
+        prioritize_loading: prioritize_loading
       -%}
     </div>
     <div class="image-hero__overlay"></div>
@@ -186,6 +193,9 @@
   "name": "t:sections.image_hero.name",
   "tag": "section",
   "class": "shopify-section--full-width",
+  "disabled_on": {
+    "groups": ["header", "custom.overlay"]
+  },
   "settings": [
     {
       "type": "radio",
@@ -235,15 +245,15 @@
       "id": "focal_point",
       "type": "select",
       "label": "t:shared.settings.focal_point.label",
-      "options": [{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
-      "default": "center"
+      "options": [{"label":"t:shared.settings.focal_point.option_image","value":"image_presentation"},{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
+      "default": "image_presentation"
     },
     {
       "id": "mobile_focal_point",
       "type": "select",
       "label": "t:sections.image_hero.settings.mobile_focal_point.label",
-      "options": [{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
-      "default": "center"
+      "options": [{"label":"t:shared.settings.focal_point.option_image","value":"image_presentation"},{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
+      "default": "image_presentation"
     },
     {
       "type": "url",

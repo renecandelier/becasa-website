@@ -12,7 +12,7 @@
     assign locale_selector = true
   endif
 
-  if enable_country_selector and shop.enabled_currencies.size > 1
+  if enable_country_selector and localization.available_countries.size > 1
     assign country_selector = true
   endif
 
@@ -72,18 +72,24 @@
 
           <div class="footer__group-content">
             {%- if block.type == 'text' -%}
-              {%- if block.settings.image_placement == "above_text" -%}
+              {%- if block.settings.image_placement == 'above_text' -%}
                 {{ rendered_image }}
               {%- endif -%}
               {%- if block.type == 'text' -%}
                 <div class="fs-body-100 footer__text">{{ block.settings.text }}</div>
-                {%- if rendered_image and block.settings.image_placement == "below_text" -%}
+                {%- if rendered_image and block.settings.image_placement == 'below_text' -%}
                   {{ rendered_image }}
                 {%- endif -%}
               {%- endif -%}
 
               {%- if block.settings.show_social_icons -%}
                 {% render 'social-icons' %}
+              {%- endif -%}
+
+              {%- if shop.features.follow_on_shop? and block.settings.enable_follow_on_shop -%}
+                <div class="footer__follow-on-shop">
+                  {{ shop | login_button: action: 'follow' }}
+                </div>
               {%- endif -%}
             {%- elsif block.type == 'links' -%}
               <div class="footer__links fs-body-100">
@@ -139,6 +145,12 @@
                 {%- if block.settings.show_social_icons -%}
                   {% render 'social-icons' %}
                 {%- endif -%}
+
+                {%- if shop.features.follow_on_shop? and block.settings.enable_follow_on_shop -%}
+                  <div class="footer__follow-on-shop">
+                    {{ shop | login_button: action: 'follow' }}
+                  </div>
+                {%- endif -%}
               </div>
             {%- endif -%}
           </div>
@@ -153,19 +165,21 @@
             render 'cross-border' with
             show_locale: locale_selector,
             show_country: country_selector,
-            id: 'footer'
+            id: 'footer',
+            defer_styles: true
           %}
         {%- endif -%}
         <div class="footer__credits fs-body-50">
           <p>
-            {{ 'sections.footer.copyright' | t }} &copy; {{ 'now' | date: "%Y" }}, {{ shop.name | link_to: '/' }}.
+            {{ 'sections.footer.copyright' | t }} &copy; {{ 'now' | date: '%Y' }}, {{ shop.name | link_to: '/' }}.
             {{ 'sections.footer.rights' | t }}
             {{ 'sections.footer.see_terms' | t }}
           </p>
           {{ section.settings.additional_copyright_text }}
-          {% comment %}
+ {% comment %}
+***&&&***
           <p>{{ powered_by_link | replace: 'rel="nofollow"', 'rel="nofollow noopener"' }}</p>
-          {% endcomment %}
+ {% endcomment %}
         </div>
       </div>
 
@@ -321,6 +335,17 @@
           "type": "checkbox",
           "label": "t:sections.footer.settings.show_social_icons.label",
           "default": false
+        },
+        {
+          "type": "header",
+          "content": "t:sections.footer.settings.header__follow_on_shop.content",
+          "info": "t:sections.footer.settings.header__follow_on_shop.info"
+        },
+        {
+          "id": "enable_follow_on_shop",
+          "type": "checkbox",
+          "label": "t:sections.footer.settings.enable_follow_on_shop.label",
+          "default": false
         }
       ]
     },
@@ -441,6 +466,17 @@
           "id": "show_social_icons",
           "type": "checkbox",
           "label": "t:sections.footer.settings.show_social_icons.label",
+          "default": true
+        },
+        {
+          "type": "header",
+          "content": "t:sections.footer.settings.header__follow_on_shop.content",
+          "info": "t:sections.footer.settings.header__follow_on_shop.info"
+        },
+        {
+          "id": "enable_follow_on_shop",
+          "type": "checkbox",
+          "label": "t:sections.footer.settings.enable_follow_on_shop.label",
           "default": true
         }
       ]

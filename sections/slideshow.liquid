@@ -73,11 +73,15 @@
   "name": "t:sections.slideshow.name",
   "tag": "section",
   "class": "shopify-section--full-width",
+  "disabled_on": {
+    "groups": ["header", "custom.overlay"]
+  },
   "settings": [
     {
       "type": "radio",
       "id": "image_aspect",
       "label": "t:sections.slideshow.settings.image_aspect.label",
+      "info": "t:sections.slideshow.settings.image_aspect.info",
       "options": [
         {
           "value": "original",
@@ -235,15 +239,15 @@
           "id": "focal_point",
           "type": "select",
           "label": "t:sections.slideshow.blocks.slide.settings.focal_point.label",
-          "options": [{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
-          "default": "center"
+          "options": [{"label":"t:shared.settings.focal_point.option_image","value":"image_presentation"},{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
+          "default": "image_presentation"
         },
         {
           "id": "mobile_focal_point",
           "type": "select",
           "label": "t:sections.slideshow.blocks.slide.settings.mobile_focal_point.label",
-          "options": [{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
-          "default": "center"
+          "options": [{"label":"t:shared.settings.focal_point.option_image","value":"image_presentation"},{"label":"t:shared.settings.focal_point.option_center","value":"center"},{"label":"t:shared.settings.focal_point.option_top","value":"top"},{"label":"t:shared.settings.focal_point.option_bottom","value":"bottom"},{"label":"t:shared.settings.focal_point.option_left","value":"left"},{"label":"t:shared.settings.focal_point.option_right","value":"right"}],
+          "default": "image_presentation"
         },
         {
           "type": "url",
@@ -351,7 +355,7 @@
           "id": "title",
           "type": "text",
           "label": "t:sections.slideshow.blocks.slide.settings.title.label",
-          "default": "Slideshow"
+          "default": "Slide"
         },
         {
           "type": "select",
