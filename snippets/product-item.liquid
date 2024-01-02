@@ -1,8 +1,7 @@
 {% comment %}
-pass in :
+  pass in :
 
-* prod (product but avoiding collision with globally scoped product)
-
+  * prod (product but avoiding collision with globally scoped product)
 {% endcomment %}
 {%- liquid
   assign show_multiple_images = false
@@ -12,10 +11,25 @@ pass in :
 
   assign current_variant = prod.selected_or_first_available_variant
 
-  assign sizes = "(max-width: 720px) calc((90vw - 12px) / 2), (max-width: 1400px) calc((93.4vw - (12px * 3)) / 4), 304px"
+  assign mobile_column_count = 2
+  if product_columns_mobile == 1
+    assign mobile_column_count = 1
+  endif
+
+  case product_columns_desktop
+    when '5'
+      assign sizes = '(max-width: 720px) calc((90vw - 12px) /[[mcc]]), (max-width: 1400px) calc((93.4vw - (12px * 3)) / 5), 270px' | replace: '[[mcc]]', mobile_column_count
+    when '3'
+      assign sizes = '(max-width: 720px) calc((90vw - 12px) /[[mcc]]), (max-width: 1400px) calc((93.4vw - (12px * 3)) / 3), 450px' | replace: '[[mcc]]', mobile_column_count
+    when '2'
+      assign sizes = '(max-width: 720px) calc((90vw - 12px) /[[mcc]]), (max-width: 1400px) calc((93.4vw - (12px * 3)) / 2), 690px' | replace: '[[mcc]]', mobile_column_count
+    else
+      # Using a 4 item grid as default for sizes
+      assign sizes = '(max-width: 720px) calc((90vw - 12px) /[[mcc]]), (max-width: 1400px) calc((93.4vw - (12px * 3)) / 4), 304px' | replace: '[[mcc]]', mobile_column_count
+  endcase
+
   assign has_hover_swatches = false
 -%}
-
 
 {% if settings.enable_product_card_swatches %}
   {% capture first_swatchified_option %}{%- render "get-first-swatchified-option" with prod: prod -%}{%- endcapture -%}
@@ -28,45 +42,67 @@ pass in :
   {% endif %}
 {% endif %}
 
-<div class="
+<div
+  class="
     product-item
     {% if has_hover_swatches %} product-item--with-hover-swatches{% endif %}
+    {% if settings.enable_border_on_hover %}product-item--border-on-hover{% endif %}
     animation
     animation--item
     {% if has_grid_reveal %}animation--item-initial{% endif %}
   "
-  style="
-    --z-index-item: {{ forloop.index }};
-  "
+  style="    --z-index-item: {{ forloop.index }};"
 >
-  {% assign variantURL = prod.url %}		
-  {% if selectedVariant != null %}		
-      {% assign variantURL = variantURL | append: "?variant=" | append: selectedVariant.id %}		
+{% comment %} 
+                ***&&&***
+{% endcomment %}
+
+ {% assign variantURL = prod.url %}   
+  {% if selectedVariant != null %}    
+      {% assign variantURL = variantURL | append: "?variant=" | append: selectedVariant.id %}   
       {% endif %}
+
+      {% comment %} 
+                ***&&&***
+{% endcomment %}
+
   <div class="product-item__inner">
     <div class="product-item__media{% if show_multiple_images %} product-item__media--multiple-images{% endif %}">
+    {% comment %} 
+                ***&&&***
+{% endcomment %}
       <a class="product-item__image-link" href="{{ variantURL | within: collection }}" aria-label="{{ prod.title }}">
+      {% comment %} 
+                ***&&&***
+{% endcomment %}
+        {%- liquid
+          assign image_wrapper_class = 'product-item__image'
+
+          if show_multiple_images
+            assign image_wrapper_class = image_wrapper_class | append: ' product-item__image--one'
+            assign second_image = prod.media[1].preview_image
+
+            if prod.featured_media != prod.media[0]
+              assign second_image = prod.media[0].preview_image
+            endif
+          endif
+        -%}
+
+        {%
+          render 'image' with
+          image: prod.featured_media,
+          wrapper_class: image_wrapper_class,
+          aspect_ratio: settings.product_listing_aspect_ratio,
+          object_fit: settings.product_listing_media_fit,
+          include_placeholder: true
+          include_placeholder: true,
+          sizes: sizes
+          src_set_type: "grid"
+        %}
+
         {%- if show_multiple_images -%}
-           {%- assign productImage = prod.featured_image -%}		
-          {%- if indexForVariant>0 -%}		
-              {%- assign productImage = prod.media[indexForVariant] -%}		
-              {%- endif -%}		
-                    {%- if indexForVariant == 0 -%}		
-        {%- assign second_image = prod.media[1].preview_image -%}		
-              {%- else  -%}		
-              {%- assign next = indexForVariant | plus: 1 -%}		
-              {%- assign second_image = prod.media[next] -%}		
-              {%- endif -%}
-          {% render 'image' with
-            image: productImage,
-            wrapper_class: 'product-item__image product-item__image--one',
-            aspect_ratio: settings.product_listing_aspect_ratio,
-            object_fit: settings.product_listing_media_fit
-            include_placeholder: true,
-            sizes: sizes
-            src_set_type: "grid"
-          %}
-          {% render 'image' with
+          {%
+            render 'image' with
             image: second_image,
             wrapper_class: 'product-item__image product-item__image--two',
             aspect_ratio: settings.product_listing_aspect_ratio,
@@ -76,21 +112,11 @@ pass in :
             no_lazy_load: true,
             src_set_type: "grid"
           %}
-        {%- else -%}
-          {% render 'image' with
-            image: prod.featured_media,
-            wrapper_class: 'product-item__image',
-            aspect_ratio: settings.product_listing_aspect_ratio,
-            object_fit: settings.product_listing_media_fit,
-            include_placeholder: true
-            include_placeholder: true,
-            sizes: sizes
-            src_set_type: "grid"
-          %}
         {%- endif -%}
       </a>
       {% unless placeholder %}
-        {%- render 'product-badges'
+        {%-
+          render 'product-badges'
           with prod: prod,
           show_sale_badge: settings.product_listing_show_sale_badge,
           show_custom_badges: settings.product_listing_show_custom_badges,
@@ -100,12 +126,23 @@ pass in :
 
       {% if settings.enable_quick_view and quick_view_is_beneath != true %}
         <div class="product-item__hover-action-wrap">
-          <button class="btn btn--tertiary btn--x-small show-product-quickview" tabindex="0" href="{{ variantURL | within: collection }}">{{ 'products.product.quick_view' | t }}</button>
+          <button
+            class="btn btn--tertiary btn--x-small show-product-quickview"
+            tabindex="0"
+            href="{{ variantURL | within: collection }}"
+          >
+            {{ 'products.product.quick_view' | t }}
+          </button>
         </div>
       {% endif %}
 
       {% if settings.enable_quick_view %}
-        <button class="product-item__hoverless-quick-view-button btn btn--rounded show-product-quickview" tabindex="0" href="{{ variantURL | within: collection }}" title="{{ 'products.product.quick_view' | t }}">
+        <button
+          class="product-item__hoverless-quick-view-button btn btn--rounded show-product-quickview"
+          tabindex="0"
+          href="{{ prod.url | within: collection }}"
+          title="{{ 'products.product.quick_view' | t }}"
+        >
           {% render 'icon' with icon: 'quick-buy' %}
         </button>
       {% endif %}
@@ -133,6 +170,12 @@ pass in :
 
             <a href="{{ variantURL | within: collection }}"> {{ productTitle }} </a>
 
+
+            {% comment %} 
+          ***&&&**** old code
+            <a href="{{ prod.url | within: collection }}">{{ prod.title }}</a>
+            {% endcomment %}
+
           {%- endif -%}
         </h4>
 
@@ -142,52 +185,93 @@ pass in :
           </h5>
         {% endif %}
 
-        <p class="product-item__price">
+        {% if settings.product_listing_show_rating %}
+          {% render 'product-rating', prod: prod %}
+        {% endif %}
 
+        <p class="product-item__price">
           {% if placeholder %}
             {{ 9999 | money }}
 
           {% elsif prod.compare_at_price > prod.price %}
             <span class="visually-hidden">{{ 'products.product.regular_price' | t }}</span>
-            <s class="t-subdued">{{ prod.compare_at_price | money }}</s>
 
-            {% if prod.price_varies %}
-            
-            {% comment %}
+            {% liquid
+              # Extend Shopify's detection for varied compare_at_price
+              assign has_null_compare_at_price = false
+              for variant in prod.variants
+                if variant.compare_at_price == null
+                  assign has_null_compare_at_price = true
+                  break
+                endif
+              endfor
+            %}
+
+            {% unless prod.compare_at_price_varies or has_null_compare_at_price %}
+              <s class="t-subdued">{{ prod.compare_at_price | money }}</s>
+            {% endunless %}
+
+            {% if prod.price_varies or prod.compare_at_price_varies or has_null_compare_at_price %}
+              
+
+
+ {% comment %}
             ***&&&*** This is meant to set a sale marker is the price varies
              {%- assign sale_price = prod.price | money -%}
-              {{ 'products.product.on_sale_from_html' | t: price: sale_price }}
-            {% endcomment %}
-              <span class="sale" data-price>{{ prod.price | money }}<span>
 
+              <span class="sale">
+                {{- 'products.product.on_sale_from_html' | t: price: sale_price -}}
+              </span>
+            {% endcomment %}
+              <span class="sale">{{ prod.price | money }}</span>
+
+
+              
             {% else %}
-              <span class="sale" data-price>{{ prod.price | money }}<span>
+              <span class="sale">{{ prod.price | money }}</span>
             {% endif %}
 
           {% else %}
             {% if prod.price_varies %}
               {%- assign price = prod.price | money -%}
-              {{ 'products.product.from_lowest_price_html' | t: lowest_price: price }}
-            {% else %}
-              <span class="product-item__price">{{ prod.price | money }}</span>
-            {% endif %}
 
+              {% if settings.zero_dollar_listing_price_display == 'replace' and prod.price == 0 %}
+                {%- assign custom_price_label = 'products.inventory.zero_price_custom_label' | t -%}
+                {{ 'products.product.from_lowest_price_html' | t: lowest_price: custom_price_label }}
+              {% else %}
+                {{ 'products.product.from_lowest_price_html' | t: lowest_price: price }}
+              {% endif %}
+
+            {% else %}
+              {% unless settings.zero_dollar_listing_price_display == 'hide' and prod.price == 0 %}
+                {% if settings.zero_dollar_listing_price_display == 'replace' and prod.price == 0 %}
+                  <p class="product-item__price">{{ 'products.inventory.zero_price_custom_label' | t }}</p>
+                {% else %}
+                  <span class="product-item__price">{{ prod.price | money }}</span>
+                {% endif %}
+              {% endunless %}
+            {% endif %}
           {% endif %}
 
           {% if settings.product_listing_show_discount %}
             <span class="displayed-discount fs-body-50">
-              {%- render "get-display-discount"
+              {%-
+                render "get-display-discount"
                 with prod: prod,
-                format: settings.product_listing_discount_format -%}
+                format: settings.product_listing_discount_format
+              -%}
             </span>
           {% endif %}
 
-          {% render 'unit-price' item: current_variant %}
+          {% render 'unit-price', item: current_variant %}
         </p>
 
         {% if has_hover_swatches %}
           <h5 class="ff-body fs-body-50 product-item__swatch-count">
-            {{ 'products.product.swatch_count' | t : count: displayed_swatch_count }}
+            {{
+              'products.product.swatch_count'
+              | t: count: displayed_swatch_count, swatch_name: first_swatchified_option
+            }}
           </h5>
         {% endif %}
       </div>
@@ -199,13 +283,11 @@ pass in :
       {%- endif -%}
 
       {%- if settings.enable_quick_view and quick_view_is_beneath -%}
-        <button class="btn btn--tertiary btn--x-small show-product-quickview" tabindex="0" href="{{ prod.url }}">{{ 'products.product.quick_view' | t }}</button>
+        <button class="btn btn--tertiary btn--x-small show-product-quickview" tabindex="0" href="{{ prod.url }}">
+          {{ 'products.product.quick_view' | t }}
+        </button>
       {%- endif -%}
-
     </div>
-                {% comment %} 
-                ***&&&***
     <div class="product-item__hover-container"></div>
-    {% endcomment %}
   </div>
 </div>

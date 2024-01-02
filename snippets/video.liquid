@@ -8,6 +8,7 @@
   wrapper_class: String
   aspect_ratio: String
   focal_alignment: String
+  animate: Bool (optional)
 {%- endcomment -%}
 {%- liquid
   if focal_point
@@ -24,6 +25,7 @@
   class="
     video-wrapper {{ wrapper_class }}
     {% if aspect_ratio != blank and aspect_ratio != 'natural' %}aspect-ratio--{{ aspect_ratio }}{% endif %}
+    {% if animate %}video-wrapper--animate{% endif %}
   "
   {%- if focal_alignment -%}
     style="--focal-alignment: {{ focal_alignment }};"
