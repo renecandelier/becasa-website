@@ -17,7 +17,8 @@
             "text": "<p>Use this text area to tell your customers about your brand and vision. You can change it in the theme settings.<\/p>",
             "image_max_width": 120,
             "image_placement": "above_text",
-            "show_social_icons": true
+            "show_social_icons": true,
+            "enable_follow_on_shop": false
           }
         },
         "footer-1": {
@@ -64,7 +65,8 @@
             "title": "Newsletter",
             "show_title_on_desktop": true,
             "text": "<p>STAY IN TOUCH<\/p>",
-            "show_social_icons": false
+            "show_social_icons": false,
+            "enable_follow_on_shop": false
           }
         }
       },
