@@ -103,7 +103,7 @@
         "template--15906633646133__b67e410b-0747-4659-a20e-752dd907bb41-button-1": {
           "type": "button",
           "settings": {
-            "link": "shopify:\/\/collections\/pono-collection",
+            "link": "shopify:\/\/pages\/introducing-pono-by-joan-goodman",
             "link_text": "Explore",
             "button_style": "btn--secondary"
           }
