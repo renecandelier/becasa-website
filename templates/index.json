@@ -50,59 +50,6 @@
         "section_padding": "section--vertical-padding-none"
       }
     },
-    "529faeb1-90d5-47b7-a481-ced8b4da7650": {
-      "type": "image-hero",
-      "blocks": {
-        "template--15630978023477__529faeb1-90d5-47b7-a481-ced8b4da7650-accent-1": {
-          "type": "accent",
-          "disabled": true,
-          "settings": {
-            "accent": "LIMITED FEATURE"
-          }
-        },
-        "template--15630978023477__529faeb1-90d5-47b7-a481-ced8b4da7650-heading-1": {
-          "type": "heading",
-          "disabled": true,
-          "settings": {
-            "title": "Introducing",
-            "heading_font_class": "fs-heading-display-3"
-          }
-        },
-        "template--15630978023477__529faeb1-90d5-47b7-a481-ced8b4da7650-text-1": {
-          "type": "text",
-          "disabled": true,
-          "settings": {
-            "text": "<p>PONO by Joan Goodman<\/p>",
-            "text_font_class": "fs-body-100"
-          }
-        }
-      },
-      "block_order": [
-        "template--15630978023477__529faeb1-90d5-47b7-a481-ced8b4da7650-accent-1",
-        "template--15630978023477__529faeb1-90d5-47b7-a481-ced8b4da7650-heading-1",
-        "template--15630978023477__529faeb1-90d5-47b7-a481-ced8b4da7650-text-1"
-      ],
-      "settings": {
-        "image_aspect": "custom",
-        "desktop_height": 100,
-        "mobile_height": 100,
-        "image": "shopify:\/\/shop_images\/Beige_Elegant_Fashion_Brand_Website_Homepage_Banner_1.png",
-        "image_mobile": "shopify:\/\/shop_images\/LEARN_MORE.png",
-        "focal_point": "center",
-        "mobile_focal_point": "center",
-        "media_link": "shopify:\/\/pages\/introducing-pono-by-joan-goodman",
-        "text_position": "center_center",
-        "text_position_mobile": "center_center",
-        "text_color": "#ffffff",
-        "button_background_color": "#ffffff",
-        "button_text_color": "#000000",
-        "color_overlay": "#000000",
-        "color_overlay_gradient": "",
-        "overlay_opacity": 0,
-        "enable_animation": true,
-        "section_padding": "section--vertical-padding-none"
-      }
-    },
     "9904d35a-b0c1-4760-9f4c-82c5783d55f0": {
       "type": "rich-text",
       "blocks": {
@@ -134,6 +81,57 @@
         "section_padding": "section--vertical-padding-top-bottom",
         "content_width": "custom",
         "custom_content_width": 700
+      }
+    },
+    "b67e410b-0747-4659-a20e-752dd907bb41": {
+      "type": "image-with-text",
+      "blocks": {
+        "template--15906633646133__b67e410b-0747-4659-a20e-752dd907bb41-heading-1": {
+          "type": "heading",
+          "settings": {
+            "title": "Introducing | PONO by Joan Goodman",
+            "heading_font_class": "fs-heading-1-base"
+          }
+        },
+        "template--15906633646133__b67e410b-0747-4659-a20e-752dd907bb41-subheading-1": {
+          "type": "subheading",
+          "settings": {
+            "subheading": "Surf Camp. Fashion. & Italian Buttons.",
+            "subheading_font_class": "fs-heading-5-base"
+          }
+        },
+        "template--15906633646133__b67e410b-0747-4659-a20e-752dd907bb41-button-1": {
+          "type": "button",
+          "settings": {
+            "link": "shopify:\/\/collections\/pono-collection",
+            "link_text": "Explore",
+            "button_style": "btn--secondary"
+          }
+        }
+      },
+      "block_order": [
+        "template--15906633646133__b67e410b-0747-4659-a20e-752dd907bb41-heading-1",
+        "template--15906633646133__b67e410b-0747-4659-a20e-752dd907bb41-subheading-1",
+        "template--15906633646133__b67e410b-0747-4659-a20e-752dd907bb41-button-1"
+      ],
+      "settings": {
+        "image_position": "right",
+        "text_alignment": "center",
+        "image": "shopify:\/\/shop_images\/Becasa0009.jpg",
+        "aspect_ratio": "square",
+        "focal_point": "center",
+        "image_caption": "",
+        "show_small_image": true,
+        "image_small": "shopify:\/\/shop_images\/Screen_Shot_2023-12-10_at_2.50.42_PM.png",
+        "image_small_aspect_ratio": "square",
+        "image_small_focal_point": "center",
+        "background_color": "",
+        "text_color": "#000000",
+        "button_background_color": "#000000",
+        "button_text_color": "#FFFFFF",
+        "enable_animation": true,
+        "divider_style": "none",
+        "section_padding": "section--vertical-padding-top-bottom"
       }
     },
     "16558445044f80743b": {
@@ -1788,8 +1786,8 @@
   },
   "order": [
     "01ffb404-403f-4ca8-a4b9-e6b50f94da3e",
-    "529faeb1-90d5-47b7-a481-ced8b4da7650",
     "9904d35a-b0c1-4760-9f4c-82c5783d55f0",
+    "b67e410b-0747-4659-a20e-752dd907bb41",
     "16558445044f80743b",
     "3a2d7467-0626-4894-bbb0-e4eb846771d1",
     "713701db-85db-49b4-b65c-a9567ca86c05",
