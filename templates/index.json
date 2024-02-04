@@ -11,23 +11,34 @@
         },
         "template--15906633646133__01ffb404-403f-4ca8-a4b9-e6b50f94da3e-heading-1": {
           "type": "heading",
+          "disabled": true,
           "settings": {
-            "title": "packable luxuries",
+            "title": "resort dresses",
             "heading_font_class": "fs-heading-display-2"
           }
         },
         "template--15906633646133__01ffb404-403f-4ca8-a4b9-e6b50f94da3e-text-1": {
           "type": "text",
+          "disabled": true,
           "settings": {
             "text": "<p>Our latest collection is meant to take you places, preferably in the sun.<\/p>",
             "text_font_class": "fs-body-100"
+          }
+        },
+        "button_GGMxag": {
+          "type": "button",
+          "settings": {
+            "link": "",
+            "link_text": "shop the resort dress presale",
+            "button_style": "btn--primary"
           }
         }
       },
       "block_order": [
         "template--15906633646133__01ffb404-403f-4ca8-a4b9-e6b50f94da3e-accent-1",
         "template--15906633646133__01ffb404-403f-4ca8-a4b9-e6b50f94da3e-heading-1",
-        "template--15906633646133__01ffb404-403f-4ca8-a4b9-e6b50f94da3e-text-1"
+        "template--15906633646133__01ffb404-403f-4ca8-a4b9-e6b50f94da3e-text-1",
+        "button_GGMxag"
       ],
       "settings": {
         "image_aspect": "custom",
@@ -37,15 +48,15 @@
         "image_mobile": "shopify:\/\/shop_images\/VSP_3337.jpg",
         "focal_point": "center",
         "mobile_focal_point": "center",
-        "media_link": "shopify:\/\/collections\/rachel-november",
+        "media_link": "",
         "text_position": "center_center",
         "text_position_mobile": "center_center",
         "text_color": "#ffffff",
         "button_background_color": "#ffffff",
         "button_text_color": "#000000",
-        "color_overlay": "#000000",
+        "color_overlay": "#A77A06",
         "color_overlay_gradient": "",
-        "overlay_opacity": 0,
+        "overlay_opacity": 5,
         "enable_animation": true,
         "section_padding": "section--vertical-padding-none"
       }
