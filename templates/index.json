@@ -149,8 +149,8 @@
           "type": "button",
           "settings": {
             "link": "shopify:\/\/collections\/rachel-november",
-            "link_text": "our latest collection",
-            "button_style": "btn--secondary"
+            "link_text": "ready to ship",
+            "button_style": "btn--primary"
           }
         },
         "15c58a65-cec7-4639-8936-8e3534462aff": {
@@ -200,8 +200,8 @@
         "image_aspect": "custom",
         "desktop_height": 100,
         "mobile_height": 100,
-        "image": "shopify:\/\/shop_images\/BecasaAugust2023-1348.jpg",
-        "image_mobile": "shopify:\/\/shop_images\/BecasaAugust2023-1368.jpg",
+        "image": "shopify:\/\/shop_images\/BecasaAugust2023-0277.jpg",
+        "image_mobile": "shopify:\/\/shop_images\/BecasaAugust2023-0276_1.jpg",
         "focal_point": "bottom",
         "mobile_focal_point": "center",
         "media_link": "shopify:\/\/collections\/rachel-november",
