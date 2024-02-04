@@ -139,7 +139,7 @@
         "background_color": "",
         "text_color": "#000000",
         "button_background_color": "#000000",
-        "button_text_color": "#FFFFFF",
+        "button_text_color": "#ffffff",
         "enable_animation": true,
         "divider_style": "none",
         "section_padding": "section--vertical-padding-top-bottom"
@@ -195,7 +195,7 @@
         "image_mobile": "shopify:\/\/shop_images\/resort-dress-maxi-poppy-6.jpg",
         "focal_point": "top",
         "mobile_focal_point": "top",
-        "media_link": "shopify:\/\/products\/crewneck-sweatshirt-1",
+        "media_link": "https:\/\/shopbecasa.com\/collections\/resort-presale\/products\/resort-dress-maxi?variant=42867672416309",
         "text_position": "center_center",
         "text_position_mobile": "center_center",
         "text_color": "#ffffff",
