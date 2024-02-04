@@ -61,6 +61,39 @@
         "section_padding": "section--vertical-padding-none"
       }
     },
+    "9904d35a-b0c1-4760-9f4c-82c5783d55f0": {
+      "type": "rich-text",
+      "blocks": {
+        "template--15630978023477__9904d35a-b0c1-4760-9f4c-82c5783d55f0-heading-1": {
+          "type": "heading",
+          "disabled": true,
+          "settings": {
+            "title": "Rich text",
+            "heading_font_class": "fs-heading-2-base"
+          }
+        },
+        "template--15630978023477__9904d35a-b0c1-4760-9f4c-82c5783d55f0-text-1": {
+          "type": "text",
+          "disabled": true,
+          "settings": {
+            "text": "<p>Use this text area to share information about your brand with your customers. Describe a product, share announcements, or welcome customers to your store.<\/p>",
+            "text_font_class": "fs-body-100"
+          }
+        }
+      },
+      "block_order": [
+        "template--15630978023477__9904d35a-b0c1-4760-9f4c-82c5783d55f0-heading-1",
+        "template--15630978023477__9904d35a-b0c1-4760-9f4c-82c5783d55f0-text-1"
+      ],
+      "settings": {
+        "alignment": "left_left",
+        "enable_animation": true,
+        "divider_style": "none",
+        "section_padding": "section--vertical-padding-top-bottom",
+        "content_width": "custom",
+        "custom_content_width": 700
+      }
+    },
     "image_with_text_fn8ipJ": {
       "type": "image-with-text",
       "blocks": {
@@ -175,37 +208,39 @@
         "section_padding": "section--vertical-padding-none"
       }
     },
-    "9904d35a-b0c1-4760-9f4c-82c5783d55f0": {
-      "type": "rich-text",
+    "3a2d7467-0626-4894-bbb0-e4eb846771d1": {
+      "type": "quote",
       "blocks": {
-        "template--15630978023477__9904d35a-b0c1-4760-9f4c-82c5783d55f0-heading-1": {
-          "type": "heading",
-          "disabled": true,
+        "template--15376799498293__3a2d7467-0626-4894-bbb0-e4eb846771d1-1668046469468369f8-0": {
+          "type": "quote",
           "settings": {
-            "title": "Rich text",
-            "heading_font_class": "fs-heading-2-base"
+            "quote": "<p><em>\"It is a peaceful feeling here at the beach; almost time for spring.\"<\/em><\/p>",
+            "title": "",
+            "font_size": "small"
           }
         },
-        "template--15630978023477__9904d35a-b0c1-4760-9f4c-82c5783d55f0-text-1": {
-          "type": "text",
+        "67a45d1a-0144-4cff-b0ec-b7dc315f1750": {
+          "type": "quote",
           "disabled": true,
           "settings": {
-            "text": "<p>Use this text area to share information about your brand with your customers. Describe a product, share announcements, or welcome customers to your store.<\/p>",
-            "text_font_class": "fs-body-100"
+            "quote": "<p>Goodbye to summer, hello to the in-between <br\/><br\/>Three New Styles – our Linen Day Caftan, Dock Shirt, and Margo Midi Dress to style for the next season<\/p>",
+            "title": "Emily Raffield, Founder + Designer BECASA",
+            "font_size": "small"
           }
         }
       },
       "block_order": [
-        "template--15630978023477__9904d35a-b0c1-4760-9f4c-82c5783d55f0-heading-1",
-        "template--15630978023477__9904d35a-b0c1-4760-9f4c-82c5783d55f0-text-1"
+        "template--15376799498293__3a2d7467-0626-4894-bbb0-e4eb846771d1-1668046469468369f8-0",
+        "67a45d1a-0144-4cff-b0ec-b7dc315f1750"
       ],
       "settings": {
-        "alignment": "left_left",
+        "autoplay_enabled": true,
+        "autoplay_delay": 7,
+        "pagination_style": "dots",
+        "font_choice": "heading",
         "enable_animation": true,
         "divider_style": "none",
-        "section_padding": "section--vertical-padding-top-bottom",
-        "content_width": "custom",
-        "custom_content_width": 700
+        "section_padding": "section--vertical-padding-top-bottom"
       }
     },
     "16558445044f80743b": {
@@ -303,41 +338,6 @@
         "overlay_opacity": 9,
         "enable_animation": false,
         "section_padding": "section--vertical-padding-none"
-      }
-    },
-    "3a2d7467-0626-4894-bbb0-e4eb846771d1": {
-      "type": "quote",
-      "blocks": {
-        "template--15376799498293__3a2d7467-0626-4894-bbb0-e4eb846771d1-1668046469468369f8-0": {
-          "type": "quote",
-          "settings": {
-            "quote": "<p><em>\"It is a peaceful feeling here at the beach; almost time for spring.\"<\/em><\/p>",
-            "title": "",
-            "font_size": "small"
-          }
-        },
-        "67a45d1a-0144-4cff-b0ec-b7dc315f1750": {
-          "type": "quote",
-          "disabled": true,
-          "settings": {
-            "quote": "<p>Goodbye to summer, hello to the in-between <br\/><br\/>Three New Styles – our Linen Day Caftan, Dock Shirt, and Margo Midi Dress to style for the next season<\/p>",
-            "title": "Emily Raffield, Founder + Designer BECASA",
-            "font_size": "small"
-          }
-        }
-      },
-      "block_order": [
-        "template--15376799498293__3a2d7467-0626-4894-bbb0-e4eb846771d1-1668046469468369f8-0",
-        "67a45d1a-0144-4cff-b0ec-b7dc315f1750"
-      ],
-      "settings": {
-        "autoplay_enabled": true,
-        "autoplay_delay": 7,
-        "pagination_style": "dots",
-        "font_choice": "heading",
-        "enable_animation": true,
-        "divider_style": "none",
-        "section_padding": "section--vertical-padding-top-bottom"
       }
     },
     "78432426-6df3-40c1-935f-3c905f16913f": {
@@ -1798,11 +1798,11 @@
   },
   "order": [
     "01ffb404-403f-4ca8-a4b9-e6b50f94da3e",
+    "9904d35a-b0c1-4760-9f4c-82c5783d55f0",
     "image_with_text_fn8ipJ",
     "3c8c13e6-f86e-43f5-a617-701f26007732",
-    "9904d35a-b0c1-4760-9f4c-82c5783d55f0",
-    "16558445044f80743b",
     "3a2d7467-0626-4894-bbb0-e4eb846771d1",
+    "16558445044f80743b",
     "78432426-6df3-40c1-935f-3c905f16913f",
     "713701db-85db-49b4-b65c-a9567ca86c05",
     "f0d3ab67-bc81-4459-b5f1-afea099f386f",
