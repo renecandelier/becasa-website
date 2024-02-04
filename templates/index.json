@@ -112,6 +112,69 @@
         "section_padding": "section--vertical-padding-top-bottom"
       }
     },
+    "3c8c13e6-f86e-43f5-a617-701f26007732": {
+      "type": "image-hero",
+      "blocks": {
+        "template--15511990272053__3c8c13e6-f86e-43f5-a617-701f26007732-16850253733a89fbd0-0": {
+          "type": "accent",
+          "disabled": true,
+          "settings": {
+            "accent": "Accent"
+          }
+        },
+        "template--15511990272053__3c8c13e6-f86e-43f5-a617-701f26007732-16850253733a89fbd0-1": {
+          "type": "heading",
+          "disabled": true,
+          "settings": {
+            "title": "Image hero",
+            "heading_font_class": "fs-heading-display-2"
+          }
+        },
+        "template--15511990272053__3c8c13e6-f86e-43f5-a617-701f26007732-16850253733a89fbd0-2": {
+          "type": "text",
+          "disabled": true,
+          "settings": {
+            "text": "<p>Use these sections to promote a particular feature with editorial photography.<\/p>",
+            "text_font_class": "fs-body-100"
+          }
+        },
+        "5fdddbbb-b708-4a79-a559-47a1841fda57": {
+          "type": "button",
+          "disabled": true,
+          "settings": {
+            "link": "",
+            "link_text": "Read more",
+            "button_style": "btn--primary"
+          }
+        }
+      },
+      "block_order": [
+        "template--15511990272053__3c8c13e6-f86e-43f5-a617-701f26007732-16850253733a89fbd0-0",
+        "template--15511990272053__3c8c13e6-f86e-43f5-a617-701f26007732-16850253733a89fbd0-1",
+        "template--15511990272053__3c8c13e6-f86e-43f5-a617-701f26007732-16850253733a89fbd0-2",
+        "5fdddbbb-b708-4a79-a559-47a1841fda57"
+      ],
+      "settings": {
+        "image_aspect": "custom",
+        "desktop_height": 100,
+        "mobile_height": 100,
+        "image": "shopify:\/\/shop_images\/resort-dress-maxi-poppy-6.jpg",
+        "image_mobile": "shopify:\/\/shop_images\/resort-dress-maxi-poppy-6.jpg",
+        "focal_point": "top",
+        "mobile_focal_point": "top",
+        "media_link": "shopify:\/\/products\/crewneck-sweatshirt-1",
+        "text_position": "center_center",
+        "text_position_mobile": "center_center",
+        "text_color": "#ffffff",
+        "button_background_color": "#ffffff",
+        "button_text_color": "#000000",
+        "color_overlay": "#000000",
+        "color_overlay_gradient": "",
+        "overlay_opacity": 0,
+        "enable_animation": true,
+        "section_padding": "section--vertical-padding-none"
+      }
+    },
     "9904d35a-b0c1-4760-9f4c-82c5783d55f0": {
       "type": "rich-text",
       "blocks": {
@@ -1485,69 +1548,6 @@
         "content_position_desktop": "outside"
       }
     },
-    "3c8c13e6-f86e-43f5-a617-701f26007732": {
-      "type": "image-hero",
-      "blocks": {
-        "template--15511990272053__3c8c13e6-f86e-43f5-a617-701f26007732-16850253733a89fbd0-0": {
-          "type": "accent",
-          "disabled": true,
-          "settings": {
-            "accent": "Accent"
-          }
-        },
-        "template--15511990272053__3c8c13e6-f86e-43f5-a617-701f26007732-16850253733a89fbd0-1": {
-          "type": "heading",
-          "disabled": true,
-          "settings": {
-            "title": "Image hero",
-            "heading_font_class": "fs-heading-display-2"
-          }
-        },
-        "template--15511990272053__3c8c13e6-f86e-43f5-a617-701f26007732-16850253733a89fbd0-2": {
-          "type": "text",
-          "disabled": true,
-          "settings": {
-            "text": "<p>Use these sections to promote a particular feature with editorial photography.<\/p>",
-            "text_font_class": "fs-body-100"
-          }
-        },
-        "5fdddbbb-b708-4a79-a559-47a1841fda57": {
-          "type": "button",
-          "disabled": true,
-          "settings": {
-            "link": "",
-            "link_text": "Read more",
-            "button_style": "btn--primary"
-          }
-        }
-      },
-      "block_order": [
-        "template--15511990272053__3c8c13e6-f86e-43f5-a617-701f26007732-16850253733a89fbd0-0",
-        "template--15511990272053__3c8c13e6-f86e-43f5-a617-701f26007732-16850253733a89fbd0-1",
-        "template--15511990272053__3c8c13e6-f86e-43f5-a617-701f26007732-16850253733a89fbd0-2",
-        "5fdddbbb-b708-4a79-a559-47a1841fda57"
-      ],
-      "settings": {
-        "image_aspect": "custom",
-        "desktop_height": 100,
-        "mobile_height": 100,
-        "image": "shopify:\/\/shop_images\/BecasaAugust2023-1526.jpg",
-        "image_mobile": "shopify:\/\/shop_images\/BecasaAugust2023-1526.jpg",
-        "focal_point": "top",
-        "mobile_focal_point": "top",
-        "media_link": "shopify:\/\/products\/crewneck-sweatshirt-1",
-        "text_position": "center_center",
-        "text_position_mobile": "center_center",
-        "text_color": "#ffffff",
-        "button_background_color": "#ffffff",
-        "button_text_color": "#000000",
-        "color_overlay": "#000000",
-        "color_overlay_gradient": "",
-        "overlay_opacity": 0,
-        "enable_animation": true,
-        "section_padding": "section--vertical-padding-none"
-      }
-    },
     "6ab7aec1-b72d-4e90-a96e-10f04f723c48": {
       "type": "promo-banner",
       "disabled": true,
@@ -1799,6 +1799,7 @@
   "order": [
     "01ffb404-403f-4ca8-a4b9-e6b50f94da3e",
     "image_with_text_fn8ipJ",
+    "3c8c13e6-f86e-43f5-a617-701f26007732",
     "9904d35a-b0c1-4760-9f4c-82c5783d55f0",
     "16558445044f80743b",
     "3a2d7467-0626-4894-bbb0-e4eb846771d1",
@@ -1816,7 +1817,6 @@
     "ecf923bb-5df9-490a-a136-852ed7481b68",
     "d4adabce-8189-4c09-aee5-fb53b4ef25b4",
     "16548834739d532589",
-    "3c8c13e6-f86e-43f5-a617-701f26007732",
     "6ab7aec1-b72d-4e90-a96e-10f04f723c48",
     "fa899858-de05-4b36-8335-323075588e0c",
     "b849cb16-b99c-46a5-a478-b739f87071d2",
