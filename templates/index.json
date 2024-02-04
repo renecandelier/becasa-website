@@ -252,6 +252,59 @@
         "section_padding": "section--vertical-padding-top-bottom"
       }
     },
+    "78432426-6df3-40c1-935f-3c905f16913f": {
+      "type": "complete-the-look",
+      "blocks": {
+        "template--15452995485749__78432426-6df3-40c1-935f-3c905f16913f-1676603352f6092e11-0": {
+          "type": "product",
+          "settings": {
+            "product_item": "saturday-shirt-white"
+          }
+        },
+        "template--15452995485749__78432426-6df3-40c1-935f-3c905f16913f-1676603352f6092e11-1": {
+          "type": "product",
+          "settings": {
+            "product_item": "concon-crochet-straw-basket"
+          }
+        },
+        "template--15452995485749__78432426-6df3-40c1-935f-3c905f16913f-1676603352f6092e11-2": {
+          "type": "product",
+          "settings": {
+            "product_item": "becasa-beach-bangles",
+            "custom_product_image": "shopify:\/\/shop_images\/becasa-Beach-Bangles-27.jpg"
+          }
+        },
+        "template--15452995485749__78432426-6df3-40c1-935f-3c905f16913f-1676603352f6092e11-3": {
+          "type": "product",
+          "settings": {
+            "product_item": "day-caftan-dress"
+          }
+        }
+      },
+      "block_order": [
+        "template--15452995485749__78432426-6df3-40c1-935f-3c905f16913f-1676603352f6092e11-0",
+        "template--15452995485749__78432426-6df3-40c1-935f-3c905f16913f-1676603352f6092e11-1",
+        "template--15452995485749__78432426-6df3-40c1-935f-3c905f16913f-1676603352f6092e11-2",
+        "template--15452995485749__78432426-6df3-40c1-935f-3c905f16913f-1676603352f6092e11-3"
+      ],
+      "settings": {
+        "image": "shopify:\/\/shop_images\/Becasa-July-0038.jpg",
+        "video_url": "",
+        "video_loop": false,
+        "video_controls": false,
+        "image_position": "left",
+        "aspect_ratio": "natural",
+        "heading": "spring basics",
+        "subheading": "",
+        "link": "",
+        "link_text": "",
+        "button_style": "btn--callout",
+        "product_image_size": "large",
+        "enable_animation": true,
+        "divider_style": "none",
+        "section_padding": "section--vertical-padding-top-bottom"
+      }
+    },
     "713701db-85db-49b4-b65c-a9567ca86c05": {
       "type": "featured-collection-slider",
       "blocks": {
@@ -285,59 +338,6 @@
         "maximum_products": 11,
         "columns": "5",
         "mobile_columns": "2",
-        "enable_animation": true,
-        "divider_style": "none",
-        "section_padding": "section--vertical-padding-top-bottom"
-      }
-    },
-    "78432426-6df3-40c1-935f-3c905f16913f": {
-      "type": "complete-the-look",
-      "blocks": {
-        "template--15452995485749__78432426-6df3-40c1-935f-3c905f16913f-1676603352f6092e11-0": {
-          "type": "product",
-          "settings": {
-            "product_item": "cotton-scout-top"
-          }
-        },
-        "template--15452995485749__78432426-6df3-40c1-935f-3c905f16913f-1676603352f6092e11-1": {
-          "type": "product",
-          "settings": {
-            "product_item": "resort-skirt-hazel-flora"
-          }
-        },
-        "template--15452995485749__78432426-6df3-40c1-935f-3c905f16913f-1676603352f6092e11-2": {
-          "type": "product",
-          "settings": {
-            "product_item": "cotton-dunes-top",
-            "custom_product_image": "shopify:\/\/shop_images\/VSP_1221.jpg"
-          }
-        },
-        "template--15452995485749__78432426-6df3-40c1-935f-3c905f16913f-1676603352f6092e11-3": {
-          "type": "product",
-          "settings": {
-            "product_item": "copy-of-cotton-scout-top"
-          }
-        }
-      },
-      "block_order": [
-        "template--15452995485749__78432426-6df3-40c1-935f-3c905f16913f-1676603352f6092e11-0",
-        "template--15452995485749__78432426-6df3-40c1-935f-3c905f16913f-1676603352f6092e11-1",
-        "template--15452995485749__78432426-6df3-40c1-935f-3c905f16913f-1676603352f6092e11-2",
-        "template--15452995485749__78432426-6df3-40c1-935f-3c905f16913f-1676603352f6092e11-3"
-      ],
-      "settings": {
-        "image": "shopify:\/\/shop_images\/BecasaAugust2023-0276.jpg",
-        "video_url": "",
-        "video_loop": false,
-        "video_controls": false,
-        "image_position": "left",
-        "aspect_ratio": "portrait_alt",
-        "heading": "featured print | hazel flora",
-        "subheading": "",
-        "link": "",
-        "link_text": "",
-        "button_style": "btn--callout",
-        "product_image_size": "large",
         "enable_animation": true,
         "divider_style": "none",
         "section_padding": "section--vertical-padding-top-bottom"
@@ -1776,8 +1776,8 @@
     "9904d35a-b0c1-4760-9f4c-82c5783d55f0",
     "16558445044f80743b",
     "3a2d7467-0626-4894-bbb0-e4eb846771d1",
-    "713701db-85db-49b4-b65c-a9567ca86c05",
     "78432426-6df3-40c1-935f-3c905f16913f",
+    "713701db-85db-49b4-b65c-a9567ca86c05",
     "f0d3ab67-bc81-4459-b5f1-afea099f386f",
     "7ac8e2ee-169d-414e-8b56-2676cc72d5a1",
     "2b9f7d63-bf6e-4b90-9369-a11a2b31c92d",
