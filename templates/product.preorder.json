@@ -49,6 +49,14 @@
             "expand_by_default": false
           }
         },
+        "information_popup_jjMiEM": {
+          "type": "information_popup",
+          "settings": {
+            "popup_icon": "t-shirt",
+            "popup_text": "Size Chart",
+            "popup_page": "{{ product.metafields.custom.size_chart.value }}"
+          }
+        },
         "inventory_counter": {
           "type": "inventory-counter",
           "settings": {
@@ -62,14 +70,6 @@
           "type": "share",
           "settings": {
           }
-        },
-        "information_popup_jjMiEM": {
-          "type": "information_popup",
-          "settings": {
-            "popup_icon": "t-shirt",
-            "popup_text": "Size Chart",
-            "popup_page": "{{ product.metafields.custom.size_chart.value }}"
-          }
         }
       },
       "block_order": [
@@ -78,9 +78,9 @@
         "quantity_selector",
         "buy_buttons",
         "description",
+        "information_popup_jjMiEM",
         "inventory_counter",
-        "share",
-        "information_popup_jjMiEM"
+        "share"
       ],
       "settings": {
         "enable_sticky_product_details": true,
