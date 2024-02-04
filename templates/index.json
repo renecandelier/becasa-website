@@ -549,6 +549,7 @@
         "template--15472021504053__7ac8e2ee-169d-414e-8b56-2676cc72d5a1-16790210829658b2cb-1",
         "template--15472021504053__7ac8e2ee-169d-414e-8b56-2676cc72d5a1-16790210829658b2cb-2"
       ],
+      "disabled": true,
       "settings": {
         "image_position": "right",
         "text_alignment": "center",
@@ -1532,6 +1533,7 @@
         "f6a7acc9-d502-4cf8-83bd-4e2b0200174d",
         "2a6ef1ba-e603-4443-bc22-db2d32e587e3"
       ],
+      "disabled": true,
       "settings": {
         "image": "shopify:\/\/shop_images\/BecasaAugust2023-1466.jpg",
         "image_position": "left",
