@@ -61,27 +61,52 @@
         "section_padding": "section--vertical-padding-none"
       }
     },
-    "featured_collection_grid_QHjrip": {
-      "type": "featured-collection-grid",
+    "image_with_text_fn8ipJ": {
+      "type": "image-with-text",
       "blocks": {
-        "collection_xTYGqE": {
-          "type": "collection",
+        "heading_LzVdkQ": {
+          "type": "heading",
           "settings": {
-            "collection": "resort-presale"
+            "title": "Pre-Sale",
+            "heading_font_class": "fs-heading-display-3"
+          }
+        },
+        "subheading_nyKA8L": {
+          "type": "subheading",
+          "settings": {
+            "subheading": "Grab your favorite resort dress before they fly this spring.",
+            "subheading_font_class": "fs-heading-5-base"
+          }
+        },
+        "button_wJiUHV": {
+          "type": "button",
+          "settings": {
+            "link": "shopify:\/\/collections\/resort-presale",
+            "link_text": "shop now",
+            "button_style": "btn--secondary"
           }
         }
       },
       "block_order": [
-        "collection_xTYGqE"
+        "heading_LzVdkQ",
+        "subheading_nyKA8L",
+        "button_wJiUHV"
       ],
       "settings": {
-        "heading": "Resort Dresses",
-        "subheading": "",
-        "link": "",
-        "link_text": "",
-        "maximum_collections": 4,
-        "columns": "4",
-        "mobile_columns": "2",
+        "image_position": "right",
+        "text_alignment": "center",
+        "image": "shopify:\/\/shop_images\/resort-dress-mini-garden-10.jpg",
+        "aspect_ratio": "square",
+        "focal_point": "center",
+        "image_caption": "",
+        "show_small_image": true,
+        "image_small": "shopify:\/\/shop_images\/resort-dress-maxi-leparadis-6.jpg",
+        "image_small_aspect_ratio": "natural",
+        "image_small_focal_point": "center",
+        "background_color": "",
+        "text_color": "#000000",
+        "button_background_color": "#000000",
+        "button_text_color": "#FFFFFF",
         "enable_animation": true,
         "divider_style": "none",
         "section_padding": "section--vertical-padding-top-bottom"
@@ -1773,7 +1798,7 @@
   },
   "order": [
     "01ffb404-403f-4ca8-a4b9-e6b50f94da3e",
-    "featured_collection_grid_QHjrip",
+    "image_with_text_fn8ipJ",
     "9904d35a-b0c1-4760-9f4c-82c5783d55f0",
     "16558445044f80743b",
     "3a2d7467-0626-4894-bbb0-e4eb846771d1",
