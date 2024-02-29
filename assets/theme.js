@@ -6127,7 +6127,7 @@ function createOptionGroup(el) {
       const thumbParent = thumb.parentElement.parentElement.parentElement.parentElement
       
       if(optionHandleValueLower !== thumb.alt.toLowerCase()){
-        //console.log("optionHandleValueLower",optionHandleValueLower, thumb.alt.toLowerCase())
+        console.log("optionHandleValueLower",optionHandleValueLower, thumb.alt.toLowerCase())
         thumbParent.classList.add("hide__img");
         thumbParent.classList.remove("visible__img");   
          
@@ -6167,7 +6167,7 @@ function createOptionGroup(el) {
     
     
    
-    //console.log("product-thumbnails__items",productThumb)
+    console.log("product-thumbnails__items",productThumb)
     buttons.forEach(function (btn) {
       l(btn, "selected", btn.dataset.optionHandle === optionHandle);
     });
