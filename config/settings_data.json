@@ -301,7 +301,7 @@
               "color_overlay": "#000000",
               "overlay_opacity": 0,
               "enable_tab": false,
-              "tab_text": "Get 10% Off",
+              "tab_text": "",
               "text_font_class": "fs-body-100",
               "tab_position": "bottom_left_floating",
               "tab_text_color": "#000000",
