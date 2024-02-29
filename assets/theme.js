@@ -6167,7 +6167,7 @@ function createOptionGroup(el) {
     
     
    
-    console.log("product-thumbnails__items",productThumb)
+    //console.log("product-thumbnails__items",productThumb)
     buttons.forEach(function (btn) {
       l(btn, "selected", btn.dataset.optionHandle === optionHandle);
     });
