@@ -278,7 +278,7 @@
           "6808e2e7-2d7d-4a4d-a6a5-d18da635ccae": {
             "type": "flyout_signup",
             "settings": {
-              "delay": "timer_3000",
+              "delay": "timer_5000",
               "frequency": "frequency_0",
               "show_on_exit_intent": false,
               "disable_for_account_holders": false,
