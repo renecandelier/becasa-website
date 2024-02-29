@@ -58,7 +58,6 @@
         "blocks": {
           "announcement-bar-0": {
             "type": "announcement",
-            "disabled": true,
             "settings": {
               "title": "<p>Newsletter<\/p>",
               "title_mobile": "",
@@ -67,7 +66,6 @@
           },
           "announcement-bar-1": {
             "type": "announcement",
-            "disabled": true,
             "settings": {
               "title": "<p>Newsletter<\/p>",
               "title_mobile": "",
@@ -175,8 +173,8 @@
           "enable_transparent_on_home": false,
           "enable_transparent_on_collection": false,
           "logo_transparent": "shopify:\/\/shop_images\/logo.png",
-          "color_text_transparent": "#000",
-          "color_count_transparent": "#000"
+          "color_text_transparent": "#000000",
+          "color_count_transparent": "#000000"
         }
       },
       "quick-cart": {
@@ -277,19 +275,18 @@
         "blocks": {
           "6808e2e7-2d7d-4a4d-a6a5-d18da635ccae": {
             "type": "flyout_signup",
-            "disabled": true,
             "settings": {
-              "delay": "timer_30000",
+              "delay": "timer_3000",
               "frequency": "frequency_100000",
               "show_on_exit_intent": false,
-              "disable_for_account_holders": true,
+              "disable_for_account_holders": false,
               "show_on_specific_page": false,
               "target_page": "",
               "accent": "",
-              "heading": "Join us",
+              "heading": "Let's Keep In Touch",
               "heading_font_class": "fs-heading-2-base",
-              "text": "<p>Signup and get 10% off your first purchase<\/p>",
-              "link_text": "Get offer",
+              "text": "<p>Stay in the loop about the latest launches, events and more!<\/p>",
+              "link_text": "Stay in Touch",
               "dismiss_text": "No thanks",
               "footer_text": "<p>By completing this form, you are signing up to receive our emails and can unsubscribe at any time<\/p>",
               "flyout_position": "right",
