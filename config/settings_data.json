@@ -279,7 +279,7 @@
             "type": "flyout_signup",
             "settings": {
               "delay": "timer_5000",
-              "frequency": "frequency_0",
+              "frequency": "frequency_100000",
               "show_on_exit_intent": false,
               "disable_for_account_holders": false,
               "show_on_specific_page": false,
