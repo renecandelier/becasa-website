@@ -110,6 +110,14 @@
             data-layout="{{ chip_layout }}"
           >
               {%- for value in option.values -%}
+                {%- assign variantColor = value | split: " " | first | downcase -%}  
+<script>console.log({{ value | json }});</script>
+  <script>console.log({{ variantColor }});</script>
+
+{% if variantColor contains "*" %}
+  <script>console.log({{ variantColor | json }});</script>
+
+{% else %}
                 <button
                   type="button"
                   data-option-origin="{{ option.name }}"
@@ -131,6 +139,7 @@
                                 {{ value }}
 
                 </button>
+  {% endif %}
               {%- endfor -%}
 
               {{ option_values }}
